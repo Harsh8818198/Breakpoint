@@ -1,0 +1,13 @@
+{
+    "python.analysis.extraPaths": ["."],
+    "python.analysis.typeCheckingMode": "basic",
+    "python.analysis.autoImportCompletions": true,
+    "editor.rulers": [100],
+    "editor.formatOnSave": true,
+    "files.associations": {
+        "*.env*": "dotenv"
+    },
+    "[python]": {
+        "editor.tabSize": 4
+    }
+}
