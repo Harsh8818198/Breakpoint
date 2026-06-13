@@ -75,6 +75,8 @@ DEMO_DESC = (
 )
 
 
+import json
+
 def _stream(kind: str, payload) -> None:
     if kind == "generation_start":
         print(f"\n--- Generation {payload['generation']} running ---")
@@ -85,19 +87,60 @@ def _stream(kind: str, payload) -> None:
 
 
 def _pipeline(description: str, gens: int, archetypes: int | None,
-              product_specific: int, show_questions: bool) -> tuple[Blueprint, list[Finding]]:
+              product_specific: int, show_questions: bool, interactive: bool = False) -> tuple[Blueprint, list[Finding]]:
     llm = LLMClient()
     print(f"Provider: {llm.provider} | Model: {llm.model}")
 
-    print("\n[1/4] Decomposing product into blueprint...")
-    bp = build_blueprint(description, llm)
-    print(f"      {bp.name} | actors={len(bp.actors)} "
-          f"surface={len(bp.attack_surface)} unknowns={len(bp.known_unknowns)}")
+    if interactive:
+        print("\n[1/4] Decomposing product into initial blueprint...")
+        bp = build_blueprint(description, llm)
+        print(f"      {bp.name} | actors={len(bp.actors)} "
+              f"surface={len(bp.attack_surface)} unknowns={len(bp.known_unknowns)}")
 
-    if show_questions:
-        print("\n[1b] Interrogation follow-ups Breakpoint would ask:")
-        for q in interrogate(bp, llm):
-            print(f"      ? {q}")
+        print("\n[Interactive] Starting follow-up interrogation...")
+        questions = interrogate(bp, llm)
+        if not questions:
+            print("      No follow-up questions needed.")
+            refined_desc = description
+        else:
+            print("\n=======================================================")
+            print("  BREAKPOINT INTERROGATION COMMAND CENTER")
+            print("=======================================================\n")
+            print("Please answer the following mechanical questions to refine the blueprint:")
+            qa_blocks = []
+            for i, q in enumerate(questions, 1):
+                print(f"\n[Question {i}/{len(questions)}] {q}")
+                try:
+                    ans = input("Answer: ").strip()
+                except (KeyboardInterrupt, EOFError):
+                    print("\nInterrogation interrupted. Proceeding with current details.")
+                    break
+                if ans.lower() in ("exit", "quit", "done"):
+                    print("\nInterrogation ended by user.")
+                    break
+                if ans:
+                    qa_blocks.append(f"Q: {q}\nA: {ans}")
+            
+            if qa_blocks:
+                refined_desc = description + "\n\nAdditional mechanical details provided by user:\n" + "\n\n".join(qa_blocks)
+                print("\n[1b/4] Refining product blueprint based on your answers...")
+                bp = build_blueprint(refined_desc, llm)
+                print(f"      {bp.name} (refined) | actors={len(bp.actors)} "
+                      f"surface={len(bp.attack_surface)} unknowns={len(bp.known_unknowns)}")
+            else:
+                refined_desc = description
+
+        description = refined_desc
+    else:
+        print("\n[1/4] Decomposing product into blueprint...")
+        bp = build_blueprint(description, llm)
+        print(f"      {bp.name} | actors={len(bp.actors)} "
+              f"surface={len(bp.attack_surface)} unknowns={len(bp.known_unknowns)}")
+
+        if show_questions:
+            print("\n[1b] Interrogation follow-ups Breakpoint would ask:")
+            for q in interrogate(bp, llm):
+                print(f"      ? {q}")
 
     print("\n[2/4] Generating agent population...")
     agents = build_population(bp, llm, archetypes=archetypes,
@@ -110,11 +153,29 @@ def _pipeline(description: str, gens: int, archetypes: int | None,
 
 
 def run(description: str, gens: int, archetypes: int | None, product_specific: int,
-        show_questions: bool) -> str:
-    bp, findings = _pipeline(description, gens, archetypes, product_specific, show_questions)
+        show_questions: bool, interactive: bool = False, output: str | None = None) -> str:
+    bp, findings = _pipeline(description, gens, archetypes, product_specific, show_questions, interactive)
     print("\n[4/4] Report\n")
     report = render_report(bp, findings)
     print(report)
+
+    if output:
+        try:
+            if output.lower().endswith(".json"):
+                data = {
+                    "blueprint": bp.to_dict(),
+                    "findings": [f.to_dict() for f in findings]
+                }
+                with open(output, "w", encoding="utf-8") as fh:
+                    json.dump(data, fh, indent=2)
+                print(f"\n[+] Saved JSON report to {output}")
+            else:
+                with open(output, "w", encoding="utf-8") as fh:
+                    fh.write(report)
+                print(f"\n[+] Saved text report to {output}")
+        except OSError as e:
+            print(f"\n[error] Failed to write report to {output}: {e}")
+
     return report
 
 
@@ -143,6 +204,10 @@ def main(argv: list[str] | None = None) -> None:
                    help="number of product-specific agents to generate (default 3)")
     p.add_argument("--questions", action="store_true",
                    help="print interrogation follow-ups after the blueprint step")
+    p.add_argument("--interactive", action="store_true",
+                   help="run an interactive follow-up interrogation in terminal to refine details")
+    p.add_argument("--output", metavar="PATH",
+                   help="save report to a file (saves structured JSON if path ends in .json)")
     p.add_argument("--check", action="store_true",
                    help="verify API key works with a quick test call, then exit")
     p.add_argument("--template", action="store_true",
@@ -171,7 +236,7 @@ def main(argv: list[str] | None = None) -> None:
         desc = DEMO_DESC
         print("(no --desc given; using built-in StudyBuddy demo)\n")
 
-    run(desc, args.gens, args.archetypes, args.product_specific, args.questions)
+    run(desc, args.gens, args.archetypes, args.product_specific, args.questions, args.interactive, args.output)
 
 
 if __name__ == "__main__":
