@@ -1,0 +1,19 @@
+{
+  "functions": {
+    "src/app/api/simulation/start/route.js": {
+      "maxDuration": 300
+    },
+    "src/app/api/simulation/[id]/stream/route.js": {
+      "maxDuration": 300
+    },
+    "src/app/api/report/[simulationId]/generate/route.js": {
+      "maxDuration": 300
+    },
+    "src/app/api/agents/generate/route.js": {
+      "maxDuration": 300
+    },
+    "src/app/api/intake/codebase/analyze/route.js": {
+      "maxDuration": 60
+    }
+  }
+}
