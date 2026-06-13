@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, Lock, User, ShieldCheck, ChevronRight, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
@@ -13,6 +13,10 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
+
+  useEffect(() => {
+    router.replace('/projects');
+  }, [router]);
 
   const [formData, setFormData] = useState({
     email: '',

@@ -37,8 +37,8 @@ export default function Home() {
           <span className="text-2xl font-bold tracking-tighter">Breakpoint <span className="text-[#8b5cf6]">V2</span></span>
         </div>
         <div className="flex items-center gap-6">
-          <Link href="/login" className="text-sm font-bold text-[#64748b] hover:text-white transition-colors uppercase tracking-widest px-4 py-2 hover:bg-white/5 rounded-xl">Login</Link>
-          <Link href="/login">
+          <Link href="/projects" className="text-sm font-bold text-[#64748b] hover:text-white transition-colors uppercase tracking-widest px-4 py-2 hover:bg-white/5 rounded-xl">Dashboard</Link>
+          <Link href="/projects">
             <Button className="!px-6 !py-2.5" icon={ArrowRight}>Get Started</Button>
           </Link>
         </div>
@@ -80,7 +80,7 @@ export default function Home() {
             variants={itemVariants}
             className="flex items-center justify-center gap-6 mt-4"
           >
-            <Link href="/login">
+            <Link href="/projects">
               <Button className="!px-10 !py-4 !text-lg" icon={Zap}>Initialize Discovery</Button>
             </Link>
             <Link href="/docs">
@@ -129,7 +129,7 @@ export default function Home() {
          <div className="flex flex-col items-center gap-8 text-center max-w-2xl px-6">
             <h2 className="text-4xl font-bold tracking-tighter">Ready for <span className="text-[#8b5cf6]">Infiltration?</span></h2>
             <p className="text-[#64748b] font-medium uppercase tracking-widest text-[10px]">Trusted by elite teams across the multiverse.</p>
-            <Link href="/login">
+            <Link href="/projects">
               <Button icon={Zap}>Begin Discovery Session</Button>
             </Link>
          </div>

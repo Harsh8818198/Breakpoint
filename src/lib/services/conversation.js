@@ -21,7 +21,6 @@ export async function startConversation(projectId, userId) {
     throw new ValidationError("Not authorized");
   }
 
-  // Create conversation with opening message
   const { openingMessage } = getOpeningPrompt();
 
   const conversation = await Conversation.create({
@@ -36,7 +35,6 @@ export async function startConversation(projectId, userId) {
     status: "active",
   });
 
-  // Link conversation to project
   project.conversationId = conversation._id;
   project.intakeMode = "conversation";
   project.status = "intake";
@@ -46,7 +44,7 @@ export async function startConversation(projectId, userId) {
 }
 
 /**
- * Process a user message and generate follow-up questions
+ * Process a user message and generate a targeted follow-up response
  */
 export async function processMessage(conversationId, userMessage, userId) {
   await connectDB();
@@ -61,7 +59,9 @@ export async function processMessage(conversationId, userMessage, userId) {
   }
 
   if (conversation.status === "completed") {
-    throw new ValidationError("Conversation is already completed. Generate a blueprint or start a new conversation.");
+    throw new ValidationError(
+      "Conversation is already completed. Generate a blueprint or start a new conversation."
+    );
   }
 
   // Add user message
@@ -83,8 +83,9 @@ export async function processMessage(conversationId, userMessage, userId) {
     { role: "user", content: decompositionPrompt },
   ]);
 
-  // Update decomposition
   const decomp = decompositionResult.data;
+
+  // Update decomposition with V2 fields
   conversation.decomposition = {
     entities: [
       ...(decomp.entities?.stated || []),
@@ -99,17 +100,30 @@ export async function processMessage(conversationId, userMessage, userId) {
       ...(decomp.boundaries?.implied || []),
     ],
     gaps: decomp.gaps || [],
+    // V2 additions — stored for use in follow-up prompts
+    interestingImplications: decomp.interestingImplications || [],
+    coverageScore: decomp.coverageScore || {},
+    riskSignals: decomp.riskSignals || [],
   };
 
-  // Step 2: Determine if more follow-ups are needed
+  // Step 2: Determine if we should ask more follow-ups
   const shouldContinue = shouldAskMore(conversation, decomp);
 
   if (shouldContinue) {
     conversation.followUpRound += 1;
 
-    // Generate follow-up questions
+    // Build full decomp object to pass to follow-up prompt
+    const fullDecomp = {
+      entities: decomp.entities,
+      flows: decomp.flows,
+      boundaries: decomp.boundaries,
+      gaps: decomp.gaps || [],
+      interestingImplications: decomp.interestingImplications || [],
+      coverageScore: decomp.coverageScore || {},
+    };
+
     const followUpPrompt = getFollowUpPrompt(
-      conversation.decomposition,
+      fullDecomp,
       conversationHistory,
       conversation.followUpRound
     );
@@ -126,24 +140,27 @@ export async function processMessage(conversationId, userMessage, userId) {
       },
     ]);
 
-    // Add assistant follow-up
     conversation.messages.push({
       role: "assistant",
       content: followUpResult.content,
       metadata: {
         type: "followup",
+        round: conversation.followUpRound,
+        theme: getRoundTheme(conversation.followUpRound),
         gapsIdentified: decomp.gaps?.slice(0, 5) || [],
+        riskSignals: decomp.riskSignals?.slice(0, 3) || [],
       },
     });
   } else {
-    // Conversation is complete enough
+    // Conversation is complete enough — generate a summary message
     conversation.status = "completed";
 
-    // Add completion message
+    const riskCount = decomp.riskSignals?.length || 0;
+    const gapCount = decomp.gaps?.length || 0;
+
     conversation.messages.push({
       role: "assistant",
-      content:
-        "Great, I think I have a solid understanding of your product now! 🎯\n\nI've captured the key features, user flows, boundaries, and some interesting edge cases. I'm ready to generate your Product Blueprint — this will be a structured document that I'll present back to you for review before we start the simulation.\n\nWould you like me to generate the blueprint now?",
+      content: buildCompletionMessage(riskCount, gapCount),
       metadata: { type: "summary" },
     });
   }
@@ -160,7 +177,8 @@ export async function processMessage(conversationId, userMessage, userId) {
 }
 
 /**
- * Determine if more follow-up questions should be asked
+ * Determine if more follow-up questions should be asked.
+ * V2: Uses coverage scores to be smarter about when we have enough.
  */
 function shouldAskMore(conversation, decomposition) {
   // Max rounds reached
@@ -168,36 +186,71 @@ function shouldAskMore(conversation, decomposition) {
     return false;
   }
 
-  // Check if enough gaps remain to justify another round
   const gaps = decomposition.gaps || [];
-  if (gaps.length < 2) {
-    return false; // Few enough gaps that we can proceed
+  const coverage = decomposition.coverageScore || {};
+
+  // Always ask at least one follow-up round
+  if (conversation.followUpRound === 0) {
+    return true;
   }
 
-  // Check if we have minimum viable product understanding
-  const hasEntities =
-    (decomposition.entities?.stated?.length || 0) >= 2;
-  const hasFlows =
-    (decomposition.flows?.stated?.length || 0) >= 1;
-  const hasBoundaries =
-    (decomposition.boundaries?.stated?.length || 0) >= 1;
+  // If we still have significant uncovered areas, continue
+  const uncoveredAreas = Object.values(coverage).filter((v) => v === 0).length;
+  if (uncoveredAreas >= 3 && conversation.followUpRound < MAX_FOLLOWUP_ROUNDS) {
+    return true;
+  }
 
-  // If we don't have basics, we MUST ask more
+  // If there are still many specific gaps, continue
+  if (gaps.length >= 5 && conversation.followUpRound < 2) {
+    return true;
+  }
+
+  // Check minimum viable understanding
+  const hasEntities = (decomposition.entities?.stated?.length || 0) >= 2;
+  const hasFlows = (decomposition.flows?.stated?.length || 0) >= 1;
+  const hasBoundaries = (decomposition.boundaries?.stated?.length || 0) >= 1;
+
+  // If we don't have basics, must ask more
   if (!hasEntities || !hasFlows || !hasBoundaries) {
     return true;
   }
 
-  // If we have basics and this is round 2+, allow completion
+  // If we're at round 2+, allow completion
   if (conversation.followUpRound >= 2) {
     return false;
   }
 
-  // Otherwise, keep asking if there are significant gaps
+  // Default: keep asking if significant gaps remain
   return gaps.length >= 3;
 }
 
 /**
- * Format conversation messages into a readable history string
+ * Get the theme name for a given round number
+ */
+function getRoundTheme(round) {
+  const themes = {
+    1: "Authentication & Identity",
+    2: "Pricing, Limits & Enforcement",
+    3: "Social Dynamics & Data Ownership",
+  };
+  return themes[round] || "Remaining Edge Cases";
+}
+
+/**
+ * Build a natural completion message with context from the analysis
+ */
+function buildCompletionMessage(riskCount, gapCount) {
+  return `I think I have a solid picture of your product now! 🎯
+
+Here's what I've captured: your core flows, user boundaries, the mechanics of your key features, and ${gapCount > 0 ? `${gapCount} specific edge cases` : "the key edge cases"} that I'll want the agents to probe.
+
+${riskCount > 0 ? `I've already spotted ${riskCount} early risk signals — I'll share those in the Blueprint verification step before we start the simulation.` : ""}
+
+Ready to generate your Product Blueprint? This will be a structured map of everything I've understood — I'll present it back to you for review before any agents are deployed.`;
+}
+
+/**
+ * Format conversation messages into readable history string
  */
 function formatConversationHistory(messages) {
   return messages

@@ -2,12 +2,8 @@ import connectDB from "@/lib/db/connect";
 import Simulation from "@/lib/db/models/Simulation";
 import Blueprint from "@/lib/db/models/Blueprint";
 import Project from "@/lib/db/models/Project";
-import Agent from "@/lib/db/models/Agent";
 import Vulnerability from "@/lib/db/models/Vulnerability";
-import { getLLMProviderWithFallback } from "@/lib/llm/factory";
-import { getUserApiKey } from "@/lib/services/auth";
-import { generateAgentPopulation } from "@/lib/services/agentGenerator";
-import { runGeneration } from "@/lib/services/generationRunner";
+import Agent from "@/lib/db/models/Agent";
 import { DEFAULT_SIMULATION_CONFIG } from "@/lib/config/defaults";
 import {
   INTENSITY_PRESETS,
@@ -20,6 +16,9 @@ import {
   SimulationError,
 } from "@/lib/utils/errors";
 
+const PYTHON_ENGINE_URL =
+  process.env.PYTHON_ENGINE_URL || "http://localhost:8000";
+
 /**
  * Configure a new simulation
  */
@@ -28,11 +27,14 @@ export async function configureSimulation(projectId, config, userId) {
 
   const project = await Project.findById(projectId);
   if (!project) throw new NotFoundError("Project");
-  if (project.userId.toString() !== userId) throw new ValidationError("Not authorized");
+  if (project.userId.toString() !== userId)
+    throw new ValidationError("Not authorized");
 
   const blueprint = await Blueprint.findById(project.blueprintId);
   if (!blueprint || blueprint.status !== BLUEPRINT_STATUS.LOCKED) {
-    throw new ValidationError("Blueprint must be locked before simulation can start");
+    throw new ValidationError(
+      "Blueprint must be locked before simulation can start"
+    );
   }
 
   const intensity = config.intensity || "standard";
@@ -48,7 +50,8 @@ export async function configureSimulation(projectId, config, userId) {
       estimatedLlmCalls: preset.estimatedLlmCalls,
       estimatedDuration: preset.estimatedDuration,
       focusAreas: config.focusAreas || DEFAULT_SIMULATION_CONFIG.focusAreas,
-      agentComposition: config.agentComposition || DEFAULT_SIMULATION_CONFIG.agentComposition,
+      agentComposition:
+        config.agentComposition || DEFAULT_SIMULATION_CONFIG.agentComposition,
       customAgents: config.customAgents || [],
     },
     status: SIMULATION_STATUS.CONFIGURING,
@@ -61,7 +64,8 @@ export async function configureSimulation(projectId, config, userId) {
 }
 
 /**
- * Start a simulation run (the main orchestrator)
+ * Start a simulation — delegates engine work to the Python FastAPI server.
+ * Results are saved to MongoDB here (Next.js side).
  */
 export async function startSimulation(simulationId, userId) {
   await connectDB();
@@ -70,84 +74,108 @@ export async function startSimulation(simulationId, userId) {
   if (!simulation) throw new NotFoundError("Simulation");
 
   const project = await Project.findById(simulation.projectId);
-  if (!project || project.userId.toString() !== userId) {
+  if (!project || project.userId.toString() !== userId)
     throw new ValidationError("Not authorized");
-  }
 
-  if (simulation.status === SIMULATION_STATUS.RUNNING) {
+  if (simulation.status === SIMULATION_STATUS.RUNNING)
     throw new ValidationError("Simulation is already running");
-  }
 
   const blueprint = await Blueprint.findById(simulation.blueprintId);
   if (!blueprint) throw new NotFoundError("Blueprint");
 
   // Update status
-  simulation.status = SIMULATION_STATUS.GENERATING_AGENTS;
+  simulation.status = SIMULATION_STATUS.RUNNING;
   simulation.progress.startedAt = new Date();
   await simulation.save();
 
   project.status = "simulating";
   await project.save();
 
-  const llmProvider = project.llmProvider;
-  const apiKey = await getUserApiKey(userId, llmProvider);
-  const llm = getLLMProviderWithFallback(llmProvider, apiKey);
-
   try {
-    // Step 1: Generate agents
-    const agentResult = await generateAgentPopulation(
-      simulationId,
-      simulation.blueprintId,
-      simulation.config,
-      userId,
-      llmProvider
+    // Check Python engine is reachable
+    const healthCheck = await fetch(`${PYTHON_ENGINE_URL}/health`).catch(
+      () => null
     );
-
-    simulation.agentIds = agentResult.agents.map((a) => a._id);
-    simulation.progress.agentsGenerated = agentResult.agents.length;
-    simulation.status = SIMULATION_STATUS.RUNNING;
-    await simulation.save();
-
-    // Step 2: Run evolutionary generations
-    let parentFindings = [];
-    const allAgents = agentResult.agents;
-    const blueprintObj = blueprint.toJSON();
-
-    for (let gen = 1; gen <= simulation.config.totalGenerations; gen++) {
-      // Check if simulation was stopped
-      const currentSim = await Simulation.findById(simulationId);
-      if (currentSim.status === SIMULATION_STATUS.PAUSED) {
-        break;
-      }
-
-      simulation.currentGeneration = gen;
-      await simulation.save();
-
-      // Select subset of agents for this generation
-      const agentsForGen = selectAgentsForGeneration(allAgents, gen, simulation.config.totalAgents);
-
-      // Run generation
-      const genResult = await runGeneration(
-        simulationId,
-        gen,
-        agentsForGen,
-        parentFindings,
-        blueprintObj,
-        llm
+    if (!healthCheck || !healthCheck.ok) {
+      throw new Error(
+        `Python engine is not running at ${PYTHON_ENGINE_URL}. ` +
+          `Start it with: python server.py (in C:\\Users\\Sahil\\Desktop\\breakpoint\\breakpoint)`
       );
-
-      // Update simulation progress
-      simulation.generationIds.push(genResult.generation._id);
-      simulation.progress.generationsCompleted = gen;
-      simulation.progress.totalVulnerabilitiesFound += genResult.findings.length;
-      simulation.progress.llmCallsMade += genResult.stats.llmCalls;
-      await simulation.save();
-
-      // Feed selected findings to next generation
-      parentFindings = [...parentFindings, ...genResult.selectedForNextGen];
     }
 
-    // Step 3: Mark as completed
+    // Call the Python engine's SSE streaming endpoint
+    const response = await fetch(`${PYTHON_ENGINE_URL}/simulate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        blueprint: blueprint.toJSON(),
+        config: {
+          totalGenerations: simulation.config.totalGenerations,
+          totalAgents: simulation.config.totalAgents,
+          intensity: simulation.config.intensity,
+        },
+        simulationId: simulationId.toString(),
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Python engine error: ${errorText}`);
+    }
+
+    // Parse the SSE stream
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let agentsReady = false;
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() || ""; // keep incomplete line
+
+      for (const line of lines) {
+        if (!line.startsWith("data: ")) continue;
+        let event;
+        try {
+          event = JSON.parse(line.slice(6));
+        } catch {
+          continue;
+        }
+
+        await _handleStreamEvent(event, simulation, project, agentsReady);
+
+        if (event.type === "agents_ready") {
+          agentsReady = true;
+          simulation.progress.agentsGenerated = event.count || 0;
+          simulation.status = SIMULATION_STATUS.RUNNING;
+          await simulation.save();
+        }
+
+        if (event.type === "finding") {
+          // Save finding to MongoDB
+          await _saveFinding(event, simulation._id, simulationId);
+          simulation.progress.totalVulnerabilitiesFound += 1;
+          simulation.progress.llmCallsMade += 1;
+          await simulation.save();
+        }
+
+        if (event.type === "generation_end") {
+          simulation.progress.generationsCompleted = event.generation || 0;
+          simulation.currentGeneration = event.generation || 0;
+          await simulation.save();
+        }
+
+        if (event.type === "error") {
+          throw new Error(`Python engine: ${event.message}`);
+        }
+      }
+    }
+
+    // Mark as completed
     simulation.status = SIMULATION_STATUS.COMPLETED;
     simulation.completedAt = new Date();
     await simulation.save();
@@ -158,6 +186,7 @@ export async function startSimulation(simulationId, userId) {
     return simulation.toJSON();
   } catch (error) {
     simulation.status = SIMULATION_STATUS.FAILED;
+    simulation.errorLog = simulation.errorLog || [];
     simulation.errorLog.push({
       timestamp: new Date(),
       message: error.message,
@@ -165,11 +194,74 @@ export async function startSimulation(simulationId, userId) {
     });
     await simulation.save();
 
-    project.status = "ready"; // Allow retry
+    project.status = "ready";
     await project.save();
 
     throw new SimulationError(error.message);
   }
+}
+
+/**
+ * Handle a stream event — update simulation progress fields
+ */
+async function _handleStreamEvent(event, simulation) {
+  if (event.type === "generation_start") {
+    simulation.currentGeneration = event.generation;
+    await simulation.save();
+  }
+}
+
+/**
+ * Save a finding from the Python engine to MongoDB
+ */
+async function _saveFinding(event, simulationId) {
+  const severityMap = {
+    CRITICAL: "critical",
+    HIGH: "high",
+    MEDIUM: "medium",
+    LOW: "low",
+  };
+
+  const severity = severityMap[event.severityBand] || "low";
+  const bss = event.bss || 0;
+
+  await Vulnerability.create({
+    simulationId,
+    generationNumber: event.generation || 1,
+    title: event.title || "Untitled Finding",
+    description: event.description || "",
+    stepsToExploit: event.stepsToExploit || [],
+    category: event.attackCategory || "",
+    targetFeature: "",
+    bssScore: {
+      totalScore: bss,
+      severity,
+      exploitability: 0,
+      impact: 0,
+      spread: 0,
+      fixDifficulty: 1,
+    },
+    impact: {
+      revenue: "",
+      reputation: "",
+      userTrust: "",
+      estimatedExploitRate: "",
+      timeToDiscovery: "",
+      virality: "medium",
+    },
+    suggestedFix: {
+      description: "",
+      effort: "",
+      priority: severity === "critical" ? 1 : severity === "high" ? 2 : 3,
+      blocksExploits: 1,
+    },
+    isDuplicate: false,
+    fitnessScore: bss / 10,
+    agentReasoning: event.discoveredBy
+      ? `Discovered by ${event.discoveredBy}`
+      : "",
+    evolvedFrom: [],
+  });
 }
 
 /**
@@ -182,9 +274,8 @@ export async function stopSimulation(simulationId, userId) {
   if (!simulation) throw new NotFoundError("Simulation");
 
   const project = await Project.findById(simulation.projectId);
-  if (!project || project.userId.toString() !== userId) {
+  if (!project || project.userId.toString() !== userId)
     throw new ValidationError("Not authorized");
-  }
 
   simulation.status = SIMULATION_STATUS.PAUSED;
   await simulation.save();
@@ -202,11 +293,9 @@ export async function getSimulationStatus(simulationId, userId) {
   if (!simulation) throw new NotFoundError("Simulation");
 
   const project = await Project.findById(simulation.projectId);
-  if (!project || project.userId.toString() !== userId) {
+  if (!project || project.userId.toString() !== userId)
     throw new NotFoundError("Simulation");
-  }
 
-  // Count vulnerabilities by generation
   const vulnsByGen = await Vulnerability.aggregate([
     { $match: { simulationId: simulation._id, isDuplicate: false } },
     { $group: { _id: "$generationNumber", count: { $sum: 1 } } },
@@ -217,23 +306,4 @@ export async function getSimulationStatus(simulationId, userId) {
     simulation: simulation.toJSON(),
     vulnerabilitiesByGeneration: vulnsByGen,
   };
-}
-
-/**
- * Select agents for a specific generation.
- * Different generations may use different subsets of agents.
- */
-function selectAgentsForGeneration(allAgents, genNumber, totalAgents) {
-  // For now, use all agents for Gen 1, and a smart subset for later generations
-  if (genNumber === 1) {
-    return allAgents;
-  }
-
-  // For later generations, prioritize agents that found interesting things
-  // or agents whose archetype is particularly relevant
-  const maxForGen = Math.ceil(allAgents.length * 0.6);
-  
-  // Shuffle and take a subset
-  const shuffled = [...allAgents].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, maxForGen);
 }

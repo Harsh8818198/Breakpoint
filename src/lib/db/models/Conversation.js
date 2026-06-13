@@ -17,8 +17,13 @@ const messageSchema = new mongoose.Schema(
         enum: ["opening", "followup", "clarification", "summary", "user_input"],
         default: "user_input",
       },
+      // V1
       gapsIdentified: [String],
       entitiesIdentified: [String],
+      // V2 additions
+      round: { type: Number },
+      theme: { type: String },
+      riskSignals: [String],
     },
     timestamp: {
       type: Date,
@@ -42,6 +47,10 @@ const conversationSchema = new mongoose.Schema(
       flows: [String],
       boundaries: [String],
       gaps: [String],
+      // V2 additions
+      interestingImplications: [String],
+      riskSignals: [String],
+      coverageScore: { type: mongoose.Schema.Types.Mixed, default: {} },
     },
     followUpRound: {
       type: Number,
@@ -65,8 +74,8 @@ const conversationSchema = new mongoose.Schema(
   }
 );
 
-const Conversation =
-  mongoose.models.Conversation ||
-  mongoose.model("Conversation", conversationSchema);
+// Force model recompile on hot reload (Next.js dev)
+delete mongoose.models.Conversation;
+const Conversation = mongoose.model("Conversation", conversationSchema);
 
 export default Conversation;

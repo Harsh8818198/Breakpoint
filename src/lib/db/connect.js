@@ -1,22 +1,15 @@
 import mongoose from "mongoose";
-
-const MONGODB_URI = process.env.MONGODB_URI;
-
-if (!MONGODB_URI) {
-  throw new Error(
-    "Please define the MONGODB_URI environment variable inside .env.local"
-  );
-}
+import { MongoMemoryServer } from "mongodb-memory-server";
 
 /**
  * Global is used here to maintain a cached connection across hot reloads
- * in development. This prevents connections from growing exponentially
- * during API Route usage. Works with Vercel serverless functions.
+ * in development. We use mongodb-memory-server to run a completely local,
+ * zero-setup in-memory database.
  */
 let cached = global.mongoose;
 
 if (!cached) {
-  cached = global.mongoose = { conn: null, promise: null };
+  cached = global.mongoose = { conn: null, promise: null, mongoServer: null };
 }
 
 async function connectDB() {
@@ -27,15 +20,23 @@ async function connectDB() {
   if (!cached.promise) {
     const opts = {
       bufferCommands: false,
-      maxPoolSize: 10,
-      serverSelectionTimeoutMS: 5000,
-      socketTimeoutMS: 45000,
     };
 
-    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
-      console.log("✅ MongoDB connected successfully");
-      return mongoose;
-    });
+    cached.promise = (async () => {
+      console.log("Starting local in-memory MongoDB server...");
+      const mongoServer = await MongoMemoryServer.create({
+        instance: {
+          dbName: "breakpoint"
+        }
+      });
+      cached.mongoServer = mongoServer;
+      const uri = mongoServer.getUri();
+      console.log("🚀 In-memory MongoDB Server running at:", uri);
+      
+      const conn = await mongoose.connect(uri, opts);
+      console.log("✅ Connected successfully to local in-memory MongoDB database.");
+      return conn;
+    })();
   }
 
   try {

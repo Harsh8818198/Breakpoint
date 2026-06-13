@@ -1,29 +1,33 @@
-import { verifyToken } from "@/lib/services/auth";
+import connectDB from "@/lib/db/connect";
+import User from "@/lib/db/models/User";
 import { AuthError } from "@/lib/utils/errors";
 import { errorResponse } from "@/lib/utils/apiResponse";
 
 /**
- * Extract user ID from request by verifying JWT token.
- * Returns userId string or throws AuthError.
+ * Bypasses JWT login check by returning a default Developer user ID.
+ * Automatically creates the user if the database is empty.
  */
 export async function authenticateRequest(request) {
-  const authHeader = request.headers.get("Authorization");
-  const cookieToken = request.cookies?.get("token")?.value;
+  await connectDB();
   
-  let token = null;
-
-  if (authHeader && authHeader.startsWith("Bearer ")) {
-    token = authHeader.split(" ")[1];
-  } else if (cookieToken) {
-    token = cookieToken;
+  // Find or create default developer user
+  let user = await User.findOne({ email: "dev@breakpoint.local" });
+  if (!user) {
+    user = await User.findOne(); // Fallback to any existing user
   }
-
-  if (!token) {
-    throw new AuthError("Missing or invalid authorization session");
+  if (!user) {
+    user = await User.create({
+      email: "dev@breakpoint.local",
+      name: "Developer",
+      passwordHash: "dummy-password-not-used",
+      settings: {
+        defaultLlmProvider: "gemini",
+        geminiApiKey: process.env.GEMINI_API_KEY || "",
+      }
+    });
   }
-
-  const payload = await verifyToken(token);
-  return payload.userId;
+  
+  return user._id.toString();
 }
 
 /**
