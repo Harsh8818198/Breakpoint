@@ -86,65 +86,74 @@ def _stream(kind: str, payload) -> None:
         print(f"   = kept {payload['kept']}/{payload['raw']} after dedup")
 
 
-def _pipeline(description: str, gens: int, archetypes: int | None,
-              product_specific: int, show_questions: bool, interactive: bool = False) -> tuple[Blueprint, list[Finding]]:
+def _pipeline(description: str | None, gens: int, archetypes: int | None,
+              product_specific: int, show_questions: bool, interactive: bool = False,
+              codebase: str | None = None, docs: list[str] | None = None) -> tuple[Blueprint, list[Finding]]:
     llm = LLMClient()
     print(f"Provider: {llm.provider} | Model: {llm.model}")
 
-    if interactive:
-        print("\n[1/4] Decomposing product into initial blueprint...")
-        bp = build_blueprint(description, llm)
-        print(f"      {bp.name} | actors={len(bp.actors)} "
-              f"surface={len(bp.attack_surface)} unknowns={len(bp.known_unknowns)}")
+    if codebase:
+        from .blueprint import build_blueprint_from_codebase
+        bp = build_blueprint_from_codebase(codebase, llm)
+    elif docs:
+        from .blueprint import build_blueprint_from_documents
+        bp = build_blueprint_from_documents(docs, llm)
+    elif description:
+        if interactive:
+            print("\n[1/4] Decomposing product into initial blueprint...")
+            bp = build_blueprint(description, llm)
+            print(f"      {bp.name} | actors={len(bp.actors)} "
+                  f"surface={len(bp.attack_surface)} unknowns={len(bp.known_unknowns)}")
 
-        print("\n[Interactive] Starting follow-up interrogation...")
-        questions = interrogate(bp, llm)
-        if not questions:
-            print("      No follow-up questions needed.")
-            refined_desc = description
-        else:
-            print("\n=======================================================")
-            print("  BREAKPOINT INTERROGATION COMMAND CENTER")
-            print("=======================================================\n")
-            print("Please answer the following mechanical questions to refine the blueprint:")
-            qa_blocks = []
-            for i, q in enumerate(questions, 1):
-                print(f"\n[Question {i}/{len(questions)}] {q}")
-                try:
-                    ans = input("Answer: ").strip()
-                except (KeyboardInterrupt, EOFError):
-                    print("\nInterrogation interrupted. Proceeding with current details.")
-                    break
-                if ans.lower() in ("exit", "quit", "done"):
-                    print("\nInterrogation ended by user.")
-                    break
-                if ans:
-                    qa_blocks.append(f"Q: {q}\nA: {ans}")
-            
-            if qa_blocks:
-                refined_desc = description + "\n\nAdditional mechanical details provided by user:\n" + "\n\n".join(qa_blocks)
-                print("\n[1b/4] Refining product blueprint based on your answers...")
-                bp = build_blueprint(refined_desc, llm)
-                print(f"      {bp.name} (refined) | actors={len(bp.actors)} "
-                      f"surface={len(bp.attack_surface)} unknowns={len(bp.known_unknowns)}")
-            else:
+            print("\n[Interactive] Starting follow-up interrogation...")
+            questions = interrogate(bp, llm)
+            if not questions:
+                print("      No follow-up questions needed.")
                 refined_desc = description
+            else:
+                print("\n=======================================================")
+                print("  BREAKPOINT INTERROGATION COMMAND CENTER")
+                print("=======================================================\n")
+                print("Please answer the following mechanical questions to refine the blueprint:")
+                qa_blocks = []
+                for i, q in enumerate(questions, 1):
+                    print(f"\n[Question {i}/{len(questions)}] {q}")
+                    try:
+                        ans = input("Answer: ").strip()
+                    except (KeyboardInterrupt, EOFError):
+                        print("\nInterrogation interrupted. Proceeding with current details.")
+                        break
+                    if ans.lower() in ("exit", "quit", "done"):
+                        print("\nInterrogation ended by user.")
+                        break
+                    if ans:
+                        qa_blocks.append(f"Q: {q}\nA: {ans}")
+                
+                if qa_blocks:
+                    refined_desc = description + "\n\nAdditional mechanical details provided by user:\n" + "\n\n".join(qa_blocks)
+                    print("\n[1b/4] Refining product blueprint based on your answers...")
+                    bp = build_blueprint(refined_desc, llm)
+                    print(f"      {bp.name} (refined) | actors={len(bp.actors)} "
+                          f"surface={len(bp.attack_surface)} unknowns={len(bp.known_unknowns)}")
+                else:
+                    refined_desc = description
 
-        description = refined_desc
+            description = refined_desc
+        else:
+            print("\n[1/4] Decomposing product into blueprint...")
+            bp = build_blueprint(description, llm)
+            print(f"      {bp.name} | actors={len(bp.actors)} "
+                  f"surface={len(bp.attack_surface)} unknowns={len(bp.known_unknowns)}")
+
+            if show_questions:
+                print("\n[1b] Interrogation follow-ups Breakpoint would ask:")
+                for q in interrogate(bp, llm):
+                    print(f"      ? {q}")
     else:
-        print("\n[1/4] Decomposing product into blueprint...")
-        bp = build_blueprint(description, llm)
-        print(f"      {bp.name} | actors={len(bp.actors)} "
-              f"surface={len(bp.attack_surface)} unknowns={len(bp.known_unknowns)}")
-
-        if show_questions:
-            print("\n[1b] Interrogation follow-ups Breakpoint would ask:")
-            for q in interrogate(bp, llm):
-                print(f"      ? {q}")
+        raise ValueError("Must provide either --desc, --desc-file, --codebase, or --docs.")
 
     print("\n[2/4] Generating agent population...")
-    agents = build_population(bp, llm, archetypes=archetypes,
-                              product_specific=product_specific)
+    agents = build_population(bp, llm, total_agents=10 if archetypes is None else (archetypes + product_specific))
     print(f"      {len(agents)} agents")
 
     print("\n[3/4] Running evolutionary simulation...")
@@ -152,9 +161,10 @@ def _pipeline(description: str, gens: int, archetypes: int | None,
     return bp, findings
 
 
-def run(description: str, gens: int, archetypes: int | None, product_specific: int,
-        show_questions: bool, interactive: bool = False, output: str | None = None) -> str:
-    bp, findings = _pipeline(description, gens, archetypes, product_specific, show_questions, interactive)
+def run(description: str | None, gens: int, archetypes: int | None, product_specific: int,
+        show_questions: bool, interactive: bool = False, output: str | None = None,
+        codebase: str | None = None, docs: list[str] | None = None) -> str:
+    bp, findings = _pipeline(description, gens, archetypes, product_specific, show_questions, interactive, codebase, docs)
     print("\n[4/4] Report\n")
     report = render_report(bp, findings)
     print(report)
@@ -196,6 +206,8 @@ def main(argv: list[str] | None = None) -> None:
     p.add_argument("--desc", help="product description")
     p.add_argument("--desc-file", metavar="PATH",
                    help="path to a text file containing the product description")
+    p.add_argument("--codebase", help="path to local codebase directory to scan (Mode 3)")
+    p.add_argument("--docs", nargs="+", help="paths to one or more document files to parse (Mode 2)")
     p.add_argument("--gens", type=int, default=3,
                    help=f"number of generations to run (1-{_MAX_GENS}, default 3)")
     p.add_argument("--archetypes", type=int, default=7,
@@ -232,11 +244,12 @@ def main(argv: list[str] | None = None) -> None:
                 desc = fh.read()
         except OSError as e:
             sys.exit(f"Cannot read {args.desc_file!r}: {e}")
-    if not desc:
+            
+    if not desc and not args.codebase and not args.docs:
         desc = DEMO_DESC
-        print("(no --desc given; using built-in StudyBuddy demo)\n")
+        print("(no input given; using built-in StudyBuddy demo)\n")
 
-    run(desc, args.gens, args.archetypes, args.product_specific, args.questions, args.interactive, args.output)
+    run(desc, args.gens, args.archetypes, args.product_specific, args.questions, args.interactive, args.output, args.codebase, args.docs)
 
 
 if __name__ == "__main__":

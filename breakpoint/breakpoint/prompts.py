@@ -204,3 +204,121 @@ Return JSON for the single best vulnerability you found:
 
 PRIOR_FINDINGS_HEADER = "----- WHAT EARLIER AGENTS ALREADY FOUND -----"
 CATEGORY_DIVERSITY_HEADER = "----- ATTACK CATEGORY COVERAGE (steer toward uncovered categories) -----"
+
+# --- Custom Agent & Crossover (spec V2 backend features) ----------------------
+
+CUSTOM_AGENT_SYSTEM = (
+    "You generate realistic threat-actor personas for product red-teaming based on a custom scenario. "
+    "Output ONLY valid JSON."
+)
+
+CUSTOM_AGENT_USER = """Create one persona based on the following custom scenario description, tailored to the product's domain.
+
+CUSTOM SCENARIO: {scenario}
+PRODUCT DOMAIN: {domain}
+PRODUCT: {name}
+
+Return JSON:
+{{
+  "name": str,
+  "age": int,
+  "backstory": str,                 // 2-3 sentences, concrete and specific
+  "motivation": str,
+  "goal": str,                      // specific goal with THIS product
+  "knowledge": [str],               // domain-specific things they know
+  "willing_to": [str],
+  "unwilling_to": [str],
+  "personality": {{"frugality": 0-1, "tech_savvy": 0-1, "risk_tolerance": 0-1,
+                   "social_coordination": 0-1, "patience": 0-1, "ethics": 0-1}}
+}}
+"""
+
+CROSSOVER_SYSTEM = (
+    "You are a threat-intelligence analyst. You combine two distinct threat actor personas "
+    "into a hybrid threat actor that inherits the traits, backstory elements, motivations, and goals of both. "
+    "Output ONLY valid JSON."
+)
+
+CROSSOVER_USER = """Create a hybrid threat-actor persona by performing a crossover between these two parent personas:
+
+PARENT 1:
+{parent1}
+
+PARENT 2:
+{parent2}
+
+The hybrid persona must combine:
+1. Backstory: Synthesize a coherent backstory that merges details from both parents.
+2. Motivation: Combine their core drivers/motivations.
+3. Goal: Combine their goals relative to this product.
+4. Knowledge: Merge and deduplicate their knowledge lists.
+5. willing_to / unwilling_to: Merge and deduplicate.
+
+Return JSON:
+{{
+  "name": str,                      // invent a name that reflects the hybrid character
+  "age": int,                       // average of parents or a reasonable mid-point
+  "backstory": str,                 // 2-3 sentences, concrete and specific
+  "motivation": str,
+  "goal": str,
+  "knowledge": [str],
+  "willing_to": [str],
+  "unwilling_to": [str]
+}}
+"""
+
+# --- Mode 2 & Mode 3 Intake (spec features) -----------------------------------
+
+BLUEPRINT_FROM_DOCS_SYSTEM = (
+    "You are a principal security architect. You analyze product documentation (PRDs, API specs, database schemas, etc.) "
+    "and extract a structured, unified attack-surface blueprint. Distinguish STATED features from ASSUMED features by appending "
+    "' (ASSUMED)' to inferred items. Output ONLY valid JSON, no prose, no markdown fences."
+)
+
+BLUEPRINT_FROM_DOCS_USER = """Analyze the following product documentation files and construct a single, comprehensive attack-surface blueprint.
+
+DOCUMENTATION:
+{docs_block}
+
+Output a single JSON object matching this exact schema:
+{{
+  "name": str,
+  "type": str,                  // e.g. "SaaS web app", "mobile app"
+  "domain": str,                // e.g. "EdTech", "Fintech"
+  "stage": str,                 // "Pre-launch" | "Beta" | "Live"
+  "actors": [str],              // every role incl. anonymous + API consumer
+  "resources": [str],           // what the system manages
+  "boundaries": [str],          // where transitions happen (free->paid, user->admin, public->private)
+  "flows": [{{"name": str, "steps": [str]}}],
+  "mechanical_details": [str],  // specific business rules and edge cases from documentation
+  "known_unknowns": [str],      // gaps, undefined behaviors, or missing info in the docs
+  "attack_surface": [str]       // high-value targets for penetration testing
+}}
+"""
+
+BLUEPRINT_FROM_CODE_SYSTEM = (
+    "You are a principal security architect. You analyze codebase extracts (routes, database models, controllers, middleware, etc.) "
+    "and extract a structured, unified attack-surface blueprint. Distinguish STATED features from ASSUMED features by appending "
+    "' (ASSUMED)' to inferred items. Output ONLY valid JSON, no prose, no markdown fences."
+)
+
+BLUEPRINT_FROM_CODE_USER = """Analyze the following codebase files and structure and construct a single, comprehensive attack-surface blueprint.
+
+CODE FILES & DETAILS:
+{code_block}
+
+Output a single JSON object matching this exact schema:
+{{
+  "name": str,
+  "type": str,                  // e.g. "SaaS web app", "mobile app"
+  "domain": str,                // e.g. "EdTech", "Fintech"
+  "stage": str,                 // "Pre-launch" | "Beta" | "Live"
+  "actors": [str],              // every role incl. anonymous + API consumer
+  "resources": [str],           // what the system manages
+  "boundaries": [str],          // where transitions happen
+  "flows": [{{"name": str, "steps": [str]}}],
+  "mechanical_details": [str],  // security controls, rate limiting, auth middlewares, DB constraints from code
+  "known_unknowns": [str],      // gaps, missing auth checks, or unvalidated parameters in code
+  "attack_surface": [str]       // actual routes, endpoints, and data tables exposed in code
+}}
+"""

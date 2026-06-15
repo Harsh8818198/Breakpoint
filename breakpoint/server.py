@@ -29,6 +29,7 @@ from breakpoint.llm import LLMClient
 from breakpoint.agents import build_population
 from breakpoint.evolution import simulate
 from breakpoint.models import Blueprint, Flow
+from breakpoint.blueprint import build_blueprint_from_codebase, scan_codebase, CODE_PATTERNS
 
 # ---------------------------------------------------------------------------
 # App setup
@@ -51,6 +52,9 @@ class SimulationConfig(BaseModel):
     totalGenerations: int = 3
     totalAgents: int = 10
     intensity: str = "standard"
+    agentComposition: dict[str, float] = {}
+    customAgents: list[dict[str, Any]] = []
+    focusAreas: list[str] = []
 
 
 class SimulateRequest(BaseModel):
@@ -61,6 +65,12 @@ class SimulateRequest(BaseModel):
     blueprint: dict[str, Any]
     config: SimulationConfig = SimulationConfig()
     simulationId: str = ""
+
+
+class ScanCodebaseRequest(BaseModel):
+    path: str
+    project_id: str = ""
+
 
 
 # ---------------------------------------------------------------------------
@@ -212,8 +222,10 @@ async def _run_simulation_stream(request: SimulateRequest):
             None,
             lambda: build_population(
                 bp, llm,
-                archetypes=min(7, request.config.totalAgents),
-                product_specific=3,
+                total_agents=request.config.totalAgents,
+                agent_composition=request.config.agentComposition,
+                custom_agents=request.config.customAgents,
+                focus_areas=request.config.focusAreas,
             )
         )
         yield _sse({"type": "agents_ready", "count": len(agents)})
@@ -223,7 +235,12 @@ async def _run_simulation_stream(request: SimulateRequest):
 
         def on_event(kind: str, payload: Any) -> None:
             """Callback from the Python simulation loop → queued into async."""
-            if kind == "generation_start":
+            if kind == "status":
+                asyncio.run_coroutine_threadsafe(
+                    _queue.put({"type": "status", "message": payload.get("message", "")}),
+                    loop,
+                )
+            elif kind == "generation_start":
                 asyncio.run_coroutine_threadsafe(
                     _queue.put({"type": "generation_start", "generation": payload["generation"]}),
                     loop,
@@ -308,6 +325,63 @@ async def simulate_endpoint(request: SimulateRequest):
             "X-Accel-Buffering": "no",
         },
     )
+
+
+@app.post("/scan-codebase")
+async def scan_codebase_endpoint(request: ScanCodebaseRequest):
+    """
+    Scans a local directory, builds a blueprint via LLM, and returns it.
+    Used by the Next.js frontend's local-path codebase intake mode.
+    """
+    import asyncio
+    loop = asyncio.get_event_loop()
+
+    try:
+        import os
+        from pathlib import Path
+
+        if not os.path.isdir(request.path):
+            raise HTTPException(status_code=400, detail=f"Directory not found: {request.path}")
+
+        # Count categories for UI feedback
+        scanned_files = {cat: [] for cat in CODE_PATTERNS}
+        ignore_dirs = {".git", "node_modules", ".next", "__pycache__", "venv", ".venv", "dist", "build"}
+        total_files = 0
+        for root, dirs, files in os.walk(request.path):
+            dirs[:] = [d for d in dirs if d not in ignore_dirs]
+            for file in files:
+                file_path = Path(root) / file
+                if file_path.suffix in {".png", ".jpg", ".gif", ".ico", ".pdf", ".zip", ".exe", ".dll"}:
+                    continue
+                total_files += 1
+                lower_name = file.lower()
+                for category, keywords in CODE_PATTERNS.items():
+                    if any(kw in lower_name or kw in str(file_path).lower() for kw in keywords):
+                        scanned_files[category].append(str(file_path))
+                        break
+
+        categories = {cat: len(files) for cat, files in scanned_files.items()}
+        files_scanned = sum(categories.values())
+
+        # Run blocking LLM blueprint build in thread
+        llm = LLMClient()
+        blueprint = await loop.run_in_executor(
+            None,
+            lambda: build_blueprint_from_codebase(request.path, llm)
+        )
+
+        return {
+            "success": True,
+            "blueprint": blueprint.to_dict(),
+            "filesScanned": files_scanned,
+            "totalFiles": total_files,
+            "categories": categories,
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/health")
