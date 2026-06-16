@@ -150,23 +150,18 @@ export default function CodebaseIntake() {
             </div>
           </div>
 
-          <AnimatePresence>
-            {(analysis || localResult) && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
+          {(analysis || localResult) && (
+            <div>
+              <Button 
+                onClick={activeTab === 'github' ? handleGenerateBlueprintGitHub : handleGenerateBlueprintLocal} 
+                icon={Sparkles} 
+                className="animate-glow"
+                loading={isAnalyzing || isLocalScanning}
               >
-                <Button 
-                  onClick={activeTab === 'github' ? handleGenerateBlueprintGitHub : handleGenerateBlueprintLocal} 
-                  icon={Sparkles} 
-                  className="animate-glow"
-                  loading={isAnalyzing || isLocalScanning}
-                >
-                  Initialize Structural Blueprint
-                </Button>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                Initialize Structural Blueprint
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Tab Switcher */}
