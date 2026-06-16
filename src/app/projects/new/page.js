@@ -55,7 +55,7 @@ export default function NewProject() {
 
   const [formData, setFormData] = useState({
     name: '',
-    mode: 'conversation',
+    intakeMode: 'conversation',
     llmProvider: 'gemini',
     description: '',
   });
@@ -79,7 +79,7 @@ export default function NewProject() {
 
       // Redirect to intake workflow
       const projectId = data.data._id;
-      router.push(`/projects/${projectId}/intake/${formData.mode}`);
+      router.push(`/projects/${projectId}/intake/${formData.intakeMode}`);
     } catch (err) {
       setError(err.message);
       setLoading(false);
@@ -199,10 +199,10 @@ export default function NewProject() {
                     {modes.map(m => (
                       <button
                         key={m.id}
-                        onClick={() => setFormData({ ...formData, mode: m.id })}
+                        onClick={() => setFormData({ ...formData, intakeMode: m.id })}
                         className={clsx(
                           'p-6 rounded-3xl border transition-all flex flex-col items-center text-center gap-4 group relative',
-                          formData.mode === m.id 
+                          formData.intakeMode === m.id 
                             ? 'bg-white/[0.03] border-[#8b5cf6] border-2 shadow-[0_0_30px_rgba(139,92,246,0.15)] scale-[1.02]' 
                             : 'bg-white/[0.02] border-white/5 hover:border-white/10'
                         )}
@@ -210,8 +210,8 @@ export default function NewProject() {
                          <div 
                            className="w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 group-hover:scale-110"
                            style={{ 
-                             backgroundColor: formData.mode === m.id ? `${m.color}20` : 'rgba(255,255,255,0.03)',
-                             color: formData.mode === m.id ? m.color : '#475569'
+                             backgroundColor: formData.intakeMode === m.id ? `${m.color}20` : 'rgba(255,255,255,0.03)',
+                             color: formData.intakeMode === m.id ? m.color : '#475569'
                            }}
                          >
                             <m.icon size={28} />
@@ -220,7 +220,7 @@ export default function NewProject() {
                             <span className="font-bold text-lg">{m.name}</span>
                             <p className="text-xs text-[#475569] font-medium leading-relaxed mt-1 px-2">{m.description}</p>
                          </div>
-                         {formData.mode === m.id && (
+                         {formData.intakeMode === m.id && (
                            <div className="absolute top-4 right-4 text-[#8b5cf6]">
                               <Plus className="rotate-45" size={18} />
                            </div>
@@ -263,7 +263,7 @@ export default function NewProject() {
                     </div>
                     <div className="flex flex-col gap-1">
                       <span className="text-[10px] text-[#475569] font-bold uppercase tracking-widest">Intake Vector</span>
-                      <span className="text-lg font-bold capitalize">{formData.mode}</span>
+                      <span className="text-lg font-bold capitalize">{formData.intakeMode}</span>
                     </div>
                     <div className="flex flex-col gap-1">
                        <span className="text-[10px] text-[#475569] font-bold uppercase tracking-widest">Intelligence Layer</span>

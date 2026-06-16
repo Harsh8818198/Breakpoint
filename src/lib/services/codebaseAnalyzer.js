@@ -136,13 +136,27 @@ export async function analyzeCodebase(projectId, accessToken, userId) {
 
   const analysisPrompt = getCodebaseAnalysisPrompt(fileContents, categorizedFiles);
   const result = await llm.chatJSON([{ role: "user", content: analysisPrompt }]);
+  const analysisData = result.data || {};
+  
+  const technologies = [
+    ...(analysisData.thirdPartyDependencies || []),
+    analysisData.authSystem?.type,
+    analysisData.paymentIntegration?.provider,
+  ].filter(Boolean);
+
+  const features = [
+    ...(analysisData.routes || []).map(r => `${r.method || 'GET'} ${r.path}`),
+    ...(analysisData.dataModels || []).map(m => `Model: ${m.name}`),
+  ].filter(Boolean);
 
   // Update project
   project.codebaseConfig.lastAnalyzedAt = new Date();
   await project.save();
 
   return {
-    analysis: result.data,
+    analysis: analysisData,
+    technologies,
+    features,
     filesAnalyzed: Object.keys(fileContents).length,
     totalFiles: tree.tree.filter((t) => t.type === "blob").length,
     categories: Object.fromEntries(
