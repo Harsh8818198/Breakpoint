@@ -58,7 +58,7 @@ class LLMClient:
     @property
     def max_workers(self) -> int:
         """Concurrency ceiling that keeps us inside each provider's rate limits."""
-        return {"anthropic": 8, "openai": 3, "gemini": 4}.get(self.provider, 4)
+        return {"anthropic": 8, "openai": 3, "gemini": 1}.get(self.provider, 4)
 
     def scale_tokens(self, base: int) -> int:
         """Add headroom for thinking models that burn tokens on internal reasoning."""
@@ -167,12 +167,26 @@ class LLMClient:
             except urllib.error.HTTPError as e:
                 body = e.read().decode()
                 if e.code == 429 and attempt < 5:
-                    # Respect Retry-After if the API sends it, else exponential back-off.
+                    # Respect Retry-After or parse retry text in the body
+                    wait = 0.0
                     try:
-                        wait = float(e.headers.get("Retry-After", 0)) or (2 ** attempt)
+                        wait = float(e.headers.get("Retry-After", 0))
                     except (ValueError, TypeError):
-                        wait = 2 ** attempt
-                    wait += random.uniform(0.1, 1.0)  # jitter so threads don't pile up
+                        pass
+                    
+                    if not wait:
+                        # Parse Gemini's error body, e.g. "Please retry in 9.532764154s."
+                        match = re.search(r"Please retry in\s+([0-9.]+)\s*s", body)
+                        if match:
+                            try:
+                                wait = float(match.group(1)) + 0.5  # Add a tiny buffer
+                            except ValueError:
+                                pass
+                    
+                    if not wait:
+                        wait = 5.0 * (2 ** attempt)  # Safer fallback for free tier
+                    
+                    wait += random.uniform(0.1, 1.0)
                     last_err = RuntimeError(f"Rate limited (429) — retrying in {wait:.1f}s")
                     time.sleep(wait)
                     continue
