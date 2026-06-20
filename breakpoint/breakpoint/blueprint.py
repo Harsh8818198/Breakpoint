@@ -3,13 +3,20 @@
 Implements all 3 intake modes:
 - Mode 1: Conversational Product Interrogation
 - Mode 2: Blueprint / Document Upload (PRDs, specs, schemas)
-- Mode 3: Codebase Connection (Local directory scan)
+- Mode 3: Codebase Connection (local path OR remote GitHub URL)
+
+For Mode 3, pass either a local directory path OR a remote GitHub URL
+(e.g. https://github.com/user/repo). Remote repos are shallow-cloned
+to a temp directory, scanned, then automatically cleaned up.
 """
 
 from __future__ import annotations
 
 import os
+import shutil
+import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 from .llm import LLMClient, extract_json
@@ -141,41 +148,71 @@ def scan_codebase(dir_path: str) -> str:
     return "\n".join(code_block_lines)
 
 
+def _is_remote_url(path: str) -> bool:
+    return path.startswith(("http://", "https://", "git@")) or path.endswith(".git")
+
+
+def _clone_repo(url: str) -> str:
+    """Shallow-clone a remote git repo into a temp dir. Returns the temp dir path."""
+    tmp = tempfile.mkdtemp(prefix="breakpoint_scan_")
+    print(f"Cloning {url} (shallow)...")
+    result = subprocess.run(
+        ["git", "clone", "--depth", "1", "--quiet", url, tmp],
+        capture_output=True, text=True
+    )
+    if result.returncode != 0:
+        shutil.rmtree(tmp, ignore_errors=True)
+        raise RuntimeError(f"git clone failed:\n{result.stderr.strip()}")
+    print(f"Cloned to temporary directory: {tmp}")
+    return tmp
+
+
 def build_blueprint_from_codebase(dir_path: str, llm: LLMClient) -> Blueprint:
-    if not os.path.isdir(dir_path):
-        raise ValueError(f"Directory path does not exist: {dir_path}")
-        
-    print(f"Scanning local codebase directory: {dir_path} ...")
-    code_block = scan_codebase(dir_path)
-    
-    if not code_block:
-        raise ValueError("No source code files could be scanned or read in the directory.")
-        
-    print(f"Extracted codebase file context. Querying LLM...")
-    raw = llm.complete(
-        prompts.BLUEPRINT_FROM_CODE_SYSTEM,
-        prompts.BLUEPRINT_FROM_CODE_USER.format(code_block=code_block),
-        task="blueprint_codebase",
-        max_tokens=llm.scale_tokens(6000)
-    )
-    
-    data = extract_json(raw)
-    flows = [Flow(name=f.get("name", ""), steps=f.get("steps", []))
-             for f in data.get("flows", [])]
-             
-    return Blueprint(
-        name=data.get("name") or Path(dir_path).name,
-        type=data.get("type", "SaaS web application"),
-        domain=data.get("domain", ""),
-        stage=data.get("stage", "Live"),
-        actors=data.get("actors", []),
-        resources=data.get("resources", []),
-        boundaries=data.get("boundaries", []),
-        flows=flows,
-        mechanical_details=data.get("mechanical_details", []),
-        known_unknowns=data.get("known_unknowns", []),
-        attack_surface=data.get("attack_surface", []),
-    )
+    temp_dir = None
+    try:
+        if _is_remote_url(dir_path):
+            temp_dir = _clone_repo(dir_path)
+            scan_path = temp_dir
+        else:
+            if not os.path.isdir(dir_path):
+                raise ValueError(f"Directory path does not exist: {dir_path}")
+            scan_path = dir_path
+
+        print(f"Scanning codebase: {scan_path} ...")
+        code_block = scan_codebase(scan_path)
+
+        if not code_block:
+            raise ValueError("No source code files could be scanned or read.")
+
+        print("Extracted codebase file context. Querying LLM...")
+        raw = llm.complete(
+            prompts.BLUEPRINT_FROM_CODE_SYSTEM,
+            prompts.BLUEPRINT_FROM_CODE_USER.format(code_block=code_block),
+            task="blueprint_codebase",
+            max_tokens=llm.scale_tokens(6000)
+        )
+
+        data = extract_json(raw)
+        flows = [Flow(name=f.get("name", ""), steps=f.get("steps", []))
+                 for f in data.get("flows", [])]
+
+        return Blueprint(
+            name=data.get("name") or Path(scan_path).name,
+            type=data.get("type", "SaaS web application"),
+            domain=data.get("domain", ""),
+            stage=data.get("stage", "Live"),
+            actors=data.get("actors", []),
+            resources=data.get("resources", []),
+            boundaries=data.get("boundaries", []),
+            flows=flows,
+            mechanical_details=data.get("mechanical_details", []),
+            known_unknowns=data.get("known_unknowns", []),
+            attack_surface=data.get("attack_surface", []),
+        )
+    finally:
+        if temp_dir:
+            shutil.rmtree(temp_dir, ignore_errors=True)
+            print(f"Cleaned up temporary clone.")
 
 
 def interrogate(blueprint: Blueprint, llm: LLMClient) -> list[str]:
