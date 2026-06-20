@@ -52,7 +52,7 @@ class LLMClient:
         return {
             "anthropic": "claude-sonnet-4-6",
             "openai":    "gpt-4o",
-            "gemini":    "gemini-2.0-flash-lite",
+            "gemini":    "gemini-3.1-flash-lite",
         }.get(self.provider, "claude-sonnet-4-6")
 
     @property
