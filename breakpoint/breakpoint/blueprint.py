@@ -97,55 +97,75 @@ def build_blueprint_from_documents(doc_paths: list[str], llm: LLMClient) -> Blue
     )
 
 
-# Codebase file patterns (similar to Node.js scanner)
+# Codebase file patterns — surface-level security + deep structural scan
 CODE_PATTERNS = {
-    "routes": ["route", "controller", "api", "page"],
-    "models": ["model", "schema", "db", "prisma"],
-    "middleware": ["middleware", "guard"],
-    "auth": ["auth", "login", "jwt", "session"],
-    "config": [".env", "config", "settings"],
-    "payment": ["payment", "billing", "stripe", "razorpay", "paypal", "subscription"]
+    "routes":     ["route", "controller", "api", "page", "endpoint", "handler", "view"],
+    "models":     ["model", "schema", "db", "prisma", "entity", "dao", "repository"],
+    "middleware": ["middleware", "guard", "interceptor", "filter", "hook"],
+    "auth":       ["auth", "login", "jwt", "session", "oauth", "token", "password"],
+    "config":     [".env", "config", "settings", "constants", "env"],
+    "payment":    ["payment", "billing", "stripe", "razorpay", "paypal", "subscription"],
+    # --- structural / quality scan additions ---
+    "logic":      ["service", "util", "helper", "manager", "processor", "engine", "worker"],
+    "tests":      ["test", "spec", "__test__", "_test"],
+    "deps":       ["package.json", "requirements", "gemfile", "go.mod", "pom.xml", "cargo.toml", "pyproject"],
+    "infra":      ["docker", "compose", "github/workflows", ".ci", "kubernetes", "helm", "nginx", "deploy"],
 }
 
 
-def scan_codebase(dir_path: str) -> str:
-    """Scans local directory and extracts key code file snippets for LLM analysis."""
+def scan_codebase(dir_path: str) -> tuple[str, dict]:
+    """Scans local directory. Returns (code_block, structural_meta).
+
+    structural_meta contains per-category file counts and structural signals
+    (missing test coverage, missing infra, etc.) used by the brain pass.
+    """
     scanned_files = {cat: [] for cat in CODE_PATTERNS}
-    ignore_dirs = {".git", "node_modules", ".next", "__pycache__", "venv", ".venv", "dist", "build", "target"}
-    
-    # Traverse directory
+    ignore_dirs = {".git", "node_modules", ".next", "__pycache__", "venv", ".venv",
+                   "dist", "build", "target", ".pytest_cache"}
+
     for root, dirs, files in os.walk(dir_path):
         dirs[:] = [d for d in dirs if d not in ignore_dirs]
         for file in files:
             file_path = Path(root) / file
-            if file_path.suffix in {".png", ".jpg", ".jpeg", ".gif", ".ico", ".pdf", ".zip", ".tar", ".gz", ".exe", ".dll"}:
+            if file_path.suffix in {".png", ".jpg", ".jpeg", ".gif", ".ico",
+                                     ".pdf", ".zip", ".tar", ".gz", ".exe", ".dll"}:
                 continue
-                
             lower_name = file.lower()
+            fp_lower  = str(file_path).lower()
             for category, keywords in CODE_PATTERNS.items():
-                if any(kw in lower_name or kw in str(file_path).lower() for kw in keywords):
+                if any(kw in lower_name or kw in fp_lower for kw in keywords):
                     scanned_files[category].append(file_path)
                     break
-                    
-    selected_files = []
-    priorities = ["routes", "models", "auth", "middleware", "payment", "config"]
+
+    # Security/business-critical files get priority slots
+    priorities = ["routes", "models", "auth", "middleware", "payment", "config",
+                  "logic", "deps", "infra"]
+    selected_files: list[tuple] = []
     for cat in priorities:
         for f_path in scanned_files[cat]:
-            if len(selected_files) >= 30:
+            if len(selected_files) >= 35:
                 break
             selected_files.append((f_path, cat))
-            
+
     code_block_lines = []
     for f_path, cat in selected_files:
         try:
-            with open(f_path, "r", encoding="utf-8", errors="ignore") as f:
-                content = f.read(5000)
+            with open(f_path, "r", encoding="utf-8", errors="ignore") as fh:
+                content = fh.read(5000)
             rel_path = os.path.relpath(f_path, dir_path)
             code_block_lines.append(f"\n--- FILE: {rel_path} ({cat}) ---\n{content}")
         except Exception:
             continue
-            
-    return "\n".join(code_block_lines)
+
+    # Structural metadata — counts + absence signals
+    structural_meta = {
+        "file_counts": {cat: len(v) for cat, v in scanned_files.items()},
+        "missing_tests":  len(scanned_files["tests"]) == 0,
+        "missing_infra":  len(scanned_files["infra"]) == 0,
+        "missing_deps":   len(scanned_files["deps"]) == 0,
+        "has_logic":      len(scanned_files["logic"]) > 0,
+    }
+    return "\n".join(code_block_lines), structural_meta
 
 
 def _is_remote_url(path: str) -> bool:
@@ -167,7 +187,30 @@ def _clone_repo(url: str) -> str:
     return tmp
 
 
+def _render_structural_signals(meta: dict) -> str:
+    """Convert structural_meta dict into a plain-text block for the brain pass prompt."""
+    lines = []
+    counts = meta.get("file_counts", {})
+    for cat, n in counts.items():
+        lines.append(f"  {cat}: {n} file(s)")
+    if meta.get("missing_tests"):
+        lines.append("  ⚠ NO TEST FILES DETECTED")
+    if meta.get("missing_infra"):
+        lines.append("  ⚠ NO CI/CD OR INFRA FILES DETECTED")
+    if meta.get("missing_deps"):
+        lines.append("  ⚠ NO DEPENDENCY MANIFEST DETECTED")
+    return "\n".join(lines)
+
+
 def build_blueprint_from_codebase(dir_path: str, llm: LLMClient) -> Blueprint:
+    """Mode 3 intake: local path or remote GitHub URL.
+
+    Runs TWO LLM passes:
+      1. Attack-surface blueprint (security/business-logic focus)
+      2. Brain pass: deep structural/quality/arch intelligence pass
+    Brain findings are injected into mechanical_details + known_unknowns
+    so ALL agents see them when reasoning about exploits.
+    """
     temp_dir = None
     try:
         if _is_remote_url(dir_path):
@@ -179,22 +222,61 @@ def build_blueprint_from_codebase(dir_path: str, llm: LLMClient) -> Blueprint:
             scan_path = dir_path
 
         print(f"Scanning codebase: {scan_path} ...")
-        code_block = scan_codebase(scan_path)
+        code_block, structural_meta = scan_codebase(scan_path)
 
         if not code_block:
             raise ValueError("No source code files could be scanned or read.")
 
-        print("Extracted codebase file context. Querying LLM...")
+        # --- Pass 1: Security attack-surface blueprint ---
+        print("Extracted codebase file context. Querying LLM [Pass 1: blueprint]...")
         raw = llm.complete(
             prompts.BLUEPRINT_FROM_CODE_SYSTEM,
             prompts.BLUEPRINT_FROM_CODE_USER.format(code_block=code_block),
             task="blueprint_codebase",
             max_tokens=llm.scale_tokens(6000)
         )
-
         data = extract_json(raw)
         flows = [Flow(name=f.get("name", ""), steps=f.get("steps", []))
                  for f in data.get("flows", [])]
+
+        mechanical_details = data.get("mechanical_details", [])
+        known_unknowns = data.get("known_unknowns", [])
+
+        # --- Pass 2: Brain pass (deep structural intelligence) ---
+        print("Running brain pass [Pass 2: structural intelligence]...")
+        try:
+            structural_signals = _render_structural_signals(structural_meta)
+            brain_raw = llm.complete(
+                prompts.CODE_BRAIN_SYSTEM,
+                prompts.CODE_BRAIN_USER.format(
+                    structural_signals=structural_signals,
+                    code_block=code_block[:30000],  # cap to avoid token overflow
+                ),
+                task="brain_pass",
+                max_tokens=llm.scale_tokens(3000),
+            )
+            brain = extract_json(brain_raw)
+            # Flatten all brain findings into the blueprint's known_unknowns
+            brain_items = []
+            category_labels = {
+                "architecture_risks":    "[ARCH]",
+                "hidden_failure_points": "[HIDDEN-FAIL]",
+                "scalability_bombs":     "[SCALABILITY]",
+                "code_quality_debt":     "[CODE-QUALITY]",
+                "missing_safeguards":    "[MISSING-SAFEGUARD]",
+                "dependency_risks":      "[DEP-RISK]",
+                "observability_gaps":    "[OBSERVABILITY]",
+                "deployment_risks":      "[DEPLOY]",
+            }
+            for key, label in category_labels.items():
+                for item in brain.get(key, []):
+                    if item:
+                        brain_items.append(f"{label} {item}")
+            # Inject into known_unknowns so agents treat them as high-value gaps
+            known_unknowns = known_unknowns + brain_items
+            print(f"Brain pass complete — {len(brain_items)} structural findings injected.")
+        except Exception as e:
+            print(f"[warn] Brain pass failed (non-fatal): {e}", file=sys.stderr)
 
         return Blueprint(
             name=data.get("name") or Path(scan_path).name,
@@ -205,14 +287,14 @@ def build_blueprint_from_codebase(dir_path: str, llm: LLMClient) -> Blueprint:
             resources=data.get("resources", []),
             boundaries=data.get("boundaries", []),
             flows=flows,
-            mechanical_details=data.get("mechanical_details", []),
-            known_unknowns=data.get("known_unknowns", []),
+            mechanical_details=mechanical_details,
+            known_unknowns=known_unknowns,
             attack_surface=data.get("attack_surface", []),
         )
     finally:
         if temp_dir:
             shutil.rmtree(temp_dir, ignore_errors=True)
-            print(f"Cleaned up temporary clone.")
+            print("Cleaned up temporary clone.")
 
 
 def interrogate(blueprint: Blueprint, llm: LLMClient) -> list[str]:

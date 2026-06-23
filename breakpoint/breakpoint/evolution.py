@@ -24,7 +24,8 @@ from . import prompts
 
 
 _ALL_CATS = ["auth", "authz", "rate_limiting", "data_privacy", "billing",
-             "injection", "crypto", "config", "supply_chain", "ux"]
+             "injection", "crypto", "config", "supply_chain", "ux",
+             "architecture", "code_quality", "error_handling", "scalability"]
 
 
 POPULATION_DECAY = {

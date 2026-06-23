@@ -105,7 +105,7 @@ class Finding:
     steps_to_exploit: list[str] = field(default_factory=list)
     impact: str = ""
     evolved_from: list[str] = field(default_factory=list)  # parent finding titles
-    attack_category: str = ""       # auth | authz | rate_limiting | data_privacy | billing | injection | crypto | config | supply_chain | ux
+    attack_category: str = ""       # auth | authz | rate_limiting | data_privacy | billing | injection | crypto | config | supply_chain | ux | architecture | code_quality | error_handling | scalability
     confidence: float = 1.0         # 0-1: how grounded in stated blueprint facts vs assumed
     # Raw 0-10 sub-scores from the agent, used to compute BSS.
     exploitability: float = 0.0

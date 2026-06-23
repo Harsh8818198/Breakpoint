@@ -64,6 +64,10 @@ def get_archetype_info(key: str) -> tuple[str, str, str]:
         return ("THE SCALPER", "exploit for profit", "money")
     if "advocate" in k:
         return ("THE ADVOCATE", "warn others", "community")
+    if "architect" in k:
+        return ("THE ARCHITECT", "expose design flaws and structural tech debt", "durability")
+    if "auditor" in k or "code" in k:
+        return ("THE CODE AUDITOR", "find code smells, anti-patterns, and hidden quality risks", "cleanliness")
     
     # Fallback to look up in prompts.ARCHETYPES
     for arch, goal, mot in prompts.ARCHETYPES:

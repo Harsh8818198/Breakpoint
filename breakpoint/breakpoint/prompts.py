@@ -73,6 +73,9 @@ ARCHETYPES = [
     ("THE REGULATOR", "find compliance issues", "legal"),
     ("THE SCALPER", "exploit for profit", "money"),
     ("THE ADVOCATE", "warn others", "community"),
+    # --- structural / deep-code archetypes ---
+    ("THE ARCHITECT", "expose design flaws and structural tech debt", "durability"),
+    ("THE CODE AUDITOR", "find code smells, anti-patterns, and hidden quality risks", "cleanliness"),
 ]
 
 AGENT_SYSTEM = (
@@ -189,7 +192,7 @@ about similar products.
 Return JSON for the single best vulnerability you found:
 {{
   "title": str,                    // short, specific, memorable
-  "attack_category": str,          // one of: auth | authz | rate_limiting | data_privacy | billing | injection | crypto | config | supply_chain | ux
+  "attack_category": str,          // one of: auth | authz | rate_limiting | data_privacy | billing | injection | crypto | config | supply_chain | ux | architecture | code_quality | error_handling | scalability
   "description": str,              // what the weakness is, in your voice
   "steps_to_exploit": [str],       // 3-5 concrete steps
   "impact": str,                   // who is harmed and how
@@ -321,4 +324,42 @@ Output a single JSON object matching this exact schema:
   "known_unknowns": [str],      // gaps, missing auth checks, or unvalidated parameters in code
   "attack_surface": [str]       // actual routes, endpoints, and data tables exposed in code
 }}
+"""
+
+# --- Code Intelligence "Brain" Pass (deep structural analysis) ----------------
+# A SECOND dedicated LLM call on Mode 3 codebase scans.
+# Finds hidden, non-obvious structural issues adversarial agents miss.
+
+CODE_BRAIN_SYSTEM = (
+    "You are a senior staff engineer and codebase forensics expert. You read code "
+    "the way a detective reads a crime scene — looking for what is missing, hidden, "
+    "inconsistent, or will silently fail under real load or adversarial conditions. "
+    "Output ONLY valid JSON, no prose, no markdown."
+)
+
+CODE_BRAIN_USER = """Perform a deep structural and quality intelligence pass on this codebase.
+Go beyond the obvious. Find hidden coupling, silent failure points, missing safeguards,
+and architectural decisions that cause real harm (data loss, downtime, security breach,
+runaway costs) that a typical security review would miss.
+
+STRUCTURAL SIGNALS:
+{structural_signals}
+
+CODE FILES:
+{code_block}
+
+Return JSON with these exact fields:
+{{
+  "architecture_risks": [str],   // tight coupling, god objects, circular deps, monolith risks
+  "hidden_failure_points": [str],// unhandled errors, missing retries, silent data loss paths
+  "scalability_bombs": [str],    // N+1 queries, no pagination, blocking I/O, in-memory state
+  "code_quality_debt": [str],    // hardcoded secrets, magic numbers, dead code that still executes
+  "missing_safeguards": [str],   // no rate limiting evidence, no input validation patterns seen
+  "dependency_risks": [str],     // pinned vs unpinned deps, outdated packages, missing lockfile
+  "observability_gaps": [str],   // no logging, no metrics, no tracing, swallowed exceptions
+  "deployment_risks": [str]      // no CI/CD evidence, hardcoded envs, missing health checks
+}}
+
+Be specific: reference actual file names, function names, or patterns you observed.
+Empty array for categories with no findings.
 """
