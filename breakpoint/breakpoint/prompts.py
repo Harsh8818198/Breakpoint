@@ -207,6 +207,12 @@ Return JSON for the single best vulnerability you found:
 
 PRIOR_FINDINGS_HEADER = "----- WHAT EARLIER AGENTS ALREADY FOUND -----"
 CATEGORY_DIVERSITY_HEADER = "----- ATTACK CATEGORY COVERAGE (steer toward uncovered categories) -----"
+KNOWN_FIXED_HEADER = (
+    "----- ALREADY PATCHED (DO NOT RE-REPORT) -----\n"
+    "The developer has already fixed the following vulnerabilities. "
+    "Any finding that overlaps with these — even under a different title — is WORTHLESS. "
+    "You MUST find something genuinely new that is NOT covered by any item below:\n"
+)
 
 # --- Custom Agent & Crossover (spec V2 backend features) ----------------------
 

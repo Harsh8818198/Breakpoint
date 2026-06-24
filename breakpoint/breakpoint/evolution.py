@@ -79,6 +79,16 @@ def _render_prior(findings: list[Finding], max_items: int = 12) -> str:
     return "\n".join(lines)
 
 
+def _render_known_fixed(titles: list[str]) -> str:
+    """Render the 'already patched' block that every agent must respect."""
+    if not titles:
+        return ""
+    lines = [prompts.KNOWN_FIXED_HEADER]
+    for t in titles:
+        lines.append(f"  - {t}")
+    return "\n".join(lines)
+
+
 def _render_inherited_findings(agent: Agent, all_findings: list[Finding]) -> str:
     parent_names = getattr(agent, "parent_names", [])
     if not parent_names:
@@ -97,7 +107,8 @@ def _render_inherited_findings(agent: Agent, all_findings: list[Finding]) -> str
 
 def run_agent(agent: Agent, blueprint_block: str, generation: int,
               prior_block: str, category_block: str, target_cat: str,
-              llm: LLMClient, all_findings: list[Finding]) -> Finding | None:
+              llm: LLMClient, all_findings: list[Finding],
+              known_fixed_block: str = "") -> Finding | None:
     cat_hint = (f"\n----- YOUR ASSIGNED CATEGORY -----\n"
                 f"You MUST set attack_category to \"{target_cat}\" for this finding.\n"
                 f"Think from this specific attack surface angle only.")
@@ -113,6 +124,11 @@ def run_agent(agent: Agent, blueprint_block: str, generation: int,
         prior_block=prior_block + parent_strategy_block,
         category_block=category_block + cat_hint,
     )
+    # Append the known-fixed block after the formatted template so it
+    # doesn't require a template change and is always the last thing the
+    # model reads before it writes its answer.
+    if known_fixed_block:
+        user = user + "\n\n" + known_fixed_block
     raw = llm.complete(prompts.AGENT_RUN_SYSTEM, user,
                        task=f"finding_gen{generation}", max_tokens=llm.scale_tokens(1200))
     try:
@@ -213,10 +229,16 @@ def crossover_parents(P1: Agent, P2: Agent, child_personality: dict[str, float],
 
 
 def simulate(blueprint: Blueprint, agents: list[Agent], llm: LLMClient, *,
-             generations: int = 3, on_event=None) -> list[Finding]:
+             generations: int = 3, on_event=None,
+             known_fixed: list[str] | None = None) -> list[Finding]:
     """Run the full evolution. One thread pool is shared across all generations;
     blueprint and prior context are rendered once per generation, not per agent.
-    `on_event(kind, payload)` is an optional callback for streaming progress to a UI."""
+    `on_event(kind, payload)` is an optional callback for streaming progress to a UI.
+    `known_fixed` is an optional list of vulnerability titles that have already
+    been patched; agents are explicitly told not to re-report them."""
+    known_fixed_block = _render_known_fixed(known_fixed or [])
+    if known_fixed_block:
+        print(f"[+] Loaded {len(known_fixed)} known-fixed titles — agents will skip these.")
     if not agents:
         print("[error] No agents were generated — all failed.", file=sys.stderr)
         return []
@@ -315,7 +337,8 @@ def simulate(blueprint: Blueprint, agents: list[Agent], llm: LLMClient, *,
             gen_findings: list[Finding] = []
             futures = {
                 pool.submit(run_agent, agent, blueprint_block, gen,
-                            prior_block, category_block, target_cat, llm, all_findings): agent
+                            prior_block, category_block, target_cat, llm,
+                            all_findings, known_fixed_block): agent
                 for agent, target_cat in zip(active_agents, agent_cats)
             }
             for fut in as_completed(futures):

@@ -88,7 +88,8 @@ def _stream(kind: str, payload) -> None:
 
 def _pipeline(description: str | None, gens: int, archetypes: int | None,
               product_specific: int, show_questions: bool, interactive: bool = False,
-              codebase: str | None = None, docs: list[str] | None = None) -> tuple[Blueprint, list[Finding]]:
+              codebase: str | None = None, docs: list[str] | None = None,
+              known_fixed: list[str] | None = None) -> tuple[Blueprint, list[Finding]]:
     llm = LLMClient()
     print(f"Provider: {llm.provider} | Model: {llm.model}")
 
@@ -157,14 +158,17 @@ def _pipeline(description: str | None, gens: int, archetypes: int | None,
     print(f"      {len(agents)} agents")
 
     print("\n[3/4] Running evolutionary simulation...")
-    findings = simulate(bp, agents, llm, generations=gens, on_event=_stream)
+    findings = simulate(bp, agents, llm, generations=gens, on_event=_stream,
+                        known_fixed=known_fixed or [])
     return bp, findings
 
 
 def run(description: str | None, gens: int, archetypes: int | None, product_specific: int,
         show_questions: bool, interactive: bool = False, output: str | None = None,
-        codebase: str | None = None, docs: list[str] | None = None) -> str:
-    bp, findings = _pipeline(description, gens, archetypes, product_specific, show_questions, interactive, codebase, docs)
+        codebase: str | None = None, docs: list[str] | None = None,
+        known_fixed: list[str] | None = None) -> str:
+    bp, findings = _pipeline(description, gens, archetypes, product_specific, show_questions,
+                              interactive, codebase, docs, known_fixed)
     print("\n[4/4] Report\n")
     report = render_report(bp, findings)
     print(report)
@@ -220,6 +224,10 @@ def main(argv: list[str] | None = None) -> None:
                    help="run an interactive follow-up interrogation in terminal to refine details")
     p.add_argument("--output", metavar="PATH",
                    help="save report to a file (saves structured JSON if path ends in .json)")
+    p.add_argument("--fixed", nargs="+", metavar="TITLE",
+                   help="one or more vulnerability titles already patched; agents will not re-report them")
+    p.add_argument("--fixed-file", metavar="PATH",
+                   help="path to a JSON report (from --output *.json) whose findings are all treated as patched")
     p.add_argument("--check", action="store_true",
                    help="verify API key works with a quick test call, then exit")
     p.add_argument("--template", action="store_true",
@@ -249,7 +257,24 @@ def main(argv: list[str] | None = None) -> None:
         desc = DEMO_DESC
         print("(no input given; using built-in StudyBuddy demo)\n")
 
-    run(desc, args.gens, args.archetypes, args.product_specific, args.questions, args.interactive, args.output, args.codebase, args.docs)
+    # Build the known_fixed list from --fixed and/or --fixed-file
+    known_fixed: list[str] = list(args.fixed or [])
+    if args.fixed_file:
+        try:
+            with open(args.fixed_file, encoding="utf-8") as fh:
+                report_data = json.load(fh)
+            # Accept both {"findings": [...]} and a bare list
+            findings_raw = report_data.get("findings", report_data) if isinstance(report_data, dict) else report_data
+            for entry in findings_raw:
+                t = entry.get("title") if isinstance(entry, dict) else None
+                if t:
+                    known_fixed.append(t)
+            print(f"[+] Loaded {len(known_fixed)} patched titles from {args.fixed_file!r}")
+        except Exception as e:
+            sys.exit(f"Cannot read --fixed-file {args.fixed_file!r}: {e}")
+
+    run(desc, args.gens, args.archetypes, args.product_specific, args.questions,
+        args.interactive, args.output, args.codebase, args.docs, known_fixed or None)
 
 
 if __name__ == "__main__":
