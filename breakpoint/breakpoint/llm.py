@@ -17,6 +17,7 @@ import pathlib
 import random
 import re
 import time
+import socket
 import urllib.request
 import urllib.error
 
@@ -162,7 +163,7 @@ class LLMClient:
         last_err: Exception | None = None
         for attempt in range(6):
             try:
-                with urllib.request.urlopen(req, timeout=120) as r:
+                with urllib.request.urlopen(req, timeout=300) as r:
                     return json.loads(r.read().decode())
             except urllib.error.HTTPError as e:
                 body = e.read().decode()
@@ -188,20 +189,24 @@ class LLMClient:
                     
                     wait += random.uniform(0.1, 1.0)
                     last_err = RuntimeError(f"Rate limited (429) — retrying in {wait:.1f}s")
+                    print(f"[!] Rate limited (429) — retrying in {wait:.1f}s...", flush=True)
                     time.sleep(wait)
                     continue
                 if e.code in (500, 502, 503, 504) and attempt < 5:
                     wait = (2 ** attempt) + random.uniform(0.1, 0.5)
                     last_err = RuntimeError(f"LLM HTTP {e.code}: {body[:200]}")
+                    print(f"[!] LLM HTTP {e.code} — retrying in {wait:.1f}s...", flush=True)
                     time.sleep(wait)
                     continue
                 raise RuntimeError(f"LLM HTTP {e.code}: {body[:500]}") from e
-            except urllib.error.URLError as e:
+            except (urllib.error.URLError, socket.timeout, TimeoutError) as e:
+                wait = (2 ** attempt) + random.uniform(0.1, 0.5)
                 if attempt < 5:
-                    last_err = RuntimeError(f"LLM connection error: {e}")
-                    time.sleep(2 ** attempt)
+                    last_err = RuntimeError(f"LLM connection/timeout error: {e}")
+                    print(f"[!] LLM connection/timeout error: {e} — retrying in {wait:.1f}s...", flush=True)
+                    time.sleep(wait)
                     continue
-                raise RuntimeError(f"LLM connection error: {e}") from e
+                raise RuntimeError(f"LLM connection/timeout error: {e}") from e
         raise last_err  # type: ignore
 
 
