@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from collections import Counter
 from .models import Blueprint, Finding
+from .cvg import CVG, render_cvg_section
 
 
 def evolution_tree(findings: list[Finding]) -> dict:
@@ -49,7 +50,7 @@ def _render_tree(findings: list[Finding]) -> str:
     return "\n".join(out) if out else "(no lineage captured)"
 
 
-def render_report(blueprint: Blueprint, findings: list[Finding]) -> str:
+def render_report(blueprint: Blueprint, findings: list[Finding], cvg: CVG | None = None) -> str:
     ranked = sorted(findings, key=lambda f: f.bss, reverse=True)
     crit = [f for f in ranked if f.severity_band == "CRITICAL"]
     gens = Counter(f.generation for f in findings)
@@ -105,6 +106,11 @@ def render_report(blueprint: Blueprint, findings: list[Finding]) -> str:
     # Section 5: evolution tree
     L.append("\n## EVOLUTION TREE (the showpiece)")
     L.append(_render_tree(findings))
+
+    # Section 6: causal impact analysis (only when CVG was built)
+    if cvg is not None:
+        L.append("\n## CAUSAL IMPACT ANALYSIS")
+        L.append(render_cvg_section(cvg, findings))
 
     L.append("\n" + "=" * 70)
     return "\n".join(L)

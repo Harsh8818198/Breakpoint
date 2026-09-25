@@ -17,6 +17,7 @@ from .blueprint import build_blueprint, interrogate
 from .agents import build_population
 from .evolution import simulate, _norm
 from .report import render_report
+from .cvg import build_cvg
 from .models import Blueprint, Finding
 from . import prompts
 
@@ -169,8 +170,10 @@ def run(description: str | None, gens: int, archetypes: int | None, product_spec
         known_fixed: list[str] | None = None) -> str:
     bp, findings = _pipeline(description, gens, archetypes, product_specific, show_questions,
                               interactive, codebase, docs, known_fixed)
-    print("\n[4/4] Report\n")
-    report = render_report(bp, findings)
+    print("\n[4/4] Building causal graph + report\n")
+    llm = LLMClient()
+    cvg = build_cvg(findings, llm)
+    report = render_report(bp, findings, cvg)
     print(report)
 
     if output:
@@ -178,7 +181,8 @@ def run(description: str | None, gens: int, archetypes: int | None, product_spec
             if output.lower().endswith(".json"):
                 data = {
                     "blueprint": bp.to_dict(),
-                    "findings": [f.to_dict() for f in findings]
+                    "findings": [f.to_dict() for f in findings],
+                    "cvg": cvg.to_dict({f.id: f for f in findings}),
                 }
                 with open(output, "w", encoding="utf-8") as fh:
                     json.dump(data, fh, indent=2)

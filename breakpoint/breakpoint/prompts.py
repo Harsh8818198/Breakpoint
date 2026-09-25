@@ -369,3 +369,41 @@ Return JSON with these exact fields:
 Be specific: reference actual file names, function names, or patterns you observed.
 Empty array for categories with no findings.
 """
+
+# --- Causal Vulnerability Graph (CVG) ------------------------------------------
+
+CVG_SYSTEM = (
+    "You are a causal security analyst. Your job is to identify the shared root "
+    "causes that explain clusters of related vulnerabilities. A root cause is a "
+    "design decision, architectural choice, or missing control that, if fixed, "
+    "would eliminate multiple findings simultaneously. Be structural and precise — "
+    "look for the *why*, not just the *what*. "
+    "Output ONLY valid JSON, no prose, no markdown fences."
+)
+
+CVG_USER = """Analyze these vulnerability findings and identify their shared root causes.
+
+FINDINGS:
+{findings_block}
+
+Return a JSON object with this exact schema:
+{{
+  "root_causes": [
+    {{
+      "id": "rc_<short_slug>",
+      "label": "one-line description of the root design flaw or missing control",
+      "category": "one of: auth|authz|rate_limiting|data_privacy|billing|injection|crypto|config|supply_chain|ux|architecture|code_quality|error_handling|scalability",
+      "finding_ids": ["exact_id_1", "exact_id_2"],
+      "fix_hint": "one concrete, actionable sentence on what to change in the product design"
+    }}
+  ]
+}}
+
+Rules:
+- Every finding_id MUST be copied character-for-character from the ID= values in FINDINGS above
+- A finding can appear in AT MOST ONE root cause group
+- Only group findings that share a genuine causal link (same design gap, same missing control)
+- Findings with no shared root cause should NOT appear in any group
+- Aim for 3-7 root causes total; do NOT create one root cause per finding
+- Order root causes by impact: most findings eliminated first
+"""
