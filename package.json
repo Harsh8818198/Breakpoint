@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "cli": "node --experimental-default-type=module --import ./cli/register.mjs cli/index.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

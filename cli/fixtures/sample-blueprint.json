@@ -1,0 +1,85 @@
+{
+  "identity": {
+    "name": "NoteShare",
+    "type": "SaaS web application",
+    "domain": "Productivity",
+    "stage": "beta"
+  },
+  "actors": [
+    {
+      "name": "Free-tier User",
+      "role": "consumer",
+      "description": "Can create and share up to 10 notes",
+      "permissions": ["create_note", "read_own_notes", "share_note"]
+    },
+    {
+      "name": "Paid-tier User",
+      "role": "consumer",
+      "description": "Unlimited notes, team folders",
+      "permissions": ["create_note", "read_own_notes", "share_note", "create_team_folder"]
+    },
+    {
+      "name": "Team Admin",
+      "role": "admin",
+      "description": "Manages a team folder's membership",
+      "permissions": ["invite_member", "remove_member", "read_team_notes"]
+    }
+  ],
+  "resources": [
+    {
+      "name": "Notes",
+      "type": "content",
+      "description": "User-authored text documents",
+      "ownership": "Owning user or team",
+      "sensitivity": "private"
+    },
+    {
+      "name": "Team Folder",
+      "type": "content",
+      "description": "Shared workspace scoped to a team",
+      "ownership": "Team Admin",
+      "sensitivity": "private"
+    }
+  ],
+  "boundaries": [
+    {
+      "from": "Free tier",
+      "to": "Paid tier",
+      "trigger": "User exceeds 10 notes or upgrades manually",
+      "description": "Unlocks unlimited notes and team folders"
+    },
+    {
+      "from": "Non-member",
+      "to": "Team member",
+      "trigger": "Accepts an invite from a Team Admin",
+      "description": "Grants read access to the team folder"
+    }
+  ],
+  "flows": [
+    {
+      "name": "Share a note",
+      "steps": [
+        { "order": 1, "action": "User clicks Share", "actor": "Free-tier User", "details": "Generates a share link" },
+        { "order": 2, "action": "Link is sent to recipient", "actor": "Free-tier User", "details": "Recipient does not need an account to view" }
+      ],
+      "edgeCases": ["Share link never expires", "Link can be forwarded to unlimited recipients"]
+    }
+  ],
+  "attackSurfaceMap": [
+    {
+      "feature": "Share links",
+      "riskLevel": "high",
+      "attackVectors": ["Link enumeration", "No expiry allows indefinite access"],
+      "relatedBoundaries": ["Non-member -> Team member"]
+    },
+    {
+      "feature": "Team folder invites",
+      "riskLevel": "medium",
+      "attackVectors": ["Invite token reuse across teams"],
+      "relatedBoundaries": ["Non-member -> Team member"]
+    }
+  ],
+  "assumptions": [
+    { "statement": "Share links are only ever sent to intended recipients", "userVerified": false }
+  ]
+}
