@@ -5,16 +5,24 @@ loadEnvFile();
 
 import { getLLMProviderWithFallback } from "@/lib/llm/factory";
 import { extractClaims } from "@/lib/services/claimExtractor";
+import { runClaimVerification } from "@/lib/services/claimVerifier";
+import { startFixture } from "./fixtures/target-app/server.mjs";
+import { claims as fixtureClaims } from "./fixtures/target-app/claims.mjs";
 
 const USAGE = `Breakpoint CLI
 
 Usage:
   node cli/index.js extract-claims --blueprint <path> [--provider gemini|openai] [--out <path>]
+  node cli/index.js verify-fixture
 
 Options:
   --blueprint <path>   Path to a blueprint JSON file (Blueprint.toJSON() shape). Required.
   --provider <name>    "gemini" or "openai". Defaults to DEFAULT_LLM_PROVIDER or "gemini".
   --out <path>         Write the full claim list as JSON to this path.
+
+verify-fixture boots the local NoteShare fixture app and runs its claim
+verifiers against it over HTTP, to prove the verification harness correctly
+tells a held claim from a falsified one before any real target is involved.
 `;
 
 async function main() {
@@ -26,8 +34,36 @@ async function main() {
     return;
   }
 
+  if (command === "verify-fixture") {
+    await runVerifyFixture();
+    return;
+  }
+
   console.log(USAGE);
   process.exit(command ? 1 : 0);
+}
+
+async function runVerifyFixture() {
+  console.log("Starting NoteShare fixture...");
+  const fixture = await startFixture();
+  console.log(`Fixture running at ${fixture.baseUrl}\n`);
+
+  try {
+    const { results, heldCount, falsifiedCount, erroredCount } = await runClaimVerification(
+      fixtureClaims,
+      fixture.baseUrl
+    );
+
+    for (const r of results) {
+      const badge = { held: "HELD    ", falsified: "FALSIFIED", error: "ERROR   " }[r.status];
+      console.log(`[${badge}] (${r.severity}) ${r.statement}`);
+      console.log(`           ${r.evidence}\n`);
+    }
+
+    console.log(`${heldCount} held, ${falsifiedCount} falsified, ${erroredCount} errored, out of ${results.length} claims.`);
+  } finally {
+    await fixture.close();
+  }
 }
 
 async function runExtractClaims({ blueprint: blueprintPath, provider, out }) {
