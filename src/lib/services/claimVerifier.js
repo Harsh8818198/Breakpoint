@@ -1,49 +1,99 @@
+import { sendRequest, runAttackLoop } from "@/lib/services/attackAgent";
+
 /**
- * Runs a set of claim verifiers against a live target and reports which
- * claims held and which were falsified.
- *
- * This is the trusted verdict computer: it does not generate claims and it
- * does not attack anything itself — it only executes the verify() function
- * each claim already carries and records the result. Keeping this separate
- * from claim generation and from whatever produces attack attempts is what
- * keeps a verdict trustworthy once an agent is in the loop (see RECEIPT,
- * arXiv 2607.18575, on verifiers an agent can satisfy without a real exploit).
- *
- * @param {Array<{id: string, statement: string, severity: string, verify: (baseUrl: string) => Promise<{held: boolean, evidence: string}>}>} claims
- * @param {string} baseUrl - target to verify against
- * @returns {Promise<{results: Array<Object>, heldCount: number, falsifiedCount: number, erroredCount: number}>}
+ * Fires one request fresh and runs the claim's own predicate on the
+ * response. This is the only place a verdict gets computed — neither the
+ * attack loop nor the agent's own reasoning decides it (see RECEIPT,
+ * arXiv 2607.18575, on agents satisfying a verifier without a reproducible
+ * exploit).
  */
-export async function runClaimVerification(claims, baseUrl) {
+export async function replayAndCheck(claim, request, baseUrl) {
+  const { status, body } = await sendRequest(baseUrl, request);
+  const { held, note } = claim.checkResponse(status, body);
+  return { status: held ? "held" : "falsified", note, request };
+}
+
+/**
+ * Fast, free, no-LLM regression check: replays each claim's known
+ * (hand-coded) exploit attempt and confirms the predicate still reads it
+ * correctly. Useful as a sanity check on the harness itself, independent
+ * of whether an agent can find the exploit on its own.
+ */
+export async function runGoldenRegression(claims, baseUrl) {
+  const results = [];
+  for (const claim of claims) {
+    const { status, note } = await replayAndCheck(claim, claim.goldenAttempt, baseUrl);
+    results.push({ id: claim.id, statement: claim.statement, severity: claim.severity, status, note });
+  }
+  return summarize(results);
+}
+
+/**
+ * Agent-driven verification: for each claim, an LLM explores a fresh
+ * instance of the target over HTTP only, with no hint about which endpoint
+ * is flawed. If it concludes the claim is falsified, its exact proof
+ * request is replayed against a second, independent fresh instance before
+ * the verdict counts — the agent's own transcript is never trusted as proof.
+ */
+export async function runAgentClaimVerification(llm, claims, apiSurface, startFixtureFn, { maxTurns = 6 } = {}) {
   const results = [];
 
   for (const claim of claims) {
-    const startedAt = Date.now();
+    const exploration = await startFixtureFn();
+    let attack;
     try {
-      const { held, evidence } = await claim.verify(baseUrl);
-      results.push({
-        id: claim.id,
-        statement: claim.statement,
-        severity: claim.severity,
-        status: held ? "held" : "falsified",
-        evidence,
-        durationMs: Date.now() - startedAt,
-      });
-    } catch (error) {
-      results.push({
-        id: claim.id,
-        statement: claim.statement,
-        severity: claim.severity,
-        status: "error",
-        evidence: error.message,
-        durationMs: Date.now() - startedAt,
-      });
+      attack = await runAttackLoop(llm, claim, apiSurface, exploration.baseUrl, { maxTurns });
+    } finally {
+      await exploration.close();
     }
+
+    const base = { id: claim.id, statement: claim.statement, severity: claim.severity, turns: attack.turns };
+
+    if (!attack.concluded) {
+      results.push({ ...base, status: "inconclusive", note: attack.reasoning });
+      continue;
+    }
+
+    if (!attack.claimedFalsified) {
+      results.push({ ...base, status: "held", note: `agent found no violation: ${attack.reasoning}` });
+      continue;
+    }
+
+    if (!attack.proofRequest) {
+      results.push({ ...base, status: "agent_claim_unverified", note: "agent claimed falsified but gave no proof request" });
+      continue;
+    }
+
+    const replayTarget = await startFixtureFn();
+    let verdict;
+    try {
+      verdict = await replayAndCheck(claim, attack.proofRequest, replayTarget.baseUrl);
+    } finally {
+      await replayTarget.close();
+    }
+
+    const confirmed = verdict.status === "falsified";
+    results.push({
+      ...base,
+      status: confirmed ? "falsified" : "agent_claim_unverified",
+      note: confirmed
+        ? `confirmed by independent replay: ${verdict.note}`
+        : `agent claimed falsified, replay did not reproduce it: ${verdict.note}`,
+      proofRequest: attack.proofRequest,
+      agentReasoning: attack.reasoning,
+    });
   }
 
+  return summarize(results);
+}
+
+function summarize(results) {
+  const count = (status) => results.filter((r) => r.status === status).length;
   return {
     results,
-    heldCount: results.filter((r) => r.status === "held").length,
-    falsifiedCount: results.filter((r) => r.status === "falsified").length,
-    erroredCount: results.filter((r) => r.status === "error").length,
+    heldCount: count("held"),
+    falsifiedCount: count("falsified"),
+    inconclusiveCount: count("inconclusive"),
+    unverifiedCount: count("agent_claim_unverified"),
   };
 }
