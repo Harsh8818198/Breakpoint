@@ -1,0 +1,107 @@
+{
+  "identity": {
+    "name": "NoteShare (fixture)",
+    "type": "HTTP JSON API",
+    "domain": "Productivity",
+    "stage": "beta"
+  },
+  "actors": [
+    {
+      "name": "alice",
+      "role": "team member",
+      "description": "Belongs to team-a. Owns note-a1 and issued share token tok-a1 for it.",
+      "permissions": ["read_own_notes", "read_team_notes", "create_share_link"]
+    },
+    {
+      "name": "bob",
+      "role": "team member",
+      "description": "Belongs to team-b. Owns note-b1.",
+      "permissions": ["read_own_notes", "read_team_notes"]
+    }
+  ],
+  "resources": [
+    {
+      "name": "note-a1",
+      "type": "content",
+      "description": "Owned by alice, belongs to team-a.",
+      "ownership": "alice",
+      "sensitivity": "private"
+    },
+    {
+      "name": "note-b1",
+      "type": "content",
+      "description": "Owned by bob, belongs to team-b.",
+      "ownership": "bob",
+      "sensitivity": "private"
+    },
+    {
+      "name": "tok-a1",
+      "type": "feature",
+      "description": "A share token alice issued for note-a1.",
+      "ownership": "alice",
+      "sensitivity": "sensitive"
+    }
+  ],
+  "boundaries": [
+    {
+      "from": "No share token",
+      "to": "Has share token",
+      "trigger": "alice shares a note and hands out the token",
+      "description": "Holding a share token is meant to grant access only to the specific note it was issued for."
+    },
+    {
+      "from": "Outside a team",
+      "to": "Inside a team",
+      "trigger": "membership in team-a or team-b",
+      "description": "Team membership is meant to scope which notes a user can list or read."
+    }
+  ],
+  "flows": [
+    {
+      "name": "View a note via share link",
+      "steps": [
+        { "order": 1, "action": "GET /share/:token", "actor": "anyone holding the token", "details": "Returns the note the token was issued for" }
+      ],
+      "edgeCases": ["Token never expires", "No check that the requester was the intended recipient"]
+    },
+    {
+      "name": "List a team's notes",
+      "steps": [
+        { "order": 1, "action": "GET /teams/:teamId/notes?asUser=<userId>", "actor": "a user", "details": "Returns all notes belonging to teamId" }
+      ],
+      "edgeCases": ["asUser is not verified against teamId before returning data"]
+    },
+    {
+      "name": "View a private note",
+      "steps": [
+        { "order": 1, "action": "GET /notes/:id/private?asUser=<userId>", "actor": "a user", "details": "Returns the note only if asUser is its owner" }
+      ],
+      "edgeCases": []
+    }
+  ],
+  "attackSurfaceMap": [
+    {
+      "feature": "Share links",
+      "riskLevel": "high",
+      "attackVectors": ["No expiry", "No recipient check"],
+      "relatedBoundaries": ["No share token -> Has share token"]
+    },
+    {
+      "feature": "Team notes listing",
+      "riskLevel": "critical",
+      "attackVectors": ["asUser not checked against teamId"],
+      "relatedBoundaries": ["Outside a team -> Inside a team"]
+    },
+    {
+      "feature": "Private note view",
+      "riskLevel": "low",
+      "attackVectors": [],
+      "relatedBoundaries": []
+    }
+  ],
+  "assumptions": [
+    { "statement": "A share token only grants access to the note it was issued for", "userVerified": false },
+    { "statement": "A user can only list notes for teams they belong to", "userVerified": false },
+    { "statement": "A user can only view another user's note directly if they own it", "userVerified": false }
+  ]
+}
