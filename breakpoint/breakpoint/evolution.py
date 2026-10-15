@@ -54,11 +54,15 @@ def _render_category_coverage(findings: list[Finding]) -> str:
     return "\n".join(lines)
 
 
-def _assign_categories(agents: list, findings: list[Finding]) -> list[str]:
+def _assign_categories(agents: list, findings: list[Finding], retriever=None) -> list[str]:
     """Round-robin assign one target category per agent, prioritising uncovered ones.
 
     Returns a list of category strings, one per agent, in the same order.
-    Agents in the same generation get *different* targets so they can't cluster."""
+    Agents in the same generation get *different* targets so they can't cluster.
+    With a code retriever (codebase mode) categories are instead given agents in proportion to how much
+    unexamined code each one has, so a category the repository has nothing for gets none."""
+    if retriever is not None:
+        return retriever.plan_categories(len(agents), findings)
     cats = Counter(f.attack_category for f in findings if f.attack_category)
     # Sort categories: uncovered first (count 0), then least-covered, avoid saturated
     ordered = sorted(_ALL_CATS, key=lambda c: (cats.get(c, 0) >= 3, cats.get(c, 0)))
@@ -68,14 +72,16 @@ def _assign_categories(agents: list, findings: list[Finding]) -> list[str]:
     return assigned
 
 
-def _render_prior(findings: list[Finding], max_items: int = 12) -> str:
+def _render_prior(findings: list[Finding], max_items: int = 12, with_code: bool = False) -> str:
     if not findings:
         return ""
     top = sorted(findings, key=lambda f: f.bss, reverse=True)[:max_items]
     lines = [prompts.PRIOR_FINDINGS_HEADER]
     for f in top:
+        where = ("".join(f" [code: {e['file']}:{e['line']}]" for e in (f.evidence or [])[:2] if isinstance(e, dict))
+                 if with_code else "")
         lines.append(f"- [{f.title}] (gen {f.generation}, {f.severity_band}): "
-                     f"{f.description[:200]}")
+                     f"{f.description[:200]}{where}")
     return "\n".join(lines)
 
 
@@ -86,6 +92,16 @@ def _render_known_fixed(titles: list[str]) -> str:
     lines = [prompts.KNOWN_FIXED_HEADER]
     for t in titles:
         lines.append(f"  - {t}")
+    return "\n".join(lines)
+
+
+def _render_refuted(refuted: list[dict]) -> str:
+    """Claims a verifier already tested and disproved, with what was actually observed."""
+    if not refuted:
+        return ""
+    lines = [prompts.REFUTED_HEADER]
+    for r in refuted[-15:]:
+        lines.append(f"  - [{r['title']}] {r['evidence']}")
     return "\n".join(lines)
 
 
@@ -108,29 +124,47 @@ def _render_inherited_findings(agent: Agent, all_findings: list[Finding]) -> str
 def run_agent(agent: Agent, blueprint_block: str, generation: int,
               prior_block: str, category_block: str, target_cat: str,
               llm: LLMClient, all_findings: list[Finding],
-              known_fixed_block: str = "") -> Finding | None:
+              known_fixed_block: str = "", refuted_block: str = "",
+              retrieval=None, retriever=None) -> Finding | None:
+    """`retrieval` (a coderetrieval.Retrieval) puts real source code in front of the agent; `retriever` checks the
+    file:line citations the agent returns against the files."""
     cat_hint = (f"\n----- YOUR ASSIGNED CATEGORY -----\n"
                 f"You MUST set attack_category to \"{target_cat}\" for this finding.\n"
                 f"Think from this specific attack surface angle only.")
-    
+
     # Inject Strategy Inheritance
     parent_strategy_block = _render_inherited_findings(agent, all_findings)
-    
-    user = prompts.AGENT_RUN_USER.format(
-        persona=agent.to_prompt_block(),
-        blueprint=blueprint_block,
-        generation=generation,
-        instruction=prompts.GENERATION_INSTRUCTIONS[generation],
-        prior_block=prior_block + parent_strategy_block,
-        category_block=category_block + cat_hint,
-    )
+
+    if retrieval:
+        user = prompts.AGENT_RUN_USER_CODE.format(
+            persona=agent.to_prompt_block(),
+            blueprint=blueprint_block,
+            category=target_cat,
+            code_block=retrieval.text,
+            generation=generation,
+            instruction=prompts.GENERATION_INSTRUCTIONS[generation],
+            code_task_note=prompts.CODE_TASK_NOTE,
+            prior_block=prior_block + parent_strategy_block,
+            category_block=category_block + cat_hint,
+        )
+    else:
+        user = prompts.AGENT_RUN_USER.format(
+            persona=agent.to_prompt_block(),
+            blueprint=blueprint_block,
+            generation=generation,
+            instruction=prompts.GENERATION_INSTRUCTIONS[generation],
+            prior_block=prior_block + parent_strategy_block,
+            category_block=category_block + cat_hint,
+        )
     # Append the known-fixed block after the formatted template so it
     # doesn't require a template change and is always the last thing the
     # model reads before it writes its answer.
     if known_fixed_block:
         user = user + "\n\n" + known_fixed_block
+    if refuted_block:
+        user = user + "\n\n" + refuted_block
     raw = llm.complete(prompts.AGENT_RUN_SYSTEM, user,
-                       task=f"finding_gen{generation}", max_tokens=llm.scale_tokens(1200))
+                       task=f"finding_gen{generation}", max_tokens=llm.scale_tokens(1600 if retrieval else 1200))
     try:
         d = extract_json(raw)
     except Exception as e:
@@ -152,6 +186,7 @@ def run_agent(agent: Agent, blueprint_block: str, generation: int,
         impact_score=float(d.get("impact_score", 0)),
         spread=float(d.get("spread", 0)),
         fix_difficulty=float(d.get("fix_difficulty", 1)),
+        code_refs=retriever.check_refs(d.get("code_refs")) if retriever is not None else [],
     )
 
 
@@ -172,13 +207,16 @@ def _similar(a: str, b: str, threshold: float = 0.35) -> bool:
     return len(ta & tb) / len(ta | tb) >= threshold
 
 
-def _dedup(new: list[Finding], existing: list[Finding]) -> list[Finding]:
-    """Drop near-duplicate titles using trigram Jaccard similarity (threshold 0.4)."""
+def _dedup(new: list[Finding], existing: list[Finding], extra_titles: list[str] | None = None,
+           within: bool = True) -> list[Finding]:
+    """Drop near-duplicate titles using trigram Jaccard similarity (threshold 0.4).
+    `within=False` only compares against `existing`/`extra_titles`, not the new batch against itself."""
     out: list[Finding] = []
-    seen: list[str] = [f.title for f in existing]
+    seen: list[str] = [f.title for f in existing] + list(extra_titles or [])
     for f in new:
         if not any(_similar(f.title, s) for s in seen):
-            seen.append(f.title)
+            if within:
+                seen.append(f.title)
             out.append(f)
     return out
 
@@ -230,12 +268,19 @@ def crossover_parents(P1: Agent, P2: Agent, child_personality: dict[str, float],
 
 def simulate(blueprint: Blueprint, agents: list[Agent], llm: LLMClient, *,
              generations: int = 3, on_event=None,
-             known_fixed: list[str] | None = None) -> list[Finding]:
+             known_fixed: list[str] | None = None, verifier=None, retriever=None) -> list[Finding]:
     """Run the full evolution. One thread pool is shared across all generations;
     blueprint and prior context are rendered once per generation, not per agent.
     `on_event(kind, payload)` is an optional callback for streaming progress to a UI.
     `known_fixed` is an optional list of vulnerability titles that have already
-    been patched; agents are explicitly told not to re-report them."""
+    been patched; agents are explicitly told not to re-report them.
+    `verifier(findings) -> [{"ok": bool, "evidence": str}, ...]` tests each new claim
+    against the real thing. Only verified findings join the history that later
+    generations inherit from and are selected on; refuted ones are fed back to the
+    next generation as tested-and-failed, with the observed behaviour.
+    `retriever` (a coderetrieval.CodeRetriever; codebase mode) gives every agent the real source for its assigned
+    category, different code to agents that share a category and to later generations, and checks the file:line
+    citations in what they return. Findings still have to pass `verifier`."""
     known_fixed_block = _render_known_fixed(known_fixed or [])
     if known_fixed_block:
         print(f"[+] Loaded {len(known_fixed)} known-fixed titles — agents will skip these.")
@@ -244,6 +289,7 @@ def simulate(blueprint: Blueprint, agents: list[Agent], llm: LLMClient, *,
         return []
     
     all_findings: list[Finding] = []
+    refuted: list[dict] = []
     blueprint_block = blueprint.to_prompt_block()  # computed once total
     
     # Store initial population base size
@@ -330,16 +376,22 @@ def simulate(blueprint: Blueprint, agents: list[Agent], llm: LLMClient, *,
             if on_event:
                 on_event("generation_start", {"generation": gen})
                 
-            prior_block = _render_prior(all_findings)      # computed once per generation
+            prior_block = _render_prior(all_findings, with_code=retriever is not None)      # computed once per generation
             category_block = _render_category_coverage(all_findings)
-            agent_cats = _assign_categories(active_agents, all_findings)
-            
+            agent_cats = _assign_categories(active_agents, all_findings, retriever)
+            # Retrieval is planned here, in order, before any thread starts: who sees which code never depends on timing.
+            retrievals = retriever.assign(agent_cats, all_findings) if retriever is not None else [None] * len(agent_cats)
+            refuted_block = _render_refuted(refuted)
+            if on_event and retriever is not None:
+                for agent, cat, r in zip(active_agents, agent_cats, retrievals):
+                    on_event("retrieval", {"agent": agent.name, "category": cat, "regions": len(r.regions), "files": len(r.files)})
+
             gen_findings: list[Finding] = []
             futures = {
                 pool.submit(run_agent, agent, blueprint_block, gen,
                             prior_block, category_block, target_cat, llm,
-                            all_findings, known_fixed_block): agent
-                for agent, target_cat in zip(active_agents, agent_cats)
+                            all_findings, known_fixed_block, refuted_block, r, retriever): agent
+                for agent, target_cat, r in zip(active_agents, agent_cats, retrievals)
             }
             for fut in as_completed(futures):
                 f = fut.result()
@@ -347,7 +399,25 @@ def simulate(blueprint: Blueprint, agents: list[Agent], llm: LLMClient, *,
                     gen_findings.append(f)
                     if on_event:
                         on_event("finding", f)
-            kept = _dedup(gen_findings, all_findings)
+            earlier_refuted = [r["title"] for r in refuted]
+            if verifier:
+                # Check every claim that is new relative to EARLIER generations, then merge near-duplicates
+                # among the survivors. Merging first would let a badly worded claim shadow a well-founded
+                # one about the same bug and get the real bug thrown away with it.
+                candidates = _dedup(gen_findings, all_findings, earlier_refuted, within=False)
+                verified = []
+                for f, v in (zip(candidates, verifier(candidates)) if candidates else []):
+                    if v["ok"]:
+                        f.verification = v.get("status", "")
+                        f.evidence = v.get("evidence_items", [])
+                        verified.append(f)
+                    else:
+                        refuted.append({"title": f.title, "evidence": v["evidence"]})
+                        if on_event:
+                            on_event("refuted", f)
+                kept = _dedup(verified, all_findings)
+            else:
+                kept = _dedup(gen_findings, all_findings, earlier_refuted)
             all_findings.extend(kept)
             if on_event:
                 on_event("generation_end",

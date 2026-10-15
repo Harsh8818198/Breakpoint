@@ -44,6 +44,27 @@ def _load_dotenv() -> None:
 _load_dotenv()
 
 
+class LLMFatalError(RuntimeError):
+    """A provider problem that retrying cannot fix: no credit, a rejected key, or an unknown model.
+    Callers must let it stop the run instead of treating it as one bad answer."""
+
+
+def fatal_reason(code: int, body: str) -> str | None:
+    """A plain-language message if this HTTP error can never succeed on retry, else None."""
+    low = body.lower()
+    if "please retry in" in low or "retry-after" in low:
+        return None                                     # a per-minute limit, not an empty account
+    if code in (400, 429) and any(k in low for k in (
+            "insufficient_quota", "credit_balance_exhausted", "credit balance is too low", "no credits remaining")):
+        return ("The provider says this account has no credit left. Add credit (or switch provider with "
+                "BREAKPOINT_PROVIDER) and run again.")
+    if code in (401, 403):
+        return f"The provider rejected the API key (HTTP {code}). Check the key and that it may use this model."
+    if code == 404 and "model" in low:
+        return "The provider does not know this model. Set BREAKPOINT_MODEL to one your key can use."
+    return None
+
+
 class LLMClient:
     def __init__(self, provider: str | None = None, model: str | None = None):
         self.provider = (provider or os.getenv("BREAKPOINT_PROVIDER", "anthropic")).lower()
@@ -61,10 +82,16 @@ class LLMClient:
         """Concurrency ceiling that keeps us inside each provider's rate limits."""
         return {"anthropic": 8, "openai": 3, "gemini": 1}.get(self.provider, 4)
 
+    def _openai_reasoning(self) -> bool:
+        m = self.model.lower()
+        return self.provider == "openai" and (m.startswith("gpt-5") or re.match(r"o\d", m) is not None)
+
     def scale_tokens(self, base: int) -> int:
         """Add headroom for thinking models that burn tokens on internal reasoning."""
         if self.provider == "gemini" and "gemma" in self.model.lower():
             return base + 2000
+        if self._openai_reasoning():
+            return base + 3000
         return base
 
     def complete(self, system: str, user: str, *, task: str = "", max_tokens: int = 2000) -> str:
@@ -116,14 +143,18 @@ class LLMClient:
                 "  Edit .env and set:  OPENAI_API_KEY=sk-...\n"
                 "  Get a key at:       https://platform.openai.com/api-keys"
             )
-        body = json.dumps({
+        payload = {
             "model": self.model,
-            "max_tokens": max_tokens,
             "messages": [
                 {"role": "system", "content": system},
                 {"role": "user", "content": user},
             ],
-        }).encode()
+        }
+        # GPT-5 and the o-series reject `max_tokens`; their hidden reasoning also counts against the limit.
+        payload["max_completion_tokens" if self._openai_reasoning() else "max_tokens"] = max_tokens
+        if self._openai_reasoning():
+            payload["reasoning_effort"] = os.getenv("BREAKPOINT_REASONING_EFFORT", "low")
+        body = json.dumps(payload).encode()
         req = urllib.request.Request(
             "https://api.openai.com/v1/chat/completions",
             data=body,
@@ -167,6 +198,9 @@ class LLMClient:
                     return json.loads(r.read().decode())
             except urllib.error.HTTPError as e:
                 body = e.read().decode()
+                fatal = fatal_reason(e.code, body)
+                if fatal:
+                    raise LLMFatalError(fatal) from None
                 if e.code == 429 and attempt < 5:
                     # Respect Retry-After or parse retry text in the body
                     wait = 0.0

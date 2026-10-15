@@ -10,15 +10,20 @@ Provider and key are read from .env (default provider: anthropic).
 from __future__ import annotations
 
 import argparse
+import dataclasses
 import sys
+from contextlib import ExitStack
 
-from .llm import LLMClient
+from .llm import LLMClient, LLMFatalError
 from .blueprint import build_blueprint, interrogate
 from .agents import build_population
 from .evolution import simulate, _norm
 from .report import render_report
 from .cvg import build_cvg
 from .models import Blueprint, Finding
+from .codeindex import CodeIndex
+from .codeverify import CodeVerifier
+from .coderetrieval import CodeRetriever
 from . import prompts
 
 _MAX_GENS = max(prompts.GENERATION_INSTRUCTIONS)
@@ -83,20 +88,49 @@ def _stream(kind: str, payload) -> None:
         print(f"\n--- Generation {payload['generation']} running ---")
     elif kind == "finding":
         print(f"   + {payload.discovered_by:>16}: {payload.title}")
+    elif kind == "retrieval":
+        print(f"   > {payload['agent']:>16} reads {payload['regions']} code regions from {payload['files']} files ({payload['category']})")
+    elif kind == "refuted":
+        print(f"   x not confirmed in the code: {payload.title}")
     elif kind == "generation_end":
-        print(f"   = kept {payload['kept']}/{payload['raw']} after dedup")
+        print(f"   = kept {payload['kept']}/{payload['raw']} after dedup and verification")
 
 
 def _pipeline(description: str | None, gens: int, archetypes: int | None,
               product_specific: int, show_questions: bool, interactive: bool = False,
               codebase: str | None = None, docs: list[str] | None = None,
-              known_fixed: list[str] | None = None) -> tuple[Blueprint, list[Finding]]:
+              known_fixed: list[str] | None = None,
+              verify: bool = True, retrieval: bool = True) -> tuple[Blueprint, list[Finding], dict | None]:
+    with ExitStack() as stack:       # keeps a temporary clone alive until the verifier is done with it
+        return _pipeline_inner(stack, description, gens, archetypes, product_specific, show_questions,
+                               interactive, codebase, docs, known_fixed, verify, retrieval)
+
+
+def _pipeline_inner(stack: ExitStack, description, gens, archetypes, product_specific, show_questions,
+                    interactive, codebase, docs, known_fixed, verify, retrieval=True):
     llm = LLMClient()
     print(f"Provider: {llm.provider} | Model: {llm.model}")
+    verifier = retriever = None
 
     if codebase:
-        from .blueprint import build_blueprint_from_codebase
-        bp = build_blueprint_from_codebase(codebase, llm)
+        from .blueprint import build_blueprint_from_codebase, codebase_checkout
+        root = stack.enter_context(codebase_checkout(codebase))
+        bp = build_blueprint_from_codebase(root, llm)
+        index = CodeIndex.from_dir(root) if (verify or retrieval) else None
+        if index is not None:
+            skipped = index.skipped.get("secret", 0)
+            print(f"{len(index)} source files indexed" + (f" ({skipped} secret file(s) left unread)" if skipped else "") + ".")
+        if retrieval:
+            retriever = CodeRetriever(index)
+            strong = ", ".join(f"{c}={n}" for c, n in retriever.summary().items() if n)
+            print(f"Code retrieval ready: each agent will read real source for its attack category (regions found: {strong}).")
+        else:
+            print("[warn] --no-retrieval: agents see only the blueprint summary, not the source code.")
+        if verify:
+            print("Verifier ready: every finding will be checked against the real code.")
+            verifier = CodeVerifier(index, llm)
+        else:
+            print("[warn] --no-verify: findings are NOT checked against the code and may be wrong.")
     elif docs:
         from .blueprint import build_blueprint_from_documents
         bp = build_blueprint_from_documents(docs, llm)
@@ -160,20 +194,24 @@ def _pipeline(description: str | None, gens: int, archetypes: int | None,
 
     print("\n[3/4] Running evolutionary simulation...")
     findings = simulate(bp, agents, llm, generations=gens, on_event=_stream,
-                        known_fixed=known_fixed or [])
-    return bp, findings
+                        known_fixed=known_fixed or [], verifier=verifier, retriever=retriever)
+    stats = verifier.stats() if verifier else None
+    if stats:
+        print(f"      verification: {stats['confirmed']} of {stats['checked']} claims held up against the code"
+              + (f" ({stats['errors']} could not be checked)" if stats["errors"] else ""))
+    return bp, findings, stats
 
 
 def run(description: str | None, gens: int, archetypes: int | None, product_specific: int,
         show_questions: bool, interactive: bool = False, output: str | None = None,
         codebase: str | None = None, docs: list[str] | None = None,
-        known_fixed: list[str] | None = None) -> str:
-    bp, findings = _pipeline(description, gens, archetypes, product_specific, show_questions,
-                              interactive, codebase, docs, known_fixed)
+        known_fixed: list[str] | None = None, verify: bool = True, retrieval: bool = True) -> str:
+    bp, findings, verification = _pipeline(description, gens, archetypes, product_specific, show_questions,
+                                           interactive, codebase, docs, known_fixed, verify, retrieval)
     print("\n[4/4] Building causal graph + report\n")
     llm = LLMClient()
     cvg = build_cvg(findings, llm)
-    report = render_report(bp, findings, cvg)
+    report = render_report(bp, findings, cvg, verification)
     print(report)
 
     if output:
@@ -183,6 +221,7 @@ def run(description: str | None, gens: int, archetypes: int | None, product_spec
                     "blueprint": bp.to_dict(),
                     "findings": [f.to_dict() for f in findings],
                     "cvg": cvg.to_dict({f.id: f for f in findings}),
+                    "verification": verification,
                 }
                 with open(output, "w", encoding="utf-8") as fh:
                     json.dump(data, fh, indent=2)
@@ -197,6 +236,51 @@ def run(description: str | None, gens: int, archetypes: int | None, product_spec
     return report
 
 
+_FINDING_FIELDS = {f.name for f in dataclasses.fields(Finding)} - {"verification", "evidence"}
+
+
+def _finding_from_dict(d: dict) -> Finding:
+    return Finding(**{k: v for k, v in d.items() if k in _FINDING_FIELDS and v is not None})
+
+
+def verify_report(report_path: str, codebase: str, output: str | None = None, defend: bool = True) -> dict:
+    """Re-check every finding in a saved JSON report against the real code. Writes nothing unless --output."""
+    try:
+        with open(report_path, encoding="utf-8") as fh:
+            data = json.load(fh)
+        findings = [_finding_from_dict(d) for d in data["findings"]]
+    except (OSError, ValueError, KeyError, TypeError) as e:
+        sys.exit(f"Cannot read findings from {report_path!r}: {e}")
+    llm = LLMClient()
+    print(f"Provider: {llm.provider} | Model: {llm.model}")
+    from .blueprint import codebase_checkout
+    with codebase_checkout(codebase) as root:
+        index = CodeIndex.from_dir(root)
+        print(f"Checking {len(findings)} findings against {len(index)} source files...")
+        verifier = CodeVerifier(index, llm, defend=defend)
+        results = verifier(findings)
+    kept = []
+    for f, r in zip(findings, results):
+        mark = {"CONFIRMED": "HOLDS  ", "REFUTED": "REFUTED", "UNVERIFIED": "UNPROVEN", "ERROR": "ERROR  "}[r["status"]]
+        print(f"\n[{mark}] {f.title}")
+        if r["status"] == "CONFIRMED":
+            f.verification, f.evidence = "CONFIRMED", r["evidence_items"]
+            kept.append(f)
+        print(f"    ({r['code']}) " + r["evidence"])
+    stats = verifier.stats()
+    print(f"\n{stats['confirmed']} of {stats['checked']} findings held up against the code "
+          f"({stats['refuted']} refuted, {stats['unverified']} unproven, {stats['errors']} errors).")
+    if output:
+        out = {"blueprint": data.get("blueprint"), "findings": [f.to_dict() for f in kept], "verification": stats}
+        try:
+            with open(output, "w", encoding="utf-8") as fh:
+                json.dump(out, fh, indent=2)
+            print(f"[+] Saved verification to {output}")
+        except OSError as e:
+            print(f"[error] Failed to write {output}: {e}")
+    return stats
+
+
 def check() -> None:
     """Verify the API key and provider work by building a minimal blueprint."""
     llm = LLMClient()
@@ -208,7 +292,25 @@ def check() -> None:
         sys.exit(f"FAIL: {e}")
 
 
+def _utf8_console() -> None:
+    """The report and the progress lines contain non-ASCII characters; the default Windows console encoding (cp1252)
+    cannot print them, and a crash while printing used to lose a finished run before its JSON was written."""
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):
+            pass
+
+
 def main(argv: list[str] | None = None) -> None:
+    _utf8_console()
+    try:
+        _main(argv)
+    except LLMFatalError as e:        # no credit / rejected key / unknown model: say so and stop, do not limp on
+        sys.exit(f"\n[error] {e}")
+
+
+def _main(argv: list[str] | None = None) -> None:
     p = argparse.ArgumentParser(
         description="Breakpoint: evolutionary adversarial-user simulation engine")
     p.add_argument("--desc", help="product description")
@@ -232,6 +334,19 @@ def main(argv: list[str] | None = None) -> None:
                    help="one or more vulnerability titles already patched; agents will not re-report them")
     p.add_argument("--fixed-file", metavar="PATH",
                    help="path to a JSON report (from --output *.json) whose findings are all treated as patched")
+    p.add_argument("--no-verify", action="store_true",
+                   help="skip the source-code check of each finding (codebase mode only; findings may be wrong)")
+    p.add_argument("--no-retrieval", action="store_true",
+                   help="codebase mode: do not show agents real source code (they see only the blueprint summary, as before)")
+    p.add_argument("--verify-report", metavar="REPORT.json",
+                   help="re-check every finding in a saved JSON report against --codebase, then exit")
+    p.add_argument("--baseline", metavar="OUT.json",
+                   help="single-prompt comparison: ask the model ONCE for the most serious vulnerabilities in --codebase, "
+                        "save them to OUT.json (check them with --verify-report), then exit")
+    p.add_argument("--baseline-context", choices=("code", "blueprint"), default="code",
+                   help="what the single prompt sees: the real source files (default) or the blueprint's 35 x 5,000-character sample")
+    p.add_argument("--baseline-n", type=int, default=15, metavar="N",
+                   help="how many vulnerabilities the single prompt is asked for (default 15)")
     p.add_argument("--check", action="store_true",
                    help="verify API key works with a quick test call, then exit")
     p.add_argument("--template", action="store_true",
@@ -244,6 +359,19 @@ def main(argv: list[str] | None = None) -> None:
 
     if args.template:
         print(DESC_TEMPLATE)
+        return
+
+    if args.verify_report:
+        if not args.codebase:
+            sys.exit("--verify-report needs --codebase (the local folder or git URL the report is about)")
+        verify_report(args.verify_report, args.codebase, args.output)
+        return
+
+    if args.baseline:
+        if not args.codebase:
+            sys.exit("--baseline needs --codebase (the local folder or git URL to review)")
+        from .baseline import write_baseline
+        write_baseline(args.codebase, args.baseline, context=args.baseline_context, n=args.baseline_n)
         return
 
     if not 1 <= args.gens <= _MAX_GENS:
@@ -278,7 +406,8 @@ def main(argv: list[str] | None = None) -> None:
             sys.exit(f"Cannot read --fixed-file {args.fixed_file!r}: {e}")
 
     run(desc, args.gens, args.archetypes, args.product_specific, args.questions,
-        args.interactive, args.output, args.codebase, args.docs, known_fixed or None)
+        args.interactive, args.output, args.codebase, args.docs, known_fixed or None,
+        verify=not args.no_verify, retrieval=not args.no_retrieval)
 
 
 if __name__ == "__main__":

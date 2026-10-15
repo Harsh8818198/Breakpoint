@@ -50,7 +50,8 @@ def _render_tree(findings: list[Finding]) -> str:
     return "\n".join(out) if out else "(no lineage captured)"
 
 
-def render_report(blueprint: Blueprint, findings: list[Finding], cvg: CVG | None = None) -> str:
+def render_report(blueprint: Blueprint, findings: list[Finding], cvg: CVG | None = None,
+                  verification: dict | None = None) -> str:
     ranked = sorted(findings, key=lambda f: f.bss, reverse=True)
     crit = [f for f in ranked if f.severity_band == "CRITICAL"]
     gens = Counter(f.generation for f in findings)
@@ -64,6 +65,11 @@ def render_report(blueprint: Blueprint, findings: list[Finding], cvg: CVG | None
     gen_span = f"across {max(gens)} generations" if gens else "no generations"
     L.append("\n## EXECUTIVE SUMMARY")
     L.append(f"{len(findings)} distinct vulnerabilities {gen_span}; {len(crit)} critical.")
+    if verification:
+        L.append(f"Every finding below was checked against the source code: {verification['confirmed']} of "
+                 f"{verification['checked']} claims held up and are listed with the code that shows them.")
+    else:
+        L.append("NOTE: findings were NOT checked against the source code; treat each one as unproven.")
     if ranked:
         top = ranked[0]
         L.append(f"Top risk: {top.title} (BSS {top.bss}, {top.severity_band}).")
@@ -89,6 +95,8 @@ def render_report(blueprint: Blueprint, findings: list[Finding], cvg: CVG | None
         if f.steps_to_exploit:
             L.append("    Steps: " + " | ".join(f.steps_to_exploit))
         L.append(f"    Impact: {f.impact}")
+        for e in f.evidence[:3]:
+            L.append(f"    Evidence: {e['file']}:{e['line']}  {e['quote'][:160]}")
         L.append(f"    Scores -> exploit {f.exploitability} / impact "
                  f"{f.impact_score} / spread {f.spread} / fixdiff {f.fix_difficulty}")
 
@@ -106,6 +114,13 @@ def render_report(blueprint: Blueprint, findings: list[Finding], cvg: CVG | None
     # Section 5: evolution tree
     L.append("\n## EVOLUTION TREE (the showpiece)")
     L.append(_render_tree(findings))
+
+    # Section 5b: what the code check threw away (so a short report is visibly a result, not a failure)
+    if verification and verification.get("rejected"):
+        L.append("\n## CLAIMS REJECTED BY THE CODE CHECK")
+        for r in verification["rejected"]:
+            why = " ".join((r.get("reasoning") or "").split())[:220]
+            L.append(f"  - [{r['status']}] {r['title']}" + (f": {why}" if why else ""))
 
     # Section 6: causal impact analysis (only when CVG was built)
     if cvg is not None:

@@ -1,0 +1,273 @@
+{
+  "_about": "Hand-labelled claims about OWASP NodeGoat (commit c5cb68a). 'real' = verified true by reading the source; 'false' = the source shows otherwise. Used by tests/eval_verifier.py to score the code verifier on a repo with known answers. Labels were checked against the source: e.g. the isAdmin guard on /benefits is commented out, so that claim is real; session.regenerate IS applied on signup but not on login. Note: NodeGoat's live code has password hashing commented out, so plaintext password storage is real.",
+  "repo": "https://github.com/OWASP/NodeGoat",
+  "findings": [
+    {
+      "label": "real",
+      "title": "Remote code execution through unsafe evaluation of contribution amounts",
+      "generation": 1,
+      "discovered_by": "label",
+      "attack_category": "injection",
+      "description": "The pension contributions form takes the pre-tax, after-tax and Roth percentages from the request and evaluates them as JavaScript instead of parsing numbers, so an attacker can run arbitrary code on the server.",
+      "steps_to_exploit": [
+        "Log in as any user",
+        "Submit the contributions form with a field containing JavaScript such as process.exit()",
+        "The server executes it"
+      ],
+      "impact": "Full server compromise."
+    },
+    {
+      "label": "real",
+      "title": "Any logged-in user can read other users' retirement allocations",
+      "generation": 1,
+      "discovered_by": "label",
+      "attack_category": "authz",
+      "description": "The allocations page takes the user id from the URL instead of the logged-in session, so changing the id in the path shows another user's allocation data.",
+      "steps_to_exploit": [
+        "Log in as user A",
+        "Request /allocations/<id of user B>",
+        "User B's allocations are shown"
+      ],
+      "impact": "Disclosure of other users' financial data."
+    },
+    {
+      "label": "real",
+      "title": "Open redirect on the learning-resources link",
+      "generation": 1,
+      "discovered_by": "label",
+      "attack_category": "injection",
+      "description": "The learn endpoint redirects the browser to whatever address is in its url query parameter with no validation, so a trusted link can send victims to an attacker's site.",
+      "steps_to_exploit": [
+        "Craft a link to the app's learn endpoint with url=https://evil.example",
+        "Send it to a logged-in user",
+        "They are redirected to the attacker's site"
+      ],
+      "impact": "Phishing from a trusted domain."
+    },
+    {
+      "label": "real",
+      "title": "NoSQL injection in the allocations threshold filter",
+      "generation": 1,
+      "discovered_by": "label",
+      "attack_category": "injection",
+      "description": "The stock threshold from the query string is placed straight into a MongoDB $where JavaScript expression without validation, so an attacker can inject JavaScript into the database query.",
+      "steps_to_exploit": [
+        "Open the allocations page",
+        "Set threshold to 1'; return 1 == '1",
+        "The query returns every record"
+      ],
+      "impact": "Data disclosure and denial of service on the database."
+    },
+    {
+      "label": "real",
+      "title": "Cross-site scripting because template auto-escaping is disabled",
+      "generation": 1,
+      "discovered_by": "label",
+      "attack_category": "injection",
+      "description": "The template engine is configured with auto-escaping turned off, so user-controlled values such as profile fields are written into pages unescaped.",
+      "steps_to_exploit": [
+        "Save a profile first name containing a script tag",
+        "Load a page that renders it",
+        "The script runs in the victim's browser"
+      ],
+      "impact": "Session theft and account takeover."
+    },
+    {
+      "label": "real",
+      "title": "Server-side request forgery in the research page",
+      "generation": 1,
+      "discovered_by": "label",
+      "attack_category": "injection",
+      "description": "The research page builds a URL from request parameters and fetches it from the server, returning the response body, so an attacker can make the server call internal addresses.",
+      "steps_to_exploit": [
+        "Request the research page with url pointing at an internal service and a symbol value",
+        "The server fetches it and returns the content"
+      ],
+      "impact": "Access to internal services and metadata endpoints."
+    },
+    {
+      "label": "real",
+      "title": "No server-side CSRF protection on state-changing forms",
+      "generation": 1,
+      "discovered_by": "label",
+      "attack_category": "auth",
+      "description": "Forms such as the profile update can be submitted by any site the logged-in user visits because the server does not validate an anti-CSRF token.",
+      "steps_to_exploit": [
+        "Host a page that auto-submits a POST to the profile update form",
+        "Get a logged-in user to open it",
+        "Their profile is changed"
+      ],
+      "impact": "Unauthorized changes to user accounts."
+    },
+    {
+      "label": "real",
+      "title": "Session cookie lacks HttpOnly and Secure flags",
+      "generation": 1,
+      "discovered_by": "label",
+      "attack_category": "config",
+      "description": "The session middleware is configured without cookie options, so the session cookie is readable by page scripts and sent over plain HTTP.",
+      "steps_to_exploit": [
+        "Exploit any script injection",
+        "Read document.cookie",
+        "Replay the session id"
+      ],
+      "impact": "Session hijacking."
+    },
+    {
+      "label": "real",
+      "title": "Session fixation at login",
+      "generation": 1,
+      "discovered_by": "label",
+      "attack_category": "auth",
+      "description": "After a successful login the existing session id is kept instead of being regenerated, so an attacker who planted a known session id can use it once the victim logs in.",
+      "steps_to_exploit": [
+        "Obtain a session id",
+        "Make the victim use that id and log in",
+        "Reuse the same id as the logged-in victim"
+      ],
+      "impact": "Account takeover."
+    },
+    {
+      "label": "real",
+      "title": "Login errors reveal whether a username exists",
+      "generation": 1,
+      "discovered_by": "label",
+      "attack_category": "auth",
+      "description": "The login page returns a different message for an unknown user name than for a wrong password, which lets an attacker enumerate valid accounts.",
+      "steps_to_exploit": [
+        "Try many user names with a wrong password",
+        "Distinguish the two error messages",
+        "Collect valid user names"
+      ],
+      "impact": "Targeted password guessing."
+    },
+    {
+      "label": "real",
+      "title": "Hard-coded session signing secret",
+      "generation": 1,
+      "discovered_by": "label",
+      "attack_category": "crypto",
+      "description": "The secret used to sign session cookies is a fixed string committed in the configuration, so anyone with the source can forge or tamper with session cookies.",
+      "steps_to_exploit": [
+        "Read the secret from the public repository",
+        "Sign a forged session cookie with it"
+      ],
+      "impact": "Session forgery."
+    },
+    {
+      "label": "real",
+      "title": "User passwords are stored in plaintext in the database",
+      "generation": 1,
+      "discovered_by": "label",
+      "attack_category": "crypto",
+      "description": "Passwords are saved exactly as the user typed them, so a database leak exposes every password.",
+      "steps_to_exploit": [
+        "Gain read access to the users collection",
+        "Read the password field"
+      ],
+      "impact": "Mass credential exposure."
+    },
+    {
+      "label": "real",
+      "title": "Non-admin users can open the admin benefits page",
+      "generation": 1,
+      "discovered_by": "label",
+      "attack_category": "authz",
+      "description": "The benefits administration pages perform no role check, so any logged-in employee can view and edit every user's benefits.",
+      "steps_to_exploit": [
+        "Log in as a normal user",
+        "Browse to the benefits page"
+      ],
+      "impact": "Unauthorized access to HR data."
+    },
+    {
+      "label": "false",
+      "title": "SQL injection in the login query",
+      "generation": 1,
+      "discovered_by": "label",
+      "attack_category": "injection",
+      "description": "The login handler concatenates the user name into an SQL statement, so ' OR 1=1 -- logs in as anyone.",
+      "steps_to_exploit": [
+        "Enter ' OR 1=1 -- as the user name",
+        "Submit the login form"
+      ],
+      "impact": "Authentication bypass."
+    },
+    {
+      "label": "false",
+      "title": "The dashboard is reachable without logging in",
+      "generation": 1,
+      "discovered_by": "label",
+      "attack_category": "auth",
+      "description": "The dashboard route has no authentication check, so an anonymous visitor can view it.",
+      "steps_to_exploit": [
+        "Request /dashboard without a session cookie"
+      ],
+      "impact": "Exposure of account summaries to anonymous users."
+    },
+    {
+      "label": "false",
+      "title": "Contribution updates can be submitted without being logged in",
+      "generation": 1,
+      "discovered_by": "label",
+      "attack_category": "auth",
+      "description": "The POST handler that updates pension contributions does not require a session, so an unauthenticated attacker can change contribution settings.",
+      "steps_to_exploit": [
+        "Send a POST to /contributions with no cookie"
+      ],
+      "impact": "Unauthorized modification of pension data."
+    },
+    {
+      "label": "false",
+      "title": "Anonymous visitors can read any user's allocations",
+      "generation": 1,
+      "discovered_by": "label",
+      "attack_category": "authz",
+      "description": "The allocations route has no login requirement, so someone who is not signed in can request another user's allocation page directly.",
+      "steps_to_exploit": [
+        "Without any cookie, request /allocations/1"
+      ],
+      "impact": "Disclosure of financial data to the public."
+    },
+    {
+      "label": "false",
+      "title": "Session id is not regenerated on signup",
+      "generation": 1,
+      "discovered_by": "label",
+      "attack_category": "auth",
+      "description": "When a new account is created the old session id is reused for the new logged-in session, allowing session fixation during registration.",
+      "steps_to_exploit": [
+        "Plant a known session id in the victim's browser",
+        "Victim registers",
+        "Attacker reuses the id"
+      ],
+      "impact": "Account takeover."
+    },
+    {
+      "label": "false",
+      "title": "Logout leaves the session valid on the server",
+      "generation": 1,
+      "discovered_by": "label",
+      "attack_category": "auth",
+      "description": "The logout handler only redirects the browser and never invalidates the server-side session, so a stolen session id keeps working after the user logs out.",
+      "steps_to_exploit": [
+        "Steal a session id",
+        "Victim logs out",
+        "Replay the old id"
+      ],
+      "impact": "Persistent session hijacking."
+    },
+    {
+      "label": "false",
+      "title": "The research page can be used without logging in",
+      "generation": 1,
+      "discovered_by": "label",
+      "attack_category": "auth",
+      "description": "The research route does not require a session, so an anonymous visitor can make the server fetch arbitrary URLs.",
+      "steps_to_exploit": [
+        "Request the research page with no cookie and a url parameter"
+      ],
+      "impact": "Anonymous server-side request forgery."
+    }
+  ]
+}

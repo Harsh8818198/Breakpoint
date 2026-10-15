@@ -205,6 +205,88 @@ Return JSON for the single best vulnerability you found:
 }}
 """
 
+# Codebase mode: the same task, but the agent is shown real source retrieved for its assigned category
+# (see coderetrieval.py) and must tie its claim to lines in it.
+AGENT_RUN_USER_CODE = """{persona}
+
+----- PRODUCT BLUEPRINT (a summary written from part of the code; the source below is the ground truth) -----
+{blueprint}
+
+----- THE REAL SOURCE CODE ({category}) -----
+Line format: `<line number>| <code>`. A number followed by `c` (for example `12c|`) is a COMMENT line, not active code.
+Secret values are redacted. This is a selection from a larger repository, chosen for your assigned category.
+
+{code_block}
+
+----- GROUNDING RULE (critical) -----
+Everything you claim must be visible in the source above.
+- Name the exact lines where the flaw bites in "code_refs": the file path exactly as shown, the line number, and the
+  line(s) copied character-for-character (without the number and the `|`). Citations are checked against the files.
+- Before you say a protection is missing, look for it in the excerpts and in the CONTROL SEARCH. A protection that
+  exists only in a comment, only in a template, or only as an unused dependency is NOT enforced. A protection that is
+  applied where the attacker's request is handled means there is no finding.
+- The harm you describe must follow from those lines. Do not invent features, plans, quotas or business rules that the
+  code does not contain, and do not assume code you cannot see.
+- Do not report anything covered by an ALREADY PATCHED or TESTED AND REFUTED list below.
+
+----- YOUR TASK (Generation {generation}) -----
+{instruction}
+{code_task_note}
+
+{prior_block}
+{category_block}
+
+Return JSON for the single best vulnerability you found:
+{{
+  "title": str,                    // short, specific, memorable
+  "attack_category": str,          // one of: auth | authz | rate_limiting | data_privacy | billing | injection | crypto | config | supply_chain | ux | architecture | code_quality | error_handling | scalability
+  "description": str,              // what the weakness is, citing file:line, in your voice
+  "steps_to_exploit": [str],       // 3-5 concrete steps
+  "impact": str,                   // who is harmed and how
+  "code_refs": [                   // 1-3 citations of the vulnerable live code
+    {{"file": str, "line": int, "quote": str}}
+  ],
+  "evolved_from": [str],           // titles of prior findings you built on ([] for Gen 1)
+  "confidence": 0.0-1.0,           // how well the code above supports the claim
+  "exploitability": 0-10,          // how easy for a typical user
+  "impact_score": 0-10,            // revenue + reputation + user harm
+  "spread": 0-10,                  // how virally users would share it
+  "fix_difficulty": 1-10
+}}
+"""
+
+CODE_TASK_NOTE = (
+    "You are reading real code. If the question above has no genuine answer in the code you were given (there is no "
+    "real combination or chain to be found here), do not stretch the code to fit it: report instead the most serious "
+    "REAL vulnerability visible above that is not already in the list of earlier findings."
+)
+
+# Plain single-prompt baseline: one model, asked once. Used only to measure whether the evolutionary engine beats it.
+BASELINE_SYSTEM = (
+    "You are a senior application-security engineer reviewing a codebase. Output ONLY valid JSON."
+)
+
+BASELINE_USER = """Review the source code below and list the {n} most serious security vulnerabilities in it.
+
+Line format: `<line number>| <code>`. A number followed by `c` (for example `12c|`) marks a comment line, not active code.
+Secret values are redacted.
+
+SOURCE CODE
+{code_block}
+
+Return a JSON array of exactly {n} objects, most serious first:
+[
+  {{
+    "title": str,                    // short and specific
+    "attack_category": str,          // one of: auth | authz | rate_limiting | data_privacy | billing | injection | crypto | config | supply_chain | ux | architecture | code_quality | error_handling | scalability
+    "description": str,              // what the weakness is, citing file:line
+    "steps_to_exploit": [str],       // 3-5 concrete steps
+    "impact": str,                   // who is harmed and how
+    "code_refs": [ {{"file": str, "line": int, "quote": str}} ]   // the vulnerable line(s), copied exactly, without the number and the `|`
+  }}
+]
+"""
+
 PRIOR_FINDINGS_HEADER = "----- WHAT EARLIER AGENTS ALREADY FOUND -----"
 CATEGORY_DIVERSITY_HEADER = "----- ATTACK CATEGORY COVERAGE (steer toward uncovered categories) -----"
 KNOWN_FIXED_HEADER = (
@@ -213,6 +295,169 @@ KNOWN_FIXED_HEADER = (
     "Any finding that overlaps with these — even under a different title — is WORTHLESS. "
     "You MUST find something genuinely new that is NOT covered by any item below:\n"
 )
+REFUTED_HEADER = (
+    "----- CLAIMS ALREADY TESTED AND REFUTED -----\n"
+    "These claims were checked against the real thing (the running app or its actual source code) "
+    "and did not hold: the product behaved as intended or already has the protection. "
+    "Do not repeat them. The evidence shown is real; use it to work out where the product "
+    "actually differs from its stated rules:\n"
+)
+
+# --- Code verification (every codebase finding is checked against the real source) ----
+
+VERIFY_LOCATE_SYSTEM = (
+    "You help a code reviewer find where, in a repository, a claimed security problem can be checked. "
+    "You never judge the claim. Output ONLY valid JSON."
+)
+
+VERIFY_LOCATE_USER = """CLAIM
+Title: {title}
+Description: {description}
+Steps: {steps}
+
+REPOSITORY FILES
+{file_list}
+
+Return JSON:
+{{
+  "files": ["up to 6 paths copied EXACTLY from the list above: the files most likely to contain the code this claim is about, INCLUDING files where a protection against it would live (auth, validation, storage, config)"],
+  "search_terms": ["up to 8 literal strings likely to appear in the relevant code: function names, file names, config keys, status codes, and words for checks that could block the claim such as 'state', 'csrf', 'verify', 'keyring'"]
+}}"""
+
+VERIFY_JUDGE_SYSTEM = (
+    "You are a skeptical senior application-security engineer. A junior analyst wrote a vulnerability claim "
+    "WITHOUT reading the whole code, so most such claims are wrong: they describe protections as missing that "
+    "exist a few lines away, or describe behaviour the code does not have. You check the claim against the REAL "
+    "source excerpts you are given.\n"
+    "Rules:\n"
+    "- Use ONLY the code shown. Never assume code you cannot see.\n"
+    "- CONFIRMED only if (1) the shown code contains the specific vulnerable behaviour the claim describes, "
+    "(2) no shown code prevents or contradicts it, and (3) the attacker needs no more access than the claim states "
+    "(an attacker who already controls the user's machine or admin account is NOT a vulnerability).\n"
+    "- REFUTED if shown code contradicts the claim or already contains the protection it says is missing "
+    "(a state/CSRF check, auth middleware, parameterised query, keyring storage, a rate limit, a size cap...). "
+    "Quote that protection.\n"
+    "- UNVERIFIABLE if the excerpts do not contain the relevant code. Do not guess.\n"
+    "- A missing best practice, a design trade-off, or an intended feature is NOT a vulnerability.\n"
+    "- Judge the claimed IMPACT, not only the code. If the code really does the thing quoted (for example it "
+    "swallows an exception) but the consequence the claim promises (bypass, takeover, leak, free access) does "
+    "not follow from what the code does, the claim is REFUTED.\n"
+    "- A protection only counts if the code that handles the attacker's request ENFORCES it. A token merely rendered "
+    "in a template, a check defined but never applied to that route, or a comment describing a fix is not enforcement.\n"
+    "- If the harm the claim describes depends on a product feature or business rule (free trials, plans, quotas, "
+    "billing, tiers) that you cannot find in the code, the claim invented it: impact_follows is false.\n"
+    "- For a claim that something is MISSING (no rate limit, no ownership check), use the REPO-WIDE LITERAL SEARCH "
+    "at the top of the excerpts: zero hits for the obvious names is evidence of absence, a hit means go and look at it. "
+    "Absence only matters if the code shows what an attacker gains from it.\n"
+    "- A line that merely CALLS a function proves nothing about what that function does. If the claim depends on "
+    "the body of a function you were not shown, answer UNVERIFIABLE.\n"
+    "- Quote the line where the flaw actually bites (where attacker input reaches the dangerous operation, or "
+    "where the missing check should be), not just a line that mentions the feature.\n"
+    "Output ONLY valid JSON."
+)
+
+VERIFY_JUDGE_USER = """CLAIM
+Title: {title}
+Category: {category}
+Description: {description}
+Steps: {steps}
+Impact: {impact}
+
+SOURCE EXCERPTS (line-numbered; the number and '|' are not part of the code; 'c|' marks a comment line, which is NOT active code)
+{excerpts}
+
+Return JSON:
+{{
+  "verdict": "CONFIRMED" | "REFUTED" | "UNVERIFIABLE",
+  "reasoning": "at most 60 words: what the code actually does versus what the claim says",
+  "attacker_needs": "the access the attacker must already have for this to work",
+  "exploit_path": "at most 50 words: what the attacker does, which line the flaw is on, and the concrete harm that results",
+  "impact_follows": true | false,
+  "evidence": [
+    {{"file": "path exactly as in the excerpts", "start_line": 1, "end_line": 1,
+      "quote": "1-3 lines copied CHARACTER-FOR-CHARACTER from the excerpt, without the line-number gutter"}}
+  ],
+  "defense_search_terms": ["up to 6 literal strings that would appear in code that blocks this claim, if any exists elsewhere"],
+  "need_to_see": ["only when UNVERIFIABLE: up to 5 literal names (variables, functions, files, config keys) whose definitions you needed but were not shown"]
+}}
+For CONFIRMED the evidence is the vulnerable code. For REFUTED it is the code that contradicts or prevents the claim. A verdict without a real quote is worthless."""
+
+VERIFY_DEFEND_SYSTEM = (
+    "You are the defender of a codebase. A reviewer has CONFIRMED a vulnerability claim. Your job is to find the "
+    "strongest reason it is NOT a real, exploitable vulnerability, using ONLY the source shown: an existing check "
+    "elsewhere in the code, the attacker needing capabilities the claim ignores, a code path that is unreachable "
+    "or never receives attacker input, or an impact that does not follow. If you find none, say it stands. "
+    "A defence counts only if it blocks the SPECIFIC attacker the claim describes: a login check does not stop an "
+    "already-logged-in user from reading another user's data (authentication is not authorization), and a CSRF "
+    "token on one form does not protect a different form. A defence must also be ENFORCED where the request is "
+    "handled: a token only rendered in a template, a function never applied to the route, or a commented-out fix "
+    "is not a defence. Read the claim's own steps for what access the attacker already has: if they already "
+    "assume that access (for example 'log in as any user'), a login check is not a defence. A check that merely "
+    "narrows, delays or reduces the harm does not defeat the claim either: answer defence_found true only if the "
+    "attack as described becomes impossible. "
+    "Do not invent defences. Output ONLY valid JSON."
+)
+
+VERIFY_DEFEND_USER = """CLAIM
+Title: {title}
+Description: {description}
+Steps: {steps}
+Impact: {impact}
+
+THE REVIEWER'S CASE
+{reasoning}
+
+SOURCE EXCERPTS (line-numbered; the number and '|' are not part of the code; 'c|' marks a comment line, which is NOT active code)
+{excerpts}
+
+Return JSON (explain first, then answer):
+{{
+  "reasoning": "at most 60 words: does any ENFORCED, live code defeat this specific claim?",
+  "defence_found": true | false,
+  "evidence": [
+    {{"file": "path exactly as in the excerpts", "start_line": 1, "end_line": 1,
+      "quote": "1-3 lines of LIVE code copied CHARACTER-FOR-CHARACTER from the excerpt that defeat the claim"}}
+  ]
+}}
+defence_found is false when the claim stands. Say true only if you can quote the code that defeats it."""
+
+VERIFY_APPEAL_SYSTEM = (
+    "You are an appeals reviewer. A first reviewer REFUTED a vulnerability claim by citing some code. First "
+    "reviewers often cite code that does not really defend: a token that is rendered but never validated, a check "
+    "that is defined but never applied to the route, a value that is read from a config file whose actual content "
+    "is itself the flaw, or a commented-out fix. Decide whether the cited code truly enforces a defence against the "
+    "SPECIFIC attacker the claim describes, using ONLY the source shown. Lines marked with 'c|' are comments, "
+    "not code. If the refutation is sound, say so. If the vulnerability is still real, quote the live vulnerable "
+    "code. Output ONLY valid JSON."
+)
+
+VERIFY_APPEAL_USER = """CLAIM
+Title: {title}
+Description: {description}
+Steps: {steps}
+Impact: {impact}
+
+THE FIRST REVIEWER REFUTED IT BECAUSE
+{reasoning}
+
+CODE THE REFUTATION CITES
+{cited}
+
+SOURCE EXCERPTS (line-numbered; the number and '|' are not part of the code; 'c|' marks a comment line)
+{excerpts}
+
+Return JSON (explain first, then answer):
+{{
+  "reasoning": "at most 60 words: does the cited code really enforce a defence on the attacker's path?",
+  "refutation_holds": true | false,
+  "exploit_path": "at most 50 words: if it does not hold, what the attacker does and which live line is the flaw",
+  "impact_follows": true | false,
+  "defense_search_terms": ["up to 6 literal strings that would appear in code that blocks this claim, if any exists elsewhere"],
+  "evidence": [
+    {{"file": "path exactly as in the excerpts", "start_line": 1, "end_line": 1,
+      "quote": "1-3 lines of LIVE vulnerable code copied CHARACTER-FOR-CHARACTER, only if refutation_holds is false"}}
+  ]
+}}"""
 
 # --- Custom Agent & Crossover (spec V2 backend features) ----------------------
 

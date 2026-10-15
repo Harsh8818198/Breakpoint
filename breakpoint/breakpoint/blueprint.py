@@ -14,11 +14,14 @@ from __future__ import annotations
 
 import os
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
+from contextlib import contextmanager
 from pathlib import Path
 
+from .codeindex import is_secret_file
 from .llm import LLMClient, extract_json
 from .models import Blueprint, Flow
 from . import prompts
@@ -127,6 +130,8 @@ def scan_codebase(dir_path: str) -> tuple[str, dict]:
         dirs[:] = [d for d in dirs if d not in ignore_dirs]
         for file in files:
             file_path = Path(root) / file
+            if is_secret_file(file):            # .env, keys, ... are never read or sent to a model
+                continue
             if file_path.suffix in {".png", ".jpg", ".jpeg", ".gif", ".ico",
                                      ".pdf", ".zip", ".tar", ".gz", ".exe", ".dll"}:
                 continue
@@ -187,6 +192,42 @@ def _clone_repo(url: str) -> str:
     return tmp
 
 
+def _rmtree(path: str) -> bool:
+    """Delete a directory tree even when it holds read-only files (git packs on Windows)."""
+    def _retry(func, p, _exc):
+        try:
+            os.chmod(p, stat.S_IWRITE)
+            func(p)
+        except OSError:
+            pass
+    try:
+        shutil.rmtree(path, onexc=_retry)          # Python 3.12+
+    except TypeError:
+        shutil.rmtree(path, onerror=lambda f, p, e: _retry(f, p, e))
+    return not os.path.exists(path)
+
+
+@contextmanager
+def codebase_checkout(path_or_url: str):
+    """Yield a local directory for a path or git URL. A temporary clone lives until the block ends,
+    so later stages (code verification) can read the same files the blueprint was built from."""
+    temp_dir = None
+    try:
+        if _is_remote_url(path_or_url):
+            temp_dir = _clone_repo(path_or_url)
+            yield temp_dir
+        else:
+            if not os.path.isdir(path_or_url):
+                raise ValueError(f"Directory path does not exist: {path_or_url}")
+            yield path_or_url
+    finally:
+        if temp_dir:
+            if _rmtree(temp_dir):
+                print("Cleaned up temporary clone.")
+            else:
+                print(f"[warn] Could not fully delete the temporary clone: {temp_dir}", file=sys.stderr)
+
+
 def _render_structural_signals(meta: dict) -> str:
     """Convert structural_meta dict into a plain-text block for the brain pass prompt."""
     lines = []
@@ -211,16 +252,7 @@ def build_blueprint_from_codebase(dir_path: str, llm: LLMClient) -> Blueprint:
     Brain findings are injected into mechanical_details + known_unknowns
     so ALL agents see them when reasoning about exploits.
     """
-    temp_dir = None
-    try:
-        if _is_remote_url(dir_path):
-            temp_dir = _clone_repo(dir_path)
-            scan_path = temp_dir
-        else:
-            if not os.path.isdir(dir_path):
-                raise ValueError(f"Directory path does not exist: {dir_path}")
-            scan_path = dir_path
-
+    with codebase_checkout(dir_path) as scan_path:
         print(f"Scanning codebase: {scan_path} ...")
         code_block, structural_meta = scan_codebase(scan_path)
 
@@ -291,10 +323,6 @@ def build_blueprint_from_codebase(dir_path: str, llm: LLMClient) -> Blueprint:
             known_unknowns=known_unknowns,
             attack_surface=data.get("attack_surface", []),
         )
-    finally:
-        if temp_dir:
-            shutil.rmtree(temp_dir, ignore_errors=True)
-            print("Cleaned up temporary clone.")
 
 
 def interrogate(blueprint: Blueprint, llm: LLMClient) -> list[str]:

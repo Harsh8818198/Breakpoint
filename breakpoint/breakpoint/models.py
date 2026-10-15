@@ -112,6 +112,13 @@ class Finding:
     impact_score: float = 0.0
     spread: float = 0.0
     fix_difficulty: float = 1.0
+    # Set only when a verifier checked this claim against the real thing. For source-code checks,
+    # `evidence` is a list of {"file", "line", "quote"} whose quotes were found verbatim in the repo.
+    verification: str = ""
+    evidence: list[dict] = field(default_factory=list)
+    # Where the AGENT says the flaw is (codebase mode). Each quote was found in the file it names, but that only shows the
+    # citation is real, not that the claim is true: `evidence` (set by the verifier) is what supports a finding.
+    code_refs: list[dict] = field(default_factory=list)
     id: str = field(default_factory=_id)
 
     @property
