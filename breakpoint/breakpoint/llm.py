@@ -22,6 +22,21 @@ import urllib.request
 import urllib.error
 
 
+def _decode_env_bytes(raw: bytes) -> str:
+    """Decode a .env file's raw bytes, tolerating the encodings different
+    shells actually produce. Windows PowerShell's `>` / `echo ... > file`
+    (classic "Windows PowerShell", not pwsh 7+) writes UTF-16LE with a BOM
+    by default, not UTF-8 — reading that as UTF-8 raises or silently
+    mangles every key and value. Detect the BOM and decode accordingly;
+    strip a leftover UTF-8 BOM character either way.
+    """
+    if raw[:2] == b"\xff\xfe":
+        return raw[2:].decode("utf-16le")
+    if raw[:2] == b"\xfe\xff":
+        return raw[2:].decode("utf-16be")
+    return raw.decode("utf-8").lstrip("﻿")
+
+
 def _load_dotenv() -> None:
     """Load .env into os.environ (stdlib only — no python-dotenv required).
     Searches the package directory and its parent (project root)."""
@@ -29,15 +44,15 @@ def _load_dotenv() -> None:
         env_file = candidate / ".env"
         if not env_file.exists():
             continue
-        with open(env_file, encoding="utf-8") as f:
-            for raw in f:
-                line = raw.strip()
-                if not line or line.startswith("#") or "=" not in line:
-                    continue
-                key, _, val = line.partition("=")
-                key = key.strip()
-                val = val.split("#", 1)[0].strip()  # drop inline comments
-                os.environ.setdefault(key, val)
+        contents = _decode_env_bytes(env_file.read_bytes())
+        for raw in contents.splitlines():
+            line = raw.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, _, val = line.partition("=")
+            key = key.strip()
+            val = val.split("#", 1)[0].strip()  # drop inline comments
+            os.environ.setdefault(key, val)
         break
 
 
