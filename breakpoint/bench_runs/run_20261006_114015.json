@@ -1,0 +1,2005 @@
+{
+  "provider": "openai",
+  "model": "gpt-4o",
+  "agents": 8,
+  "gens": 3,
+  "engine": {
+    "calls": 44,
+    "summary": {
+      "claims": 15,
+      "untestable": 2,
+      "tested": 13,
+      "real": 4,
+      "not_real": 7,
+      "invalid": 2,
+      "real_share_of_tested": 0.31,
+      "planted_found": [
+        "IDOR_READ",
+        "IMPORT_NO_QUOTA",
+        "STALE_LINK"
+      ],
+      "planted_total": 4,
+      "by_generation": {
+        "1": {
+          "claims": 8,
+          "tested": 8,
+          "real": 3
+        },
+        "2": {
+          "claims": 5,
+          "tested": 4,
+          "real": 1
+        },
+        "3": {
+          "claims": 2,
+          "tested": 1,
+          "real": 0
+        }
+      }
+    },
+    "rows": [
+      {
+        "title": "No Rate Limiting on Bulk Import Allows Unlimited Note Creation",
+        "description": "NoteShare's bulk import feature doesn't seem to enforce a rate limit, allowing users on free plans to bypass the 5 live note restriction by importing more notes than the limit of individual note creation.",
+        "steps": [
+          "Create or obtain an account on a free plan.",
+          "Prepare a JSON file with more than 5 notes.",
+          "Use the POST /notes/import endpoint to import the notes in bulk.",
+          "Verify that more than 5 notes are successfully imported, bypassing the plan limit."
+        ],
+        "generation": 1,
+        "by": "Jordan Marks",
+        "script": [
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes/import",
+            "body": {
+              "notes": [
+                {
+                  "title": "Note 1"
+                },
+                {
+                  "title": "Note 2"
+                },
+                {
+                  "title": "Note 3"
+                },
+                {
+                  "title": "Note 4"
+                },
+                {
+                  "title": "Note 5"
+                },
+                {
+                  "title": "Note 6"
+                }
+              ]
+            },
+            "save": {
+              "ids": "ids"
+            }
+          },
+          {
+            "as": "bob",
+            "method": "GET",
+            "path": "/notes/2"
+          },
+          {
+            "as": "bob",
+            "method": "GET",
+            "path": "/notes/3"
+          },
+          {
+            "as": "bob",
+            "method": "GET",
+            "path": "/notes/4"
+          },
+          {
+            "as": "bob",
+            "method": "GET",
+            "path": "/notes/5"
+          },
+          {
+            "as": "bob",
+            "method": "GET",
+            "path": "/notes/6"
+          },
+          {
+            "as": "bob",
+            "method": "GET",
+            "path": "/notes/7"
+          }
+        ],
+        "status": "CONFIRMED",
+        "claims_broken": [
+          "QUOTA",
+          "READ_AUTHZ"
+        ],
+        "flaws": [
+          "IDOR_READ",
+          "IMPORT_NO_QUOTA"
+        ],
+        "error": ""
+      },
+      {
+        "title": "Excessive Note Sharing without Authentication",
+        "description": "Users can excessively share notes via the public link feature without needing to authenticate, bypassing organizational boundaries and potentially causing service degradation.",
+        "steps": [
+          "Create a note as a user within Org A on the free plan.",
+          "Use POST /notes/{id}/link to generate a public share link.",
+          "Distribute this link widely on social media or through a botnet to maximize access.",
+          "Repeat the process with multiple notes, circumventing the 5-note limit on the free plan.",
+          "Observe NoteShare's service degradation due to increased access requests."
+        ],
+        "generation": 1,
+        "by": "The Note Overloader",
+        "script": [
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes",
+            "body": {
+              "title": "Note 1",
+              "body": "Content 1"
+            },
+            "save": {
+              "noteId1": "id"
+            }
+          },
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes/{noteId1}/link",
+            "save": {
+              "token1": "token"
+            }
+          },
+          {
+            "as": null,
+            "method": "GET",
+            "path": "/s/{token1}"
+          },
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes",
+            "body": {
+              "title": "Note 2",
+              "body": "Content 2"
+            },
+            "save": {
+              "noteId2": "id"
+            }
+          },
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes/{noteId2}/link",
+            "save": {
+              "token2": "token"
+            }
+          },
+          {
+            "as": null,
+            "method": "GET",
+            "path": "/s/{token2}"
+          },
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes",
+            "body": {
+              "title": "Note 3",
+              "body": "Content 3"
+            },
+            "save": {
+              "noteId3": "id"
+            }
+          },
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes/{noteId3}/link",
+            "save": {
+              "token3": "token"
+            }
+          },
+          {
+            "as": null,
+            "method": "GET",
+            "path": "/s/{token3}"
+          },
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes",
+            "body": {
+              "title": "Note 4",
+              "body": "Content 4"
+            },
+            "save": {
+              "noteId4": "id"
+            }
+          },
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes/{noteId4}/link",
+            "save": {
+              "token4": "token"
+            }
+          },
+          {
+            "as": null,
+            "method": "GET",
+            "path": "/s/{token4}"
+          }
+        ],
+        "status": "NOT_REPRODUCED",
+        "claims_broken": [],
+        "flaws": [],
+        "error": ""
+      },
+      {
+        "title": "Bulk Import Bypass with Continuous Rotation",
+        "description": "The bulk import feature allows importing up to five notes via the /notes/import endpoint, which is aligned with the free plan limit. However, by deleting existing notes immediately after import and then uploading new ones, a user can continuously rotate notes to maintain access to a larger amount of notes than allowed by the plan restrictions.",
+        "steps": [
+          "Use the /notes/import endpoint to bulk import up to five notes.",
+          "Access and use the imported notes as needed.",
+          "Delete one or more of the current notes via the DELETE /notes/{id} endpoint to make space.",
+          "Repeat the import process with new notes.",
+          "Continue the cycle of import, use, delete, and re-import to maintain a large, dynamic set of notes without upgrading the plan."
+        ],
+        "generation": 1,
+        "by": "The Note Parasite",
+        "script": [
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes/import",
+            "body": {
+              "notes": [
+                {
+                  "title": "Note 4"
+                },
+                {
+                  "title": "Note 5"
+                },
+                {
+                  "title": "Note 6"
+                },
+                {
+                  "title": "Note 7"
+                },
+                {
+                  "title": "Note 8"
+                }
+              ]
+            },
+            "save": {
+              "ids": "ids"
+            }
+          },
+          {
+            "as": "bob",
+            "method": "GET",
+            "path": "/notes/{ids.0}"
+          },
+          {
+            "as": "bob",
+            "method": "GET",
+            "path": "/notes/{ids.1}"
+          },
+          {
+            "as": "bob",
+            "method": "DELETE",
+            "path": "/notes/1"
+          },
+          {
+            "as": "bob",
+            "method": "DELETE",
+            "path": "/notes/2"
+          },
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes/import",
+            "body": {
+              "notes": [
+                {
+                  "title": "Note 9"
+                },
+                {
+                  "title": "Note 10"
+                },
+                {
+                  "title": "Note 11"
+                },
+                {
+                  "title": "Note 12"
+                },
+                {
+                  "title": "Note 13"
+                }
+              ]
+            },
+            "save": {
+              "ids2": "ids"
+            }
+          },
+          {
+            "as": "bob",
+            "method": "GET",
+            "path": "/notes/{ids2.0}"
+          },
+          {
+            "as": "bob",
+            "method": "DELETE",
+            "path": "/notes/{ids.0}"
+          },
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes/import",
+            "body": {
+              "notes": [
+                {
+                  "title": "Note 14"
+                },
+                {
+                  "title": "Note 15"
+                },
+                {
+                  "title": "Note 16"
+                },
+                {
+                  "title": "Note 17"
+                },
+                {
+                  "title": "Note 18"
+                }
+              ]
+            }
+          },
+          {
+            "as": "bob",
+            "method": "GET",
+            "path": "/notes/{ids2.1}"
+          },
+          {
+            "as": "bob",
+            "method": "DELETE",
+            "path": "/notes/{ids2.0}"
+          },
+          {
+            "as": "bob",
+            "method": "GET",
+            "path": "/notes/2"
+          }
+        ],
+        "status": "CONFIRMED",
+        "claims_broken": [
+          "QUOTA"
+        ],
+        "flaws": [
+          "IMPORT_NO_QUOTA"
+        ],
+        "error": ""
+      },
+      {
+        "title": "Exceed Free Plan Limit with Bulk Import",
+        "description": "The Free plan users are limited to at most 5 live notes, but the system allows for bulk importing notes without checking the note count limit first, potentially allowing users to bypass the limit unintentionally or intentionally.",
+        "steps": [
+          "Register a free plan account on NoteShare.",
+          "Create a few notes manually to approach the plan limit (e.g., 4 notes).",
+          "Use the bulk import feature to import more notes (e.g., 3 additional notes).",
+          "Observe that the number of live notes exceeds the allowed limit without receiving a 402 error."
+        ],
+        "generation": 1,
+        "by": "Alex Wu",
+        "script": [
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes",
+            "body": {
+              "title": "Note 1",
+              "body": "Content 1"
+            }
+          },
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes",
+            "body": {
+              "title": "Note 2",
+              "body": "Content 2"
+            }
+          },
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes",
+            "body": {
+              "title": "Note 3",
+              "body": "Content 3"
+            }
+          },
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes",
+            "body": {
+              "title": "Note 4",
+              "body": "Content 4"
+            }
+          },
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes/import",
+            "body": {
+              "notes": [
+                {
+                  "title": "Bulk Note 5"
+                },
+                {
+                  "title": "Bulk Note 6"
+                },
+                {
+                  "title": "Bulk Note 7"
+                }
+              ]
+            }
+          }
+        ],
+        "status": "CONFIRMED",
+        "claims_broken": [
+          "QUOTA"
+        ],
+        "flaws": [
+          "IMPORT_NO_QUOTA"
+        ],
+        "error": ""
+      },
+      {
+        "title": "Bulk Note Import Without Proper Input Sanitization",
+        "description": "The bulk note import feature allows for multiple notes to be created in one action without proper input sanitization, which might allow injection of malicious content into the system.",
+        "steps": [
+          "Prepare a JSON payload for the /notes/import endpoint with notes containing script tags or harmful scripts in the 'title' and 'body' fields.",
+          "Send the payload using POST /notes/import to bulk-create the malicious notes.",
+          "Observe if the injected scripts execute when accessed via GET /notes/{id} in the notes interface.",
+          "Exploit these notes within orgs to create confusion or disrupt normal operations.",
+          "Continue injecting more notes to maintain a persistent disruptive presence."
+        ],
+        "generation": 1,
+        "by": "Elliot Bradford",
+        "script": [
+          {
+            "as": "carol",
+            "method": "POST",
+            "path": "/notes/import",
+            "body": {
+              "notes": [
+                {
+                  "title": "<script>alert('Injected 1')</script>",
+                  "body": "Example body 1"
+                },
+                {
+                  "title": "Safe title",
+                  "body": "<img src='x' onerror='alert(2)'/>"
+                },
+                {
+                  "title": "<svg onload=alert(3)>",
+                  "body": "Another example body"
+                }
+              ]
+            },
+            "save": {
+              "first_id": "ids.0",
+              "second_id": "ids.1",
+              "third_id": "ids.2"
+            }
+          },
+          {
+            "as": "carol",
+            "method": "GET",
+            "path": "/notes/{first_id}"
+          },
+          {
+            "as": "carol",
+            "method": "GET",
+            "path": "/notes/{second_id}"
+          },
+          {
+            "as": "carol",
+            "method": "GET",
+            "path": "/notes/{third_id}"
+          }
+        ],
+        "status": "INVALID",
+        "claims_broken": [],
+        "flaws": [],
+        "error": "unresolved variable {first_id}"
+      },
+      {
+        "title": "Insecure Public Note Access via Token Leakage",
+        "description": "NoteShare's public link sharing allows any anonymous user to access a note via a tokenized URL without authentication. If these URLs are exposed or guessed, sensitive note data could be accessed by unauthorized individuals.",
+        "steps": [
+          "Owner of a note creates a public link via POST /notes/{id}/link.",
+          "A token is generated and appended to the URL (e.g., /s/{token}).",
+          "An attacker obtains the URL, potentially through user error or network interception.",
+          "Attacker accesses the note using GET /s/{token}, bypassing authentication."
+        ],
+        "generation": 1,
+        "by": "Evelyn Turner",
+        "script": [
+          {
+            "as": "alice",
+            "method": "POST",
+            "path": "/notes/1/link",
+            "save": {
+              "tok": "token"
+            }
+          },
+          {
+            "as": null,
+            "method": "GET",
+            "path": "/s/{tok}"
+          }
+        ],
+        "status": "NOT_REPRODUCED",
+        "claims_broken": [],
+        "flaws": [],
+        "error": ""
+      },
+      {
+        "title": "Public Token Predictability",
+        "description": "There's a risk that the tokens generated for public links aren't generated with sufficient entropy, making them predictable. If someone can predict the token, they can gain unauthorized access to a note, even if not shared publicly.",
+        "steps": [
+          "Observe multiple /s/{token} URLs generated over time.",
+          "Analyze the structure of the tokens for patterns.",
+          "Develop a script to generate and test possible tokens based on observed patterns.",
+          "Access a note without the owner explicitly creating a public link for you."
+        ],
+        "generation": 1,
+        "by": "Liam Cheng",
+        "script": [
+          {
+            "as": "alice",
+            "method": "POST",
+            "path": "/notes/1/link",
+            "save": {
+              "tok1": "token"
+            }
+          },
+          {
+            "as": "alice",
+            "method": "POST",
+            "path": "/notes/1/link",
+            "save": {
+              "tok2": "token"
+            }
+          },
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes/2/link",
+            "save": {
+              "tok3": "token"
+            }
+          },
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes/2/link",
+            "save": {
+              "tok4": "token"
+            }
+          },
+          {
+            "as": "carol",
+            "method": "POST",
+            "path": "/notes/3/link",
+            "save": {
+              "tok5": "token"
+            }
+          },
+          {
+            "as": "carol",
+            "method": "POST",
+            "path": "/notes/3/link",
+            "save": {
+              "tok6": "token"
+            }
+          }
+        ],
+        "status": "NOT_REPRODUCED",
+        "claims_broken": [],
+        "flaws": [],
+        "error": ""
+      },
+      {
+        "title": "Public Share Link Not Revoked on Note Deletion",
+        "description": "When a note owner deletes a note, the public share link remains active. This allows anyone with the link to continue accessing the note, despite the owner's intention to remove it.",
+        "steps": [
+          "Create a new note in NoteShare.",
+          "Generate a public share link for the note.",
+          "Share the link with someone outside your organization.",
+          "Delete the note intending to restrict access.",
+          "Access the note using the public share link, which remains active."
+        ],
+        "generation": 1,
+        "by": "Olivia Price",
+        "script": [
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes",
+            "body": {
+              "title": "Test Note",
+              "body": "This is a test note."
+            },
+            "save": {
+              "note_id": "id"
+            }
+          },
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes/{note_id}/link",
+            "save": {
+              "tok": "token"
+            }
+          },
+          {
+            "as": "bob",
+            "method": "DELETE",
+            "path": "/notes/{note_id}"
+          },
+          {
+            "as": null,
+            "method": "GET",
+            "path": "/s/{tok}"
+          }
+        ],
+        "status": "NOT_REPRODUCED",
+        "claims_broken": [],
+        "flaws": [],
+        "error": ""
+      },
+      {
+        "title": "Supply Chain Risk via Insecure Third-Party Integration",
+        "description": "The bulk note import feature allows for integration with other tools without rigorous validation of incoming data. This flaw can enable injection of malicious content from third-party sources, compromising data integrity and potentially introducing vulnerabilities across multiple tenant systems.",
+        "steps": [
+          "Identify a third-party tool that integrates with NoteShare's bulk import feature.",
+          "Craft malicious payloads disguising them as legitimate notes.",
+          "Use the third-party tool to import these malicious payloads into NoteShare via the /notes/import endpoint.",
+          "Observe the injection of malicious content and any effects on data integrity or system behavior.",
+          "Repeat the imports across different tenant accounts to exploit multi-system spread."
+        ],
+        "generation": 2,
+        "by": "The Note Parasite",
+        "status": "UNTESTABLE",
+        "error": "translator said it cannot be tested"
+      },
+      {
+        "title": "Persistent Note Access via Undeleted Public Links",
+        "description": "Due to architectural oversight, NoteShare's public links remain active even after notes are deleted, allowing unauthorized and persistent access to potentially sensitive content.",
+        "steps": [
+          "Create a note as an owner and generate a public share link using POST /notes/{id}/link.",
+          "Delete the note using DELETE /notes/{id}, expecting to remove access.",
+          "Share the public link extensively or monitor access logs to observe continued access despite note deletion.",
+          "Leverage access to flood the environment with misleading information via unexpired links."
+        ],
+        "generation": 2,
+        "by": "Jordan Merger",
+        "script": [
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes",
+            "body": {
+              "title": "Test Note",
+              "body": "This is a test"
+            },
+            "save": {
+              "nid": "id"
+            }
+          },
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes/{nid}/link",
+            "save": {
+              "tok": "token"
+            }
+          },
+          {
+            "as": "bob",
+            "method": "DELETE",
+            "path": "/notes/{nid}"
+          },
+          {
+            "as": null,
+            "method": "GET",
+            "path": "/s/{tok}"
+          }
+        ],
+        "status": "NOT_REPRODUCED",
+        "claims_broken": [],
+        "flaws": [],
+        "error": ""
+      },
+      {
+        "title": "Token Recycling on Public Link Revoking Unleashes UX Chaos",
+        "description": "By exploiting the lack of state management for public link tokens, a user can continually generate and revoke public share links for the same note without the links truly becoming inactive. This disrupts the user experience by creating confusion over what's shared or not, while potentially overloading the system as users think they're securing their content.",
+        "steps": [
+          "Create a note as a user within Org A on the free plan.",
+          "Use POST /notes/{id}/link to generate a public share link.",
+          "Immediately POST /notes/{id}/unshare_all to revoke the link.",
+          "Repeat the link creation and revocation process rapidly.",
+          "Note remains nominally private while public traffic spikes due to unrevoked tokens circulating."
+        ],
+        "generation": 2,
+        "by": "The Note Overloader",
+        "script": [
+          {
+            "as": "alice",
+            "method": "POST",
+            "path": "/notes/1/link",
+            "save": {
+              "tok1": "token"
+            }
+          },
+          {
+            "as": "alice",
+            "method": "POST",
+            "path": "/notes/1/unshare_all"
+          },
+          {
+            "as": "alice",
+            "method": "POST",
+            "path": "/notes/1/link",
+            "save": {
+              "tok2": "token"
+            }
+          },
+          {
+            "as": "alice",
+            "method": "POST",
+            "path": "/notes/1/unshare_all"
+          },
+          {
+            "as": "alice",
+            "method": "POST",
+            "path": "/notes/1/link",
+            "save": {
+              "tok3": "token"
+            }
+          },
+          {
+            "as": "alice",
+            "method": "POST",
+            "path": "/notes/1/unshare_all"
+          },
+          {
+            "as": null,
+            "method": "GET",
+            "path": "/s/{tok1}"
+          },
+          {
+            "as": null,
+            "method": "GET",
+            "path": "/s/{tok2}"
+          },
+          {
+            "as": null,
+            "method": "GET",
+            "path": "/s/{tok3}"
+          }
+        ],
+        "status": "CONFIRMED",
+        "claims_broken": [
+          "REVOKE"
+        ],
+        "flaws": [
+          "STALE_LINK"
+        ],
+        "error": ""
+      },
+      {
+        "title": "Token Reuse Between Deleted and Shared Notes",
+        "description": "NoteShare fails to properly handle token invalidation for public links when a note is deleted and then re-imported. This reuse of tokens potentially allows previously authorized parties to access the new note if they still possess the old token, highlighting improper link management and execution of distinct operations.",
+        "steps": [
+          "Create a note in Org A and generate a public link with POST /notes/{id}/link.",
+          "Delete the note using DELETE /notes/{id}, observing that public access should be revoked.",
+          "Re-import the same note content using /notes/import and observe if the link token remains valid for the new note.",
+          "Access the note with the previously obtained token using GET /s/{token}.",
+          "Confirm that the deleted note's public token can access the newly re-imported note."
+        ],
+        "generation": 2,
+        "by": "Evelyn Overload",
+        "script": [
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes",
+            "body": {
+              "title": "Test Note",
+              "body": "This is a test note."
+            },
+            "save": {
+              "noteId": "id"
+            }
+          },
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes/{noteId}/link",
+            "save": {
+              "tok": "token"
+            }
+          },
+          {
+            "as": "bob",
+            "method": "DELETE",
+            "path": "/notes/{noteId}"
+          },
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes/import",
+            "body": {
+              "notes": [
+                {
+                  "title": "Test Note",
+                  "body": "This is a test note."
+                }
+              ]
+            }
+          },
+          {
+            "as": null,
+            "method": "GET",
+            "path": "/s/{tok}"
+          }
+        ],
+        "status": "NOT_REPRODUCED",
+        "claims_broken": [],
+        "flaws": [],
+        "error": ""
+      },
+      {
+        "title": "Error Handling Oversight During Bulk Deletion Impacts System Stability",
+        "description": "NoteShare's lack of robust error handling when deleting notes in bulk leads to system instability. This can be triggered by crafting a sequence of requests that delete notes repeatedly while others are accessing them, causing service disruption and leaving orphaned references in system databases.",
+        "steps": [
+          "Bulk import multiple notes using the POST /notes/import endpoint.",
+          "Generate public share links for each imported note using POST /notes/{id}/link.",
+          "Simultaneously trigger multiple GET /s/{token} access requests to these public links.",
+          "Initiate repeated DELETE /notes/{id} requests in quick succession targeting the same notes.",
+          "Observe the degradation in system performance or any unexpected behaviors like partial deletions or inaccessible notes."
+        ],
+        "generation": 2,
+        "by": "Max Chaos",
+        "script": [
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes/import",
+            "body": {
+              "notes": [
+                {
+                  "title": "Note 1"
+                },
+                {
+                  "title": "Note 2"
+                },
+                {
+                  "title": "Note 3"
+                }
+              ]
+            },
+            "save": {
+              "id1": "ids.0",
+              "id2": "ids.1",
+              "id3": "ids.2"
+            }
+          },
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes/{id1}/link",
+            "save": {
+              "tok1": "token"
+            }
+          },
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes/{id2}/link",
+            "save": {
+              "tok2": "token"
+            }
+          },
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes/{id3}/link",
+            "save": {
+              "tok3": "token"
+            }
+          },
+          {
+            "as": null,
+            "method": "GET",
+            "path": "/s/{tok1}"
+          },
+          {
+            "as": null,
+            "method": "GET",
+            "path": "/s/{tok2}"
+          },
+          {
+            "as": null,
+            "method": "GET",
+            "path": "/s/{tok3}"
+          },
+          {
+            "as": "bob",
+            "method": "DELETE",
+            "path": "/notes/{id1}"
+          },
+          {
+            "as": "bob",
+            "method": "DELETE",
+            "path": "/notes/{id2}"
+          },
+          {
+            "as": "bob",
+            "method": "DELETE",
+            "path": "/notes/{id3}"
+          },
+          {
+            "as": "bob",
+            "method": "DELETE",
+            "path": "/notes/{id1}"
+          },
+          {
+            "as": "bob",
+            "method": "DELETE",
+            "path": "/notes/{id2}"
+          }
+        ],
+        "status": "INVALID",
+        "claims_broken": [],
+        "flaws": [],
+        "error": "unresolved variable {id1}"
+      },
+      {
+        "title": "Infinite Note Duplication via Autocomplete Glitch",
+        "description": "By leveraging an unintentional loop between the autocomplete feature and note creation endpoint, a user can perpetually create duplicate notes, bypassing the free plan's note limit and stressing NoteShare's resources.",
+        "steps": [
+          "Create a note using POST /notes with specific content designed to trigger the autocomplete feature.",
+          "Use an automated script to rapidly trigger the autocomplete functionality alongside calling POST /notes/import to initiate duplicate note creation.",
+          "Continuously loop this sequence, exploiting the lack of rate limits and duplicate checks within the system.",
+          "Monitor as NoteShare's system attempts to handle the massive influx of duplicate notes, leading to response delays and potential service interruptions.",
+          "Scale the attack by coordinating similar actions across multiple free accounts."
+        ],
+        "generation": 3,
+        "by": "The Note Overloader",
+        "status": "UNTESTABLE",
+        "error": "translator said it cannot be tested"
+      },
+      {
+        "title": "Orchestrated Token Bloat for System Overwhelm",
+        "description": "By leveraging the ability to generate infinite public share tokens without maintaining an active authentication state, a malicious user can create a multitude of valid links, causing chaos and multiplying system requests beyond manageable levels.",
+        "steps": [
+          "Create a note using a free plan account.",
+          "Call POST /notes/{id}/link repetitively to generate numerous public share tokens for this note.",
+          "Systematically distribute these tokens across various public platforms and networks.",
+          "Monitor the system as the excessive authenticated requests flood the service, leading to potential degradation or unavailability.",
+          "Repeat the process with multiple notes to compound the effect."
+        ],
+        "generation": 3,
+        "by": "Jordan Overboot",
+        "script": [
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes",
+            "body": {
+              "title": "Test Note",
+              "body": "Test Body"
+            },
+            "save": {
+              "noteId": "id"
+            }
+          },
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes/{noteId}/link",
+            "save": {
+              "tok1": "token"
+            }
+          },
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes/{noteId}/link",
+            "save": {
+              "tok2": "token"
+            }
+          },
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes/{noteId}/link",
+            "save": {
+              "tok3": "token"
+            }
+          },
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes/{noteId}/link",
+            "save": {
+              "tok4": "token"
+            }
+          },
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes/{noteId}/link",
+            "save": {
+              "tok5": "token"
+            }
+          },
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes/{noteId}/link",
+            "save": {
+              "tok6": "token"
+            }
+          },
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes/{noteId}/link",
+            "save": {
+              "tok7": "token"
+            }
+          },
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes/{noteId}/link",
+            "save": {
+              "tok8": "token"
+            }
+          },
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes/{noteId}/link",
+            "save": {
+              "tok9": "token"
+            }
+          },
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes/{noteId}/link",
+            "save": {
+              "tok10": "token"
+            }
+          },
+          {
+            "as": null,
+            "method": "GET",
+            "path": "/s/{tok1}"
+          }
+        ],
+        "status": "NOT_REPRODUCED",
+        "claims_broken": [],
+        "flaws": [],
+        "error": ""
+      }
+    ]
+  },
+  "single_prompt": {
+    "calls": 16,
+    "summary": {
+      "claims": 15,
+      "untestable": 1,
+      "tested": 14,
+      "real": 5,
+      "not_real": 8,
+      "invalid": 1,
+      "real_share_of_tested": 0.36,
+      "planted_found": [
+        "CROSS_TENANT_SHARE",
+        "IDOR_READ",
+        "IMPORT_NO_QUOTA",
+        "STALE_LINK"
+      ],
+      "planted_total": 4,
+      "by_generation": {
+        "1": {
+          "claims": 15,
+          "tested": 14,
+          "real": 5
+        }
+      }
+    },
+    "rows": [
+      {
+        "title": "Inadequate Authentication for Public Share Links",
+        "description": "The notes can be accessed by anyone with a public share link without authentication, risking exposure of sensitive data if the links are guessed or leaked.",
+        "steps": [
+          "Generate and share a public link for a note.",
+          "Access the note by using the link without any authentication."
+        ],
+        "generation": 1,
+        "by": "single prompt",
+        "script": [
+          {
+            "as": "alice",
+            "method": "POST",
+            "path": "/notes/1/link",
+            "save": {
+              "token": "token"
+            }
+          },
+          {
+            "as": null,
+            "method": "GET",
+            "path": "/s/{token}"
+          }
+        ],
+        "status": "NOT_REPRODUCED",
+        "claims_broken": [],
+        "flaws": [],
+        "error": ""
+      },
+      {
+        "title": "Potential for Excessive Data Exposure to Admins",
+        "description": "Admins within an organization can access any note within that organization, which may lead to exposure of notes that should be restricted to certain users.",
+        "steps": [
+          "Admin logs in to the application.",
+          "Access any note using GET /admin/notes/{id} API endpoint, regardless of the note owner\u2019s permission."
+        ],
+        "generation": 1,
+        "by": "single prompt",
+        "script": [
+          {
+            "as": "root",
+            "method": "GET",
+            "path": "/admin/notes/1"
+          },
+          {
+            "as": "root",
+            "method": "GET",
+            "path": "/admin/notes/2"
+          },
+          {
+            "as": "root",
+            "method": "GET",
+            "path": "/admin/notes/3"
+          }
+        ],
+        "status": "NOT_REPRODUCED",
+        "claims_broken": [],
+        "flaws": [],
+        "error": ""
+      },
+      {
+        "title": "Cross-Tenant Data Access",
+        "description": "The system may not have adequate controls to prevent users from different organizations accessing unauthorized data.",
+        "steps": [
+          "Log in as an admin of Org A.",
+          "Attempt to access a note using GET /notes/{id} endpoint from Org B or via other non-intended APIs."
+        ],
+        "generation": 1,
+        "by": "single prompt",
+        "script": [
+          {
+            "as": "root",
+            "method": "GET",
+            "path": "/notes/3"
+          }
+        ],
+        "status": "NOT_REPRODUCED",
+        "claims_broken": [],
+        "flaws": [],
+        "error": ""
+      },
+      {
+        "title": "Denial of Service via Note Creation",
+        "description": "Excessive note creation through the /notes endpoint can lead to an overwhelming number of requests that degrade system performance.",
+        "steps": [
+          "Continuously send POST requests to the /notes endpoint.",
+          "Maximize quota usage and attempt further creation to cause denial by server resources."
+        ],
+        "generation": 1,
+        "by": "single prompt",
+        "script": [
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes",
+            "body": {
+              "title": "Note 1",
+              "body": "Content"
+            }
+          },
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes",
+            "body": {
+              "title": "Note 2",
+              "body": "Content"
+            }
+          },
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes",
+            "body": {
+              "title": "Note 3",
+              "body": "Content"
+            }
+          },
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes",
+            "body": {
+              "title": "Note 4",
+              "body": "Content"
+            }
+          },
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes",
+            "body": {
+              "title": "Note 5",
+              "body": "Content"
+            }
+          },
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes",
+            "body": {
+              "title": "Note 6",
+              "body": "Content"
+            }
+          },
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes",
+            "body": {
+              "title": "Note 7",
+              "body": "Content"
+            }
+          },
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes",
+            "body": {
+              "title": "Note 8",
+              "body": "Content"
+            }
+          },
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes",
+            "body": {
+              "title": "Note 9",
+              "body": "Content"
+            }
+          },
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes",
+            "body": {
+              "title": "Note 10",
+              "body": "Content"
+            }
+          },
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes",
+            "body": {
+              "title": "Note 11",
+              "body": "Content"
+            }
+          },
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes",
+            "body": {
+              "title": "Note 12",
+              "body": "Content"
+            }
+          }
+        ],
+        "status": "NOT_REPRODUCED",
+        "claims_broken": [],
+        "flaws": [],
+        "error": ""
+      },
+      {
+        "title": "Improper Handling of Bulk Import Limits",
+        "description": "The POST /notes/import endpoint does not clearly specify limits per import session, potentially leading to system strain or bypassing tenant restrictions.",
+        "steps": [
+          "Package an excessive number of notes in a single bulk import request.",
+          "Submit the request and observe resource strain or unintended allowance of notes beyond user plan limits."
+        ],
+        "generation": 1,
+        "by": "single prompt",
+        "script": [
+          {
+            "as": "alice",
+            "method": "POST",
+            "path": "/notes/import",
+            "body": {
+              "notes": [
+                {
+                  "title": "Note 1"
+                },
+                {
+                  "title": "Note 2"
+                },
+                {
+                  "title": "Note 3"
+                },
+                {
+                  "title": "Note 4"
+                },
+                {
+                  "title": "Note 5"
+                },
+                {
+                  "title": "Note 6"
+                },
+                {
+                  "title": "Note 7"
+                },
+                {
+                  "title": "Note 8"
+                },
+                {
+                  "title": "Note 9"
+                },
+                {
+                  "title": "Note 10"
+                },
+                {
+                  "title": "Note 11"
+                },
+                {
+                  "title": "Note 12"
+                },
+                {
+                  "title": "Note 13"
+                }
+              ]
+            }
+          },
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes/import",
+            "body": {
+              "notes": [
+                {
+                  "title": "Note 1"
+                },
+                {
+                  "title": "Note 2"
+                },
+                {
+                  "title": "Note 3"
+                },
+                {
+                  "title": "Note 4"
+                },
+                {
+                  "title": "Note 5"
+                },
+                {
+                  "title": "Note 6"
+                },
+                {
+                  "title": "Note 7"
+                },
+                {
+                  "title": "Note 8"
+                },
+                {
+                  "title": "Note 9"
+                },
+                {
+                  "title": "Note 10"
+                },
+                {
+                  "title": "Note 11"
+                },
+                {
+                  "title": "Note 12"
+                },
+                {
+                  "title": "Note 13"
+                }
+              ]
+            }
+          },
+          {
+            "as": "carol",
+            "method": "POST",
+            "path": "/notes/import",
+            "body": {
+              "notes": [
+                {
+                  "title": "Note 1"
+                },
+                {
+                  "title": "Note 2"
+                },
+                {
+                  "title": "Note 3"
+                },
+                {
+                  "title": "Note 4"
+                },
+                {
+                  "title": "Note 5"
+                },
+                {
+                  "title": "Note 6"
+                },
+                {
+                  "title": "Note 7"
+                },
+                {
+                  "title": "Note 8"
+                },
+                {
+                  "title": "Note 9"
+                },
+                {
+                  "title": "Note 10"
+                },
+                {
+                  "title": "Note 11"
+                },
+                {
+                  "title": "Note 12"
+                },
+                {
+                  "title": "Note 13"
+                }
+              ]
+            }
+          }
+        ],
+        "status": "CONFIRMED",
+        "claims_broken": [
+          "QUOTA"
+        ],
+        "flaws": [
+          "IMPORT_NO_QUOTA"
+        ],
+        "error": ""
+      },
+      {
+        "title": "Insufficient JSON Token Protection",
+        "description": "The lack of robust verification for JSON tokens in public share links might make them susceptible to brute force attacks.",
+        "steps": [
+          "Obtain a public share link for a note.",
+          "Attempt to programmatically guess valid tokens using a brute force script."
+        ],
+        "generation": 1,
+        "by": "single prompt",
+        "script": [
+          {
+            "as": "alice",
+            "method": "POST",
+            "path": "/notes/1/link",
+            "save": {
+              "tok1": "token"
+            }
+          },
+          {
+            "as": null,
+            "method": "GET",
+            "path": "/s/{tok1}"
+          },
+          {
+            "as": null,
+            "method": "GET",
+            "path": "/s/invalidtoken"
+          },
+          {
+            "as": null,
+            "method": "GET",
+            "path": "/s/{tok1}",
+            "save": {
+              "note_id1": "id"
+            }
+          },
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes/1/link",
+            "save": {
+              "tok2": "token"
+            }
+          },
+          {
+            "as": null,
+            "method": "GET",
+            "path": "/s/{tok2}"
+          },
+          {
+            "as": null,
+            "method": "GET",
+            "path": "/s/{tok1}"
+          },
+          {
+            "as": null,
+            "method": "GET",
+            "path": "/s/invalidtoken2"
+          },
+          {
+            "as": null,
+            "method": "GET",
+            "path": "/s/{tok2}"
+          },
+          {
+            "as": null,
+            "method": "GET",
+            "path": "/s/{tok1}",
+            "save": {
+              "note_id2": "id"
+            }
+          },
+          {
+            "as": null,
+            "method": "GET",
+            "path": "/s/anotherinvalidtoken"
+          },
+          {
+            "as": null,
+            "method": "GET",
+            "path": "/s/{tok2}"
+          }
+        ],
+        "status": "INVALID",
+        "claims_broken": [],
+        "flaws": [],
+        "error": "unresolved variable {tok2}"
+      },
+      {
+        "title": "Lack of Rate Limiting on Share/Unshare Operations",
+        "description": "No apparent rate limiting on using share and unshare operations could be abused to flood recipient notifications.",
+        "steps": [
+          "Use POST /notes/{id}/share or POST /notes/{id}/unshare_all to repeatedly share/unshare a note with a user rapidly.",
+          "Observe potential notification spam to the recipient."
+        ],
+        "generation": 1,
+        "by": "single prompt",
+        "script": [
+          {
+            "as": "alice",
+            "method": "POST",
+            "path": "/notes/1/share",
+            "body": {
+              "user": "bob"
+            }
+          },
+          {
+            "as": "alice",
+            "method": "POST",
+            "path": "/notes/1/unshare_all"
+          },
+          {
+            "as": "alice",
+            "method": "POST",
+            "path": "/notes/1/share",
+            "body": {
+              "user": "bob"
+            }
+          },
+          {
+            "as": "alice",
+            "method": "POST",
+            "path": "/notes/1/unshare_all"
+          },
+          {
+            "as": "alice",
+            "method": "POST",
+            "path": "/notes/1/share",
+            "body": {
+              "user": "bob"
+            }
+          },
+          {
+            "as": "alice",
+            "method": "POST",
+            "path": "/notes/1/unshare_all"
+          },
+          {
+            "as": "alice",
+            "method": "POST",
+            "path": "/notes/1/share",
+            "body": {
+              "user": "bob"
+            }
+          },
+          {
+            "as": "alice",
+            "method": "POST",
+            "path": "/notes/1/unshare_all"
+          },
+          {
+            "as": "alice",
+            "method": "POST",
+            "path": "/notes/1/share",
+            "body": {
+              "user": "bob"
+            }
+          },
+          {
+            "as": "alice",
+            "method": "POST",
+            "path": "/notes/1/unshare_all"
+          },
+          {
+            "as": "alice",
+            "method": "POST",
+            "path": "/notes/1/share",
+            "body": {
+              "user": "bob"
+            }
+          },
+          {
+            "as": "alice",
+            "method": "POST",
+            "path": "/notes/1/unshare_all"
+          }
+        ],
+        "status": "NOT_REPRODUCED",
+        "claims_broken": [],
+        "flaws": [],
+        "error": ""
+      },
+      {
+        "title": "Role Escalation via Poor Access Control",
+        "description": "The API does not enforce strict access control checks, potentially allowing unauthorized actions via parameter tampering.",
+        "steps": [
+          "Log in as a regular organization user.",
+          "Attempt to perform admin-like actions by altering parameters in API requests, such as changing user roles or permission levels."
+        ],
+        "generation": 1,
+        "by": "single prompt",
+        "script": [
+          {
+            "as": "bob",
+            "method": "GET",
+            "path": "/admin/notes/1"
+          },
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes/3/share",
+            "body": {
+              "user": "alice"
+            }
+          },
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes/2/share",
+            "body": {
+              "user": "carol"
+            }
+          },
+          {
+            "as": "bob",
+            "method": "DELETE",
+            "path": "/notes/3"
+          }
+        ],
+        "status": "CONFIRMED",
+        "claims_broken": [
+          "SHARE_TENANCY"
+        ],
+        "flaws": [
+          "CROSS_TENANT_SHARE"
+        ],
+        "error": ""
+      },
+      {
+        "title": "Unvalidated Actions on Notes",
+        "description": "Actions on notes, like editing and deletion, potentially lack validation to confirm change legitimacy, making them vulnerable to unauthorized exposure.",
+        "steps": [
+          "Craft a well-formed PUT or DELETE API request, altering the target note IDs iteratively.",
+          "Observe whether notes you do not own are modified or deleted."
+        ],
+        "generation": 1,
+        "by": "single prompt",
+        "script": [
+          {
+            "as": "bob",
+            "method": "PUT",
+            "path": "/notes/1",
+            "body": {
+              "body": "Unauthorized edit"
+            }
+          },
+          {
+            "as": "bob",
+            "method": "GET",
+            "path": "/notes/1"
+          },
+          {
+            "as": "bob",
+            "method": "DELETE",
+            "path": "/notes/1"
+          },
+          {
+            "as": "bob",
+            "method": "GET",
+            "path": "/notes/1"
+          },
+          {
+            "as": "bob",
+            "method": "PUT",
+            "path": "/notes/3",
+            "body": {
+              "body": "Unauthorized edit"
+            }
+          },
+          {
+            "as": "bob",
+            "method": "GET",
+            "path": "/notes/3"
+          },
+          {
+            "as": "bob",
+            "method": "DELETE",
+            "path": "/notes/3"
+          },
+          {
+            "as": "bob",
+            "method": "GET",
+            "path": "/notes/3"
+          }
+        ],
+        "status": "CONFIRMED",
+        "claims_broken": [
+          "READ_AUTHZ"
+        ],
+        "flaws": [
+          "IDOR_READ"
+        ],
+        "error": ""
+      },
+      {
+        "title": "Lack of Logging for Public Access",
+        "description": "There is no mention of logging access to notes via public links, potentially impacting forensic investigation in case of abuse.",
+        "steps": [
+          "Access a note through a public link as an anonymous visitor.",
+          "Check system logs to confirm absence of recorded access."
+        ],
+        "generation": 1,
+        "by": "single prompt",
+        "script": [
+          {
+            "as": "alice",
+            "method": "POST",
+            "path": "/notes/1/link",
+            "save": {
+              "tok": "token"
+            }
+          },
+          {
+            "as": null,
+            "method": "GET",
+            "path": "/s/{tok}"
+          }
+        ],
+        "status": "NOT_REPRODUCED",
+        "claims_broken": [],
+        "flaws": [],
+        "error": ""
+      },
+      {
+        "title": "Improper Input Sanitization for Notes",
+        "description": "Input data for note creation is not adequately sanitized, risking injection attacks like HTML or JavaScript.",
+        "steps": [
+          "Create a note with HTML/JavaScript content in the title or body fields.",
+          "Access the note to see if the content is executed, confirming improper sanitization."
+        ],
+        "generation": 1,
+        "by": "single prompt",
+        "script": [
+          {
+            "as": "alice",
+            "method": "POST",
+            "path": "/notes",
+            "body": {
+              "title": "<script>alert('XSS')</script>",
+              "body": "<b>Test HTML injection</b>"
+            },
+            "save": {
+              "note_id": "id"
+            }
+          },
+          {
+            "as": "alice",
+            "method": "GET",
+            "path": "/notes/{note_id}"
+          }
+        ],
+        "status": "NOT_REPRODUCED",
+        "claims_broken": [],
+        "flaws": [],
+        "error": ""
+      },
+      {
+        "title": "Revoked Link Re-access via Token Replay",
+        "description": "Re-access of a revoked public share link might be possible if token invalidation is not properly enforced.",
+        "steps": [
+          "Create a public link for a note.",
+          "Revoke the link using POST /notes/{id}/unshare_all.",
+          "Attempt to access the note again using the previously obtained public link token."
+        ],
+        "generation": 1,
+        "by": "single prompt",
+        "script": [
+          {
+            "as": "alice",
+            "method": "POST",
+            "path": "/notes/1/link",
+            "save": {
+              "tok": "token"
+            }
+          },
+          {
+            "as": "alice",
+            "method": "POST",
+            "path": "/notes/1/unshare_all"
+          },
+          {
+            "as": null,
+            "method": "GET",
+            "path": "/s/{tok}"
+          }
+        ],
+        "status": "CONFIRMED",
+        "claims_broken": [
+          "REVOKE"
+        ],
+        "flaws": [
+          "STALE_LINK"
+        ],
+        "error": ""
+      },
+      {
+        "title": "Improper Handling of Large Payloads in Bulk Import",
+        "description": "Submitting large payloads in bulk import without checks can lead to buffer overflow or performance issues.",
+        "steps": [
+          "Send excessively large data payloads using POST /notes/import.",
+          "Observe for system crashes or degradation."
+        ],
+        "generation": 1,
+        "by": "single prompt",
+        "status": "UNTESTABLE",
+        "error": "JSONDecodeError: Expecting ',' delimiter: line 10 column 42 (char 229)"
+      },
+      {
+        "title": "Lack of Notification for Revoked Access",
+        "description": "Users are not notified when their access to a shared note is revoked, leading to ambiguity and potential security slips.",
+        "steps": [
+          "Share a note with a user.",
+          "Revoke the note access without the user's knowledge.",
+          "Attempt to access the note as the user without any prior notification."
+        ],
+        "generation": 1,
+        "by": "single prompt",
+        "script": [
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes/1/share",
+            "body": {
+              "user": "bob"
+            }
+          },
+          {
+            "as": "alice",
+            "method": "POST",
+            "path": "/notes/1/unshare_all"
+          },
+          {
+            "as": "bob",
+            "method": "GET",
+            "path": "/notes/1"
+          }
+        ],
+        "status": "CONFIRMED",
+        "claims_broken": [
+          "READ_AUTHZ"
+        ],
+        "flaws": [
+          "IDOR_READ"
+        ],
+        "error": ""
+      },
+      {
+        "title": "Weak Handling of Logout for Anonymous Token Access",
+        "description": "Once accessed, publicly shared notes may not require login, even when subsequently transitioning between accounts, leaving authenticated sessions susceptible.",
+        "steps": [
+          "Access a note via public link.",
+          "Log in to an account from the same session.",
+          "Check if additional, cross-account information becomes accessible without further authentication."
+        ],
+        "generation": 1,
+        "by": "single prompt",
+        "script": [
+          {
+            "as": "alice",
+            "method": "POST",
+            "path": "/notes/1/link",
+            "save": {
+              "tok": "token"
+            }
+          },
+          {
+            "as": null,
+            "method": "GET",
+            "path": "/s/{tok}"
+          },
+          {
+            "as": "bob",
+            "method": "POST",
+            "path": "/notes",
+            "body": {
+              "title": "Test",
+              "body": "This is a test note"
+            }
+          },
+          {
+            "as": "bob",
+            "method": "GET",
+            "path": "/notes/2"
+          },
+          {
+            "as": null,
+            "method": "GET",
+            "path": "/s/{tok}"
+          }
+        ],
+        "status": "NOT_REPRODUCED",
+        "claims_broken": [],
+        "flaws": [],
+        "error": ""
+      }
+    ]
+  }
+}
