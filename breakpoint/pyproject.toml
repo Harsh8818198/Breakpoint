@@ -5,8 +5,17 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "breakpoint-engine"
 version = "0.1.0"
-description = "Evolutionary adversarial-user simulation engine"
+description = "Adversarial agents that probe a codebase, with every finding checked against the real source"
+readme = "README.md"
 requires-python = ">=3.10"
+# The CLI uses only the standard library. The web server is optional: pip install -e ".[server]"
+dependencies = []
+
+[project.optional-dependencies]
+server = ["fastapi>=0.111.0", "uvicorn>=0.29.0"]
+
+[project.scripts]
+breakpoint-scan = "breakpoint.run:main"
 
 [tool.setuptools.packages.find]
 where = ["."]

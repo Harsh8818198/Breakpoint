@@ -5,3 +5,10 @@ __pycache__/
 dist/
 build/
 .venv/
+.idea/
+
+# Reports and run output from the author's own apps and from local experiments.
+# They describe real products, not this project, and are not meant to be published.
+/prism_gui_report.json
+/nodegoat_gemini.json
+/bench_runs/retrieval_eval/
