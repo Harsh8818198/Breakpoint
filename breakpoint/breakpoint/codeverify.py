@@ -24,6 +24,7 @@ from typing import Any
 
 from . import prompts
 from .codeindex import CodeIndex, identifiers
+from .coderetrieval import file_weight
 from .llm import LLMFatalError, extract_json
 from .models import Finding
 
@@ -33,6 +34,7 @@ CONFIRMED, REFUTED, UNVERIFIED, ERROR = "CONFIRMED", "REFUTED", "UNVERIFIED", "E
 CODE_LABELS = {
     "confirmed": "vulnerable code quoted, impact follows, no enforced defence found",
     "confirmed_on_appeal": "refuted at first, then shown real on appeal",
+    "confirmed_absent": "the protection is missing: no live code uses it, and commented-out copies show it was switched off",
     "no_related_files": "no file in the repository relates to the claim",
     "judge_unverifiable": "the relevant code was not available to the reviewer",
     "invalid_verdict": "the reviewer gave no usable verdict",
@@ -50,6 +52,16 @@ _CODEISH = re.compile(r"\b(?:[A-Za-z]+_[A-Za-z0-9_]+|[a-z]+[A-Z][A-Za-z0-9]+|[A-
 _ROUTE = re.compile(r"(?<![\w./])/[A-Za-z][\w\-./:]{2,40}")
 DEFENDER_CHARS = 80000     # the defender reads each confirming file in full: this is what catches a check far from the flaw
 _STOP = {"the", "and", "for", "with", "that", "this", "from", "into", "user", "users", "application", "app"}
+
+
+_CODE_EXTS = (".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx", ".py", ".rb", ".java", ".go", ".php", ".cs", ".rs", ".kt",
+              ".scala", ".swift")
+_IMPORT_START = re.compile(r"^\s*(?:const|let|var|import|from)\b")
+
+
+def _import_only(line: str, name: str) -> bool:
+    """A line that only imports `name` (`const helmet = require("helmet")`, `import bcrypt`) and never calls it."""
+    return bool(_IMPORT_START.match(line)) and not re.search(r"(?<![A-Za-z0-9_$])" + re.escape(name) + r"\s*\(", line)
 
 
 def _step_list(f: Finding) -> list[str]:
@@ -183,6 +195,16 @@ class CodeVerifier:
         if verdict not in (CONFIRMED, REFUTED):
             return _result(UNVERIFIED, "invalid_verdict", reasoning)
         evidence, dropped = self._valid_evidence(judged.get("evidence"))
+        absent = None
+        if not evidence and verdict == CONFIRMED:
+            # "This protection is missing / switched off" cannot be quoted: there is no live line to copy. Prove it by
+            # search instead: the names the protection would carry appear in no live code, and the commented-out
+            # copies the search finds are the evidence.
+            absent = self._absence(judged.get("absent_names"))
+            if absent:
+                evidence = absent["evidence"]
+                reasoning = (reasoning + " [No live code uses " + ", ".join(f"`{n}`" for n in absent["names"])
+                             + "; switched off at " + ", ".join(f"{e['file']}:{e['line']}" for e in evidence) + ".]")[:900]
         if not evidence:            # a verdict with no real quote behind it is not evidence
             code = "quote_is_comment" if dropped["comment"] and not dropped["not_found"] else "quote_not_in_code"
             return _result(UNVERIFIED, code, reasoning)
@@ -195,7 +217,40 @@ class CodeVerifier:
                            "The code does this, but the claimed impact does not follow: " + reasoning, evidence)
         if follows is not True:
             return _result(UNVERIFIED, "impact_not_established", reasoning)
-        return _result(CONFIRMED, "confirmed", reasoning, evidence)
+        return _result(CONFIRMED, "confirmed_absent" if absent else "confirmed", reasoning, evidence)
+
+    def _absence(self, names) -> dict[str, Any] | None:
+        """Mechanical proof that a protection is absent from live code, or None if it cannot be proved.
+
+        `names` are literals the protection would carry (`httpOnly`, `csrf`, `helmet`). The whole repository is searched,
+        whole words only. If ANY live line of a code file uses one of them, the claim has to be proved from that code, not
+        from absence, so this returns None. Hits in docs, tests, manifests and templates neither enforce nor switch off
+        anything and are ignored, and so is a bare `require`/`import` line (an import enforces nothing; a use shows up
+        as its own live line). At least one commented-out line must exist, so there is something real to point at."""
+        clean: list[str] = []
+        for n in names if isinstance(names, list) else []:
+            if isinstance(n, str) and re.fullmatch(r"[A-Za-z_$][\w$.\-]{2,39}", n.strip()):
+                clean.append(n.strip())
+        clean = list(dict.fromkeys(clean))[:5]
+        if not clean:
+            return None
+        off: list[tuple[str, int, str]] = []
+        for name in clean:
+            for path, line, is_comment in self.index.find_word(name):
+                if not path.lower().endswith(_CODE_EXTS) or file_weight(path) < 0.5:
+                    continue
+                if is_comment:
+                    off.append((path, line, name))
+                elif not _import_only(self.index.lines(path)[line - 1], name):
+                    return None
+        if not off:
+            return None
+        once: dict[tuple[str, int], str] = {}
+        for p, ln, n in off:                                  # one item per line; the first name that hit it is kept
+            once.setdefault((p, ln), n)
+        items = [{"file": p, "line": ln, "quote": " ".join(self.index.lines(p)[ln - 1].split())[:240],
+                  "kind": "switched_off", "absent": n} for (p, ln), n in list(once.items())[:3]]
+        return {"names": clean, "evidence": items}
 
     def _valid_evidence(self, items) -> tuple[list[dict], dict[str, int]]:
         """Keep only quotes that exist in the file named AND are live code (a commented-out line is neither
@@ -257,7 +312,8 @@ class CodeVerifier:
         judged = res.get("_judged", {})
         evidence = res["evidence"]
         confirming = [e["file"] for e in evidence]
-        extra = [t for t in judged.get("defense_search_terms", []) if isinstance(t, str)]
+        extra = [t for t in list(judged.get("defense_search_terms") or []) + list(judged.get("absent_names") or [])
+                 if isinstance(t, str)]
         ranked = dict(self.index.rank_files(extra + terms, preferred=confirming, limit=self.max_files + 2))
         # A quoted call site says nothing about the callee: also show what the called functions really do.
         for path, lines in self.index.callee_hits(self._around(evidence)).items():

@@ -1,0 +1,258 @@
+{
+  "blueprint": null,
+  "findings": [
+    {
+      "title": "Missing Security Headers",
+      "generation": 1,
+      "discovered_by": "route review (dropped by the old code check)",
+      "description": "Essential security headers provided by the helmet middleware are all commented out in server.js. This exposes the application to various attacks such as XSS, clickjacking, and MIME-sniffing.",
+      "steps_to_exploit": [],
+      "impact": "",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "CONFIRMED",
+      "evidence": [
+        {
+          "file": "server.js",
+          "line": 10,
+          "quote": "// const helmet = require(\"helmet\");",
+          "kind": "switched_off",
+          "absent": "helmet"
+        },
+        {
+          "file": "server.js",
+          "line": 40,
+          "quote": "// TODO: Review the rest of helmet options, like \"xssFilter\"",
+          "kind": "switched_off",
+          "absent": "helmet"
+        },
+        {
+          "file": "server.js",
+          "line": 45,
+          "quote": "app.use(helmet.frameguard()); //xframe deprecated",
+          "kind": "switched_off",
+          "absent": "helmet"
+        }
+      ],
+      "code_refs": [],
+      "id": "16ea5a07",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Session Cookies Missing 'Secure' and 'HttpOnly' Flags",
+      "generation": 1,
+      "discovered_by": "route review (dropped by the old code check)",
+      "description": "The session management middleware is initialized without securing cookies. The 'secure' and 'httpOnly' flags are absent in the default configuration, making cookies accessible via JavaScript and transmittable over unencrypted HTTP.",
+      "steps_to_exploit": [],
+      "impact": "",
+      "evolved_from": [],
+      "attack_category": "auth",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "CONFIRMED",
+      "evidence": [
+        {
+          "file": "server.js",
+          "line": 78,
+          "quote": "app.use(session({ secret: cookieSecret, saveUninitialized: true, resave: true"
+        }
+      ],
+      "code_refs": [],
+      "id": "6eeac3f7",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "CSRF protection disabled app-wide",
+      "generation": 1,
+      "discovered_by": "route review (dropped by the old code check)",
+      "description": "The CSRF protection middleware is explicitly commented out in server.js:107, rendering the application vulnerable to Cross-Site Request Forgery for any state-changing operations that might exist or be added, and potentially impacting the integrity of session-based actions.",
+      "steps_to_exploit": [],
+      "impact": "",
+      "evolved_from": [],
+      "attack_category": "authz",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "CONFIRMED",
+      "evidence": [
+        {
+          "file": "server.js",
+          "line": 7,
+          "quote": "// const csrf = require('csurf');",
+          "kind": "switched_off",
+          "absent": "csurf"
+        },
+        {
+          "file": "server.js",
+          "line": 7,
+          "quote": "// const csrf = require('csurf');",
+          "kind": "switched_off",
+          "absent": "csrf"
+        },
+        {
+          "file": "server.js",
+          "line": 105,
+          "quote": "// Fix for A8 - CSRF",
+          "kind": "switched_off",
+          "absent": "csrf"
+        }
+      ],
+      "code_refs": [],
+      "id": "bd789cad",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Missing CSRF Protection",
+      "generation": 1,
+      "discovered_by": "route review (dropped by the old code check)",
+      "description": "The CSRF protection middleware is explicitly commented out in server.js:107, leaving the application vulnerable to cross-site request forgery. While this route is a GET, the lack of global CSRF protection affects the entire application security posture.",
+      "steps_to_exploit": [],
+      "impact": "",
+      "evolved_from": [],
+      "attack_category": "authz",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "CONFIRMED",
+      "evidence": [
+        {
+          "file": "server.js",
+          "line": 7,
+          "quote": "// const csrf = require('csurf');",
+          "kind": "switched_off",
+          "absent": "csrf"
+        },
+        {
+          "file": "server.js",
+          "line": 105,
+          "quote": "// Fix for A8 - CSRF",
+          "kind": "switched_off",
+          "absent": "csrf"
+        },
+        {
+          "file": "server.js",
+          "line": 106,
+          "quote": "// Enable Express csrf protection",
+          "kind": "switched_off",
+          "absent": "csrf"
+        }
+      ],
+      "code_refs": [],
+      "id": "8e9865ad",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Missing Cross-Site Request Forgery (CSRF) Protection",
+      "generation": 1,
+      "discovered_by": "route review (dropped by the old code check)",
+      "description": "The CSRF protection middleware is explicitly commented out in server.js:107. As a result, the session-based state changing or sensitive actions performed via the dashboard are vulnerable to CSRF attacks.",
+      "steps_to_exploit": [],
+      "impact": "",
+      "evolved_from": [],
+      "attack_category": "auth",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "CONFIRMED",
+      "evidence": [
+        {
+          "file": "server.js",
+          "line": 7,
+          "quote": "// const csrf = require('csurf');",
+          "kind": "switched_off",
+          "absent": "csurf"
+        },
+        {
+          "file": "server.js",
+          "line": 110,
+          "quote": "res.locals.csrftoken = req.csrfToken();",
+          "kind": "switched_off",
+          "absent": "csrfToken"
+        }
+      ],
+      "code_refs": [],
+      "id": "0e3a263e",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Lack of Session Security Configuration (Security Headers)",
+      "generation": 1,
+      "discovered_by": "route review (dropped by the old code check)",
+      "description": "Essential security headers including HSTS and no-cache are disabled or commented out in server.js (e.g., lines 48, 54). This increases the risk of session hijacking via man-in-the-middle attacks or cached sensitive profile data remaining on shared machines.",
+      "steps_to_exploit": [],
+      "impact": "",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "CONFIRMED",
+      "evidence": [
+        {
+          "file": "server.js",
+          "line": 10,
+          "quote": "// const helmet = require(\"helmet\");",
+          "kind": "switched_off",
+          "absent": "helmet"
+        },
+        {
+          "file": "server.js",
+          "line": 40,
+          "quote": "// TODO: Review the rest of helmet options, like \"xssFilter\"",
+          "kind": "switched_off",
+          "absent": "helmet"
+        },
+        {
+          "file": "server.js",
+          "line": 45,
+          "quote": "app.use(helmet.frameguard()); //xframe deprecated",
+          "kind": "switched_off",
+          "absent": "helmet"
+        }
+      ],
+      "code_refs": [],
+      "id": "d3fd30c9",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "verification": {
+    "mode": "source-code",
+    "files_indexed": 98,
+    "checked": 6,
+    "confirmed": 6,
+    "refuted": 0,
+    "unverified": 0,
+    "errors": 0,
+    "defender_pass": true,
+    "appeal_pass": true,
+    "rejected": []
+  }
+}

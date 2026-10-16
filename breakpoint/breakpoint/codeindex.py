@@ -254,6 +254,25 @@ class CodeIndex:
                 out[path] = hits[:max_per_file]
         return out
 
+    def find_word(self, term: str, limit: int = 300) -> list[tuple[str, int, bool]]:
+        """Every whole-word, case-insensitive occurrence of `term` as (path, 1-based line, line_is_comment).
+        Whole-word, so `secure` does not match `insecure` or `security`. Used to check mechanically that a name which
+        a protection would carry (`httpOnly`, `csrf`, `helmet`) appears in no live code."""
+        t = term.strip()
+        if len(t) < 3:
+            return []
+        rx = re.compile(r"(?<![A-Za-z0-9_$])" + re.escape(t) + r"(?![A-Za-z0-9_$])", re.IGNORECASE)
+        out: list[tuple[str, int, bool]] = []
+        for path, lines in self._files.items():
+            if t.lower() not in self._lower_text(path):
+                continue
+            for i, ln in enumerate(lines):
+                if rx.search(ln):
+                    out.append((path, i + 1, self.is_comment(path, i + 1)))
+                    if len(out) >= limit:
+                        return out
+        return out
+
     def rank_files(self, terms: list[str], preferred: list[str] | None = None, limit: int = 8) -> list[tuple[str, list[int]]]:
         """Files most relevant to `terms` (rarer terms count more), with the lines that matched."""
         n = max(len(self._files), 1)

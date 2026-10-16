@@ -349,6 +349,11 @@ VERIFY_JUDGE_SYSTEM = (
     "- For a claim that something is MISSING (no rate limit, no ownership check), use the REPO-WIDE LITERAL SEARCH "
     "at the top of the excerpts: zero hits for the obvious names is evidence of absence, a hit means go and look at it. "
     "Absence only matters if the code shows what an attacker gains from it.\n"
+    "- When the claim is that a protection is MISSING or has been SWITCHED OFF (commented out), a missing line cannot be "
+    "quoted. Instead list in absent_names up to 5 distinctive literal names that would appear in live code if the "
+    "protection existed (for example `httpOnly`, `csrf`, `helmet`, `bcrypt`; not generic words like `user` or `token`). "
+    "The system searches the whole repository itself: if no live code uses those names it accepts the absence and finds "
+    "the commented-out lines as evidence, so you may leave evidence empty. If live code does use them, quote it instead.\n"
     "- A line that merely CALLS a function proves nothing about what that function does. If the claim depends on "
     "the body of a function you were not shown, answer UNVERIFIABLE.\n"
     "- Quote the line where the flaw actually bites (where attacker input reaches the dangerous operation, or "
@@ -378,9 +383,10 @@ Return JSON:
       "quote": "1-3 lines copied CHARACTER-FOR-CHARACTER from the excerpt, without the line-number gutter"}}
   ],
   "defense_search_terms": ["up to 6 literal strings that would appear in code that blocks this claim, if any exists elsewhere"],
+  "absent_names": ["only when the claim is that a protection is missing or switched off: up to 5 distinctive literal names it would carry in live code"],
   "need_to_see": ["only when UNVERIFIABLE: up to 5 literal names (variables, functions, files, config keys) whose definitions you needed but were not shown"]
 }}
-For CONFIRMED the evidence is the vulnerable code. For REFUTED it is the code that contradicts or prevents the claim. A verdict without a real quote is worthless."""
+For CONFIRMED the evidence is the vulnerable code (for a missing protection, see absent_names). For REFUTED it is the code that contradicts or prevents the claim. A verdict without a real quote is worthless, except a missing-protection claim backed by absent_names."""
 
 VERIFY_DEFEND_SYSTEM = (
     "You are the defender of a codebase. A reviewer has CONFIRMED a vulnerability claim. Your job is to find the "

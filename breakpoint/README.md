@@ -101,6 +101,14 @@ therefore checks every claim against the real files:
 4. **Defend**: a second pass reads the confirming file(s) in full, plus the
    functions they call, and tries to find a protection that defeats the claim.
 
+A claim that a protection is **missing or switched off** (no CSRF token, no `httpOnly`, `helmet` commented out) has no
+live line to quote. For these the reviewer lists the names the protection would carry in live code, and the check
+searches the whole repository itself, whole words only. It accepts the absence only if no live line of any code file uses
+those names (a bare `require`/`import` line does not count as a use; docs, tests, manifests and templates are ignored),
+and it takes the commented-out lines it finds as the evidence (marked `"kind": "switched_off"`). The impact must still
+follow and the defender still runs. It cannot prove absence when the protection exists under a name the reviewer did not
+think of; the defender reading the files is the only guard against that.
+
 Only claims that survive are reported, each with `file:line` evidence. The report
 also lists what was rejected and why, and the JSON has a `verification` block
 (`checked / confirmed / refuted / unverified / errors`).
@@ -124,11 +132,13 @@ per arm unless it says otherwise. Read the caveats before quoting any of it.
 **1. Does the code check throw out false claims?** On the 20 labelled NodeGoat claims (13 real, 7 false):
 
 - gpt-4o kept 10 of 13 real and 0 of 7 false. gpt-4.1 kept 9 of 13 and 0 of 7 (measured 2026-10-13).
-- gemini-3.1-flash-lite, re-run 2026-10-15 with the final code: kept 12 of 13 real and 0 of 7 false. The one
-  real claim it dropped says the session cookie lacks HttpOnly/Secure; those flags exist only in commented-out
-  lines, and the check does not yet accept "this protection is absent" as a quotable fact.
-- Caveat: these 20 claims were also used to tune the check, so this is not a held-out test. One call in this run
-  failed on a provider error (the claim was still refuted by the earlier step).
+- gemini-3.1-flash-lite, re-run 2026-10-15: kept 12 of 13 real and 0 of 7 false. The one real claim it dropped says
+  the session cookie lacks HttpOnly/Secure; those flags exist only in commented-out lines, and the check could not
+  yet accept "this protection is absent" as a quotable fact.
+- same model, 2026-10-16, after the missing-protection rule above: kept 13 of 13 real and 0 of 7 false. The cookie-flags
+  and CSRF claims now pass through the new rule.
+- Caveat: these 20 claims were also used to tune the check, and the missing-protection rule was written to fix the miss
+  above, so this is not a held-out test. One call in the 2026-10-15 run failed on a provider error.
 
 Before the check existed, hand-grading reports on two of the author's own apps found 1 of 16 and
 0 of 17 findings held up against the code. That is why the check exists.
@@ -162,8 +172,11 @@ gemini-3.1-flash-lite, one run each, both arms through the same code check, verd
   It missed CSRF, the cookie flags and the hard-coded secret. The mechanical scorer reports 13 of 13 for it; three of
   those credits are wrong (a finding's evidence line happened to fall inside another bug's location range).
 - the two found different bugs, so together they cover 12 of 13.
-- the route reviewers did propose CSRF and cookie-flag findings, but the code check dropped them as unproven: it cannot
-  yet accept "this protection is absent" as a quotable fact. That is the same weakness as in item 1.
+- the route reviewers did propose CSRF and cookie-flag findings, but the code check of that day dropped them as unproven
+  (it could not yet accept "this protection is absent"; see item 1). After the missing-protection rule, the six dropped
+  claims (three worded CSRF, cookie flags, two about security headers) all hold when re-checked on 2026-10-16. That was
+  a re-check of those six, not a re-run of the review, so the 10 of 13 above stands as measured; with those findings
+  kept it would be 12 of 13 by my reading (only the hard-coded signing secret missed).
 
 **What this supports:** reported findings come with quoted evidence and few false claims.
 **What it does not support:** that the engine, or the per-route review, finds more bugs than one prompt does. On a repo
