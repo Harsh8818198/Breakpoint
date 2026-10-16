@@ -1,0 +1,26 @@
+{
+  "_about": "Hand verdicts for the 21 findings the code check KEPT in nodegoat_gemini_flash_lite.json (per-route review, Gemini gemini-3.1-flash-lite, OWASP NodeGoat c5cb68a, run 2026-10-16). Written by reading each claim against the NodeGoat source. 'real' + a bug title = the finding really claims and evidences that labelled bug. 'real' + null = a real weakness the 13-bug label set does not list. 'mixed'/'false' = the claim, or its headline, is wrong or only loosely true. The mechanical scorer (tests/score_report.py without --adjudication) credits 13/13 for this file; three of those credits are wrong because a finding's evidence line happens to fall inside another bug's location range (CSRF, cookie flags, hard-coded signing secret). A person (the founder) should re-check these before quoting them.",
+  "verdicts": {
+    "Cross-Site Scripting (XSS) via Disabled Template Escaping": {"verdict": "real", "bug": "Cross-site scripting because template auto-escaping is disabled"},
+    "Session fixation vulnerability due to failure to regenerate session ID": {"verdict": "real", "bug": "Session fixation at login"},
+    "Information disclosure via distinct login error messages": {"verdict": "real", "bug": "Login errors reveal whether a username exists"},
+    "Unsafe NoSQL query construction": {"verdict": "real", "bug": null, "note": "user-dao.js findOne({userName}) takes the value from req.body, and bodyParser.json() is on, so an operator object can be sent as the user name; impact is limited because a password must still match. Plausible and not in the label set."},
+    "Unrestricted Registration of New Accounts": {"verdict": "false", "note": "open registration is what this app is for; the CSRF and rate-limit remarks are generic, not a flaw in the code shown"},
+    "Unsafe rendering of user input in template": {"verdict": "real", "bug": "Cross-site scripting because template auto-escaping is disabled", "note": "same root cause seen on the signup page: {{userName}} is reflected with escaping off"},
+    "Catastrophic ReDoS via Unsafe Regular Expression": {"verdict": "real", "bug": null, "note": "profile.js:59 is live code: /([0-9]+)+#/ on the bank routing number; the fixed regex is commented out just above it"},
+    "Server-Side JavaScript Injection via eval()": {"verdict": "real", "bug": "Remote code execution through unsafe evaluation of contribution amounts"},
+    "Broken Access Control: Unauthorized Modification of User Benefits": {"verdict": "real", "bug": "Non-admin users can open the admin benefits page", "note": "right root cause (isAdmin variant is commented out in index.js, any logged-in user can update any user's benefits); framed around the POST rather than the page"},
+    "Insecure Direct Object Reference (IDOR) in allocations route": {"verdict": "real", "bug": "Any logged-in user can read other users' retirement allocations"},
+    "NoSQL Injection via $where operator": {"verdict": "real", "bug": "NoSQL injection in the allocations threshold filter"},
+    "Broken Access Control: Exposure of all memos to all authenticated users": {"verdict": "mixed", "note": "the memo board is shared by design and has no owner field to violate; the real memo weakness (stored XSS) is the labelled template-escaping bug"},
+    "Broken Access Control - Insecure Object Association": {"verdict": "false", "note": "memos have no owner by design; the claim is generic"},
+    "Open Redirect via User-Controlled Input": {"verdict": "real", "bug": "Open redirect on the learning-resources link"},
+    "Server-Side Request Forgery (SSRF) via insecure URL construction": {"verdict": "real", "bug": "Server-side request forgery in the research page"},
+    "Server-Side Request Forgery (SSRF) via user-controlled URL": {"verdict": "real", "bug": "Server-side request forgery in the research page", "note": "duplicate of the previous finding that the title-based merge did not catch"},
+    "Insecure Session Configuration: resave and saveUninitialized enabled": {"verdict": "mixed", "note": "resave/saveUninitialized true is a minor weakness; it is not the labelled cookie-flag or hard-coded-secret bug, although its evidence line sits next to them"},
+    "Plaintext Password Storage": {"verdict": "real", "bug": "User passwords are stored in plaintext in the database"},
+    "Account enumeration via distinguishable error messages": {"verdict": "real", "bug": "Login errors reveal whether a username exists", "note": "duplicate of the earlier login-error finding"},
+    "Insecure Session Configuration": {"verdict": "mixed", "note": "headline is resave/saveUninitialized; it mentions missing secure/httpOnly flags in passing but its evidence line is the session() call, not the missing flags. The dedicated cookie-flags claim was dropped by the code check (quote_not_in_code)"},
+    "Sensitive Data Stored in Plaintext": {"verdict": "real", "bug": null, "note": "profile-dao.js stores ssn and dob as given; the encrypting version is commented out. Real, not in the label set"}
+  }
+}

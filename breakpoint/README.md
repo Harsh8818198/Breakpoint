@@ -138,6 +138,7 @@ Before the check existed, hand-grading reports on two of the author's own apps f
 - engine without code retrieval: 3 of 13 real bugs found, 5 of 12 kept claims false
 - engine with code retrieval: 7 of 13 found, 3 of 14 kept claims false
 - one plain prompt with the whole source (its claims were not run through the code check): named 10 of 13
+  (checked later, see item 4: it still found 10 of 13)
 
 So on a repo small enough to fit in one prompt, the plain prompt found as many bugs as the engine or more.
 The retrieval cues were written with NodeGoat in view, so these numbers flatter the engine.
@@ -150,9 +151,25 @@ planted bugs; each claim becomes an exploit script that an executable spec judge
 
 These runs pre-date the code check and the code retrieval.
 
+**4. Per-route review against one plain prompt** (`--route-review`, below). OWASP NodeGoat `c5cb68a`,
+gemini-3.1-flash-lite, one run each, both arms through the same code check, verdicts read by hand from the source
+(`bench_runs/route_review/`, including the raw results and one verdict per kept finding):
+
+- one plain prompt (the whole source, one call): 10 of 13 known bugs found; 12 findings kept, none wrong, 2 more real.
+  It missed session fixation, the login-error disclosure and the hard-coded secret. Three of its claims hit provider
+  errors in the first checking pass and were re-checked; one (ReDoS) errored again and is not counted.
+- per-route review (47 reviews plus the code check): 10 of 13 found; 21 findings kept, 5 weak or wrong, 3 more real.
+  It missed CSRF, the cookie flags and the hard-coded secret. The mechanical scorer reports 13 of 13 for it; three of
+  those credits are wrong (a finding's evidence line happened to fall inside another bug's location range).
+- the two found different bugs, so together they cover 12 of 13.
+- the route reviewers did propose CSRF and cookie-flag findings, but the code check dropped them as unproven: it cannot
+  yet accept "this protection is absent" as a quotable fact. That is the same weakness as in item 1.
+
 **What this supports:** reported findings come with quoted evidence and few false claims.
-**What it does not support:** that the engine finds more bugs than one prompt does. Closing that gap is the
-open work: raising how many real bugs get found, not how many false ones get through.
+**What it does not support:** that the engine, or the per-route review, finds more bugs than one prompt does. On a repo
+this small the whole source fits in one prompt, so the per-route review matched its recall with more noise and about
+fifty times as many model calls. Whether it pays off on a repo too big for one prompt is untested. Closing that gap
+is the open work: raising how many real bugs get found, not how many false ones get through.
 
 ## Route map (Express, work in progress)
 
@@ -165,8 +182,7 @@ Splits an Express app into one unit per route: where it is registered, the prote
 check, admin check), its handler, and the code the handler calls one or two hops down. It also lists protections
 that were switched off (a commented-out copy of the route with an extra check, or a commented-out `app.use(...)`),
 and which routes read request input or reach `eval`, a redirect, a database query or an outbound request.
-It reads source text only: no model is called and no code is run. It is not wired into a scan yet; it exists so
-each route can later be reviewed on its own with exactly the code that matters.
+It reads source text only: no model is called and no code is run. `--route-review` (next section) builds on it.
 
 Checked so far: NodeGoat gives 20 routes, and all 13 known bugs fall inside some node (9 inside a route's node,
 4 in app-wide setup such as session settings and CSRF). DVNA, which the mapper was not written against, gives 32
@@ -174,6 +190,25 @@ routes, the same count as a plain text search for route registrations. Caveats: 
 writing it; "inside a node" means the code was in front of a reviewer, not that a reviewer finds the bug; it does not
 understand `app.route()` chains, dynamic `require`, routes built in loops or non-Express frameworks (it returns fewer
 routes, never invented ones).
+
+## Per-route review (Express, experimental)
+
+```bash
+python -m breakpoint.run --route-review review.json --codebase path/to/express/app
+python -m tests.score_report review.json          # NodeGoat only: which of the 13 known bugs the kept findings point at
+```
+
+For each route the route map finds, a model reviews only that route's code (registration, the protections in front of it,
+the handler, what the handler calls) and answers only the questions that route's own facts allow: access control
+(every route); untrusted input (routes that read request input and reach `eval`, a shell, a query, a file or the
+response); redirects and outbound requests; credentials and sessions; plus one app-wide review of cookie flags, the
+signing secret, CSRF, template escaping and security headers. Every finding must cite the exact vulnerable lines, the
+citation is checked against the file, duplicates are merged, and the survivors go through the same code check as
+everything else. The reviews are saved before checking starts, so a provider failure does not lose them
+(check them later with `--verify-report`). `--review-max-calls N` caps the spend (default 150); NodeGoat takes 47.
+`--no-verify` skips the code check. Express only: any other repo stops with a message.
+
+It is a measured experiment, not a proven improvement; see "Measured results", item 4.
 
 ## Tests
 
@@ -196,7 +231,8 @@ breakpoint/
   codeindex.py   read-only index of a repo: secret filtering, redaction, search, quote checking
   coderetrieval.py  per-agent retrieval of real source for the agent's attack category (+ control search, citation check)
   codeverify.py  the locate / judge / mechanical-check / defend verifier
-  routemap.py    Express app -> routes, protections, handlers, callees (no model calls; not wired into a scan yet)
+  routemap.py    Express app -> routes, protections, handlers, callees (no model calls)
+  routereview.py per-route, per-question model review on top of the route map (--route-review)
   baseline.py    the single-prompt comparison (--baseline)
   cvg.py         causal vulnerability graph (shared root causes, minimal fix set)
   report.py      exec summary, ranked cards with evidence, rejected claims, evolution tree

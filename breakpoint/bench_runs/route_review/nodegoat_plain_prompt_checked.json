@@ -1,0 +1,460 @@
+{
+  "baseline_check": {
+    "note": "claims checked in two passes: 3 claims hit provider 503 errors in the first pass and were re-checked; ReDoS errored again and is not counted"
+  },
+  "findings": [
+    {
+      "title": "Remote Code Execution via eval() in User Input",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The application uses eval() on user-supplied input (preTax, afterTax, roth) in app/routes/contributions.js, allowing arbitrary server-side JavaScript execution.",
+      "steps_to_exploit": [
+        "Navigate to the Contributions page.",
+        "Submit a payroll contribution form.",
+        "Inject malicious JavaScript payloads into the 'preTax' or 'afterTax' fields, such as 'require(\"fs\").readFileSync(\"/etc/passwd\")'.",
+        "Observe the server executing the command."
+      ],
+      "impact": "Full server compromise, unauthorized access to system files, and potential remote execution of OS commands.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "CONFIRMED",
+      "evidence": [
+        {
+          "file": "app/routes/contributions.js",
+          "line": 32,
+          "quote": "const preTax = eval(req.body.preTax); const afterTax = eval(req.body.afterTax); const roth = eval(req.body.roth);"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "app/routes/contributions.js",
+          "line": 32,
+          "quote": "const preTax = eval(req.body.preTax);"
+        }
+      ],
+      "id": "88f7c895",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Direct Object Reference (IDOR) on Allocations",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The allocations endpoint uses the 'userId' from the URL parameter instead of the user's session in app/routes/allocations.js, allowing any logged-in user to access another user's allocation data.",
+      "steps_to_exploit": [
+        "Log in as a regular user.",
+        "Navigate to the allocations page.",
+        "Change the userId in the URL to another user's ID.",
+        "Observe the application displaying the target user's private financial data."
+      ],
+      "impact": "Unauthorized access to sensitive user financial and portfolio data.",
+      "evolved_from": [],
+      "attack_category": "authz",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "CONFIRMED",
+      "evidence": [
+        {
+          "file": "app/routes/allocations.js",
+          "line": 16,
+          "quote": "const { userId } = req.params;"
+        },
+        {
+          "file": "app/routes/allocations.js",
+          "line": 23,
+          "quote": "allocationsDAO.getByUserIdAndThreshold(userId, threshold, (err, allocations) => {"
+        }
+      ],
+      "code_refs": [],
+      "id": "cb0ba75a",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Server-Side Request Forgery (SSRF) in Research Page",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The application allows users to supply a base URL which is fetched by the server without any validation, enabling an attacker to query internal network resources.",
+      "steps_to_exploit": [
+        "Navigate to the Research page.",
+        "Submit a request with the 'url' parameter set to an internal metadata server (e.g., http://169.254.169.254/).",
+        "Observe the server fetching and displaying the content of the internal resource."
+      ],
+      "impact": "Exposure of internal network services, cloud instance metadata, and sensitive configuration data.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "CONFIRMED",
+      "evidence": [
+        {
+          "file": "app/routes/research.js",
+          "line": 15,
+          "quote": "const url = req.query.url + req.query.symbol; return needle.get(url, (error, newResponse, body) => {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "app/routes/research.js",
+          "line": 15,
+          "quote": "const url = req.query.url + req.query.symbol;"
+        }
+      ],
+      "id": "6595c65c",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unvalidated Redirects",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The application redirects users to a URL provided via query parameters without validation, allowing attackers to perform phishing attacks.",
+      "steps_to_exploit": [
+        "Craft a URL targeting /learn?url=http://malicious-site.com.",
+        "Send this link to a user.",
+        "The user is redirected to the attacker's site, appearing to come from the trusted application domain."
+      ],
+      "impact": "Phishing, malware delivery, and credibility loss.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "CONFIRMED",
+      "evidence": [
+        {
+          "file": "app/routes/index.js",
+          "line": 70,
+          "quote": "app.get(\"/learn\", isLoggedIn, (req, res) => { // Insecure way to handle redirects by taking redirect url from query string return res.redirect(req.query.url); });"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "app/routes/index.js",
+          "line": 72,
+          "quote": "return res.redirect(req.query.url);"
+        }
+      ],
+      "id": "d3409fd4",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Broken Access Control on Benefits Page",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The benefits route lacks server-side authorization checks, allowing regular users to access or modify administrator functions despite UI-level hiding.",
+      "steps_to_exploit": [
+        "Log in as a standard user.",
+        "Access /benefits directly via browser.",
+        "Attempt to update benefit start dates.",
+        "Observe that the server processes the unauthorized request."
+      ],
+      "impact": "Unauthorized modification of administrative data and privilege escalation.",
+      "evolved_from": [],
+      "attack_category": "authz",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "CONFIRMED",
+      "evidence": [
+        {
+          "file": "app/routes/index.js",
+          "line": 55,
+          "quote": "app.get(\"/benefits\", isLoggedIn, benefitsHandler.displayBenefits); app.post(\"/benefits\", isLoggedIn, benefitsHandler.updateBenefits);"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "app/routes/index.js",
+          "line": 56,
+          "quote": "app.post(\"/benefits\", isLoggedIn, benefitsHandler.updateBenefits);"
+        }
+      ],
+      "id": "9f4da729",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Missing Cross-Site Request Forgery (CSRF) Protection",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "CSRF middleware is commented out globally, leaving state-changing requests (like profile updates) unprotected.",
+      "steps_to_exploit": [
+        "Host a malicious form on a third-party site targeting the app's /profile endpoint.",
+        "Trick a logged-in victim into visiting the site.",
+        "The victim's browser sends the forged POST request, updating the user's data."
+      ],
+      "impact": "Unauthorized state changes on behalf of the victim user.",
+      "evolved_from": [],
+      "attack_category": "authz",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "CONFIRMED",
+      "evidence": [
+        {
+          "file": "app/routes/profile.js",
+          "line": 40,
+          "quote": "this.handleProfileUpdate = (req, res, next) => {"
+        }
+      ],
+      "code_refs": [],
+      "id": "42b0822c",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Session Cookie Configuration",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Session cookies are missing 'httpOnly' and 'secure' flags, and use a default/weak implementation.",
+      "steps_to_exploit": [
+        "Intercept traffic in a network where the application is used.",
+        "Access the session cookie, which is readable by scripts (XSS) and transmitted over insecure connections."
+      ],
+      "impact": "Increased risk of session hijacking via XSS or network eavesdropping.",
+      "evolved_from": [],
+      "attack_category": "auth",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "CONFIRMED",
+      "evidence": [
+        {
+          "file": "server.js",
+          "line": 78,
+          "quote": "app.use(session({ secret: cookieSecret, saveUninitialized: true, resave: true }));"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "server.js",
+          "line": 84,
+          "quote": "saveUninitialized: true,"
+        }
+      ],
+      "id": "3faa51da",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unprotected Template Auto-Escaping",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Swig engine auto-escaping is disabled, increasing the risk of XSS throughout the application.",
+      "steps_to_exploit": [
+        "Inject HTML tags into any field rendered by the template engine.",
+        "The tags are rendered directly as raw HTML."
+      ],
+      "impact": "Widespread potential for Stored and Reflected XSS.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "CONFIRMED",
+      "evidence": [
+        {
+          "file": "server.js",
+          "line": 135,
+          "quote": "swig.setDefaults({ autoescape: false"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "server.js",
+          "line": 137,
+          "quote": "autoescape: false"
+        }
+      ],
+      "id": "0788828f",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Log Injection Vulnerability",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "User input is logged directly without sanitization, allowing for log forging and injection of malicious entries into terminal/log output.",
+      "steps_to_exploit": [
+        "Send a request with a malicious username containing newline characters.",
+        "The log output now contains a false error message, potentially misleading security auditors."
+      ],
+      "impact": "Tampering with system audit trails.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "CONFIRMED",
+      "evidence": [
+        {
+          "file": "app/routes/session.js",
+          "line": 64,
+          "quote": "console.log(\"Error: attempt to login with invalid user: \", userName);"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "app/routes/session.js",
+          "line": 64,
+          "quote": "console.log(\"Error: attempt to login with invalid user: \", userName);"
+        }
+      ],
+      "id": "abfc034c",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Verbose Error Messages",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The application renders raw error objects to the user in the error-template, potentially leaking stack traces or database structure information.",
+      "steps_to_exploit": [
+        "Trigger an application error (e.g., malformed ID request).",
+        "Observe the error-template display detailed information about the cause.",
+        "Gather architectural information from stack traces."
+      ],
+      "impact": "Information disclosure facilitating further exploitation.",
+      "evolved_from": [],
+      "attack_category": "error_handling",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "CONFIRMED",
+      "evidence": [
+        {
+          "file": "app/routes/error.js",
+          "line": 10,
+          "quote": "res.render(\"error-template\", { error: err"
+        },
+        {
+          "file": "app/views/error-template.html",
+          "line": 11,
+          "quote": "<br>{{error}}"
+        }
+      ],
+      "code_refs": [],
+      "id": "c414e937",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "NoSQL Injection via $where operator",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The application uses an unsafe concatenation of user input into a MongoDB $where query in app/data/allocations-dao.js, allowing attackers to inject arbitrary JavaScript to manipulate the database query.",
+      "steps_to_exploit": [
+        "Access the allocations endpoint with a threshold parameter.",
+        "Inject a payload like '5'; while(true){}; ' into the 'threshold' query parameter.",
+        "The server executes the infinite loop on the database, leading to a Denial of Service."
+      ],
+      "impact": "Data exfiltration, unauthorized access to other users' records, and server-side Denial of Service.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "CONFIRMED",
+      "evidence": [
+        {
+          "file": "app/data/allocations-dao.js",
+          "line": 77,
+          "quote": "return { $where: `this.userId == ${parsedUserId} && this.stocks > '${threshold}'` };"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "app/data/allocations-dao.js",
+          "line": 78,
+          "quote": "$where: `this.userId == ${parsedUserId} && this.stocks > '${threshold}'`"
+        }
+      ],
+      "id": "4c6875cd",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Plaintext Password Storage",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "User passwords are stored in plaintext in the database instead of using secure hashing mechanisms.",
+      "steps_to_exploit": [
+        "Access the application's database (e.g., via SQLi or server compromise).",
+        "Dump the users collection to see all user passwords clearly visible.",
+        "Use these credentials to log in as other users."
+      ],
+      "impact": "Mass account compromise in the event of a database breach.",
+      "evolved_from": [],
+      "attack_category": "crypto",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "CONFIRMED",
+      "evidence": [
+        {
+          "file": "app/data/user-dao.js",
+          "line": 25,
+          "quote": "password //received from request param"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "app/data/user-dao.js",
+          "line": 25,
+          "quote": "password //received from request param"
+        }
+      ],
+      "id": "9933675e",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "verification": {
+    "checked": 15,
+    "confirmed": 12,
+    "note": "see baseline_check"
+  }
+}

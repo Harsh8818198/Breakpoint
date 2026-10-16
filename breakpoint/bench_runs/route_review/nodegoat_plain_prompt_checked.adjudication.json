@@ -1,0 +1,17 @@
+{
+  "_about": "Hand verdicts for the 12 findings the code check KEPT from the single-prompt baseline (the whole NodeGoat source in one prompt, asked once for the 15 most serious vulnerabilities; Gemini gemini-3.1-flash-lite, OWASP NodeGoat c5cb68a). The claims are bench_runs/retrieval_eval/baseline_code.json (not committed); they were checked in two passes because three hit provider 503 errors the first time (NoSQL, ReDoS, plaintext passwords): NoSQL and plaintext passwords then held; the ReDoS claim errored again and is not counted. 1 claim was refuted and 1 left unproven by the check. Written by reading each claim against the NodeGoat source; a person (the founder) should re-check these before quoting them.",
+  "verdicts": {
+    "Remote Code Execution via eval() in User Input": {"verdict": "real", "bug": "Remote code execution through unsafe evaluation of contribution amounts"},
+    "Insecure Direct Object Reference (IDOR) on Allocations": {"verdict": "real", "bug": "Any logged-in user can read other users' retirement allocations"},
+    "Server-Side Request Forgery (SSRF) in Research Page": {"verdict": "real", "bug": "Server-side request forgery in the research page"},
+    "Unvalidated Redirects": {"verdict": "real", "bug": "Open redirect on the learning-resources link"},
+    "Broken Access Control on Benefits Page": {"verdict": "real", "bug": "Non-admin users can open the admin benefits page"},
+    "Missing Cross-Site Request Forgery (CSRF) Protection": {"verdict": "real", "bug": "No server-side CSRF protection on state-changing forms", "note": "the claim is right (csrf middleware is commented out app-wide); its evidence line is only the profile handler's first line, so the mechanical scorer does not credit it"},
+    "Insecure Session Cookie Configuration": {"verdict": "real", "bug": "Session cookie lacks HttpOnly and Secure flags"},
+    "Unprotected Template Auto-Escaping": {"verdict": "real", "bug": "Cross-site scripting because template auto-escaping is disabled"},
+    "Log Injection Vulnerability": {"verdict": "real", "bug": null, "note": "session.js logs the submitted user name unsanitised; real but low severity, and not the labelled login-error bug that the mechanical scorer credits it for"},
+    "Verbose Error Messages": {"verdict": "real", "bug": null, "note": "error.js renders the raw error object into the page; real, not in the label set"},
+    "NoSQL Injection via $where operator": {"verdict": "real", "bug": "NoSQL injection in the allocations threshold filter"},
+    "Plaintext Password Storage": {"verdict": "real", "bug": "User passwords are stored in plaintext in the database"}
+  }
+}
