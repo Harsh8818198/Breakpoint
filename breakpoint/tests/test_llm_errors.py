@@ -66,6 +66,41 @@ class SendBehaviour(unittest.TestCase):
         sleep.assert_called_once()
 
 
+class ATransient403(unittest.TestCase):
+    class Ok:
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+        def read(self): return b'{"ok": true}'
+
+    def send(self, seq):
+        calls = []
+
+        def fake(*a, **k):
+            calls.append(1)
+            r = seq.pop(0)
+            if isinstance(r, Exception):
+                raise r
+            return r
+
+        with mock.patch("urllib.request.urlopen", fake), mock.patch("time.sleep") as sleep:
+            try:
+                return LLMClient._send(mock.Mock()), len(calls), sleep.call_count
+            except LLMFatalError:
+                return "fatal", len(calls), sleep.call_count
+
+    def test_a_403_that_clears_is_retried(self):
+        out, calls, sleeps = self.send([http_error(403, "denied"), http_error(403, "denied"), self.Ok()])
+        self.assertEqual((out, calls, sleeps), ({"ok": True}, 3, 2))
+
+    def test_a_403_that_persists_is_fatal_after_a_few_short_waits(self):
+        out, calls, sleeps = self.send([http_error(403, "denied")] * 5)
+        self.assertEqual((out, calls, sleeps), ("fatal", 4, 3))
+
+    def test_a_401_is_still_fatal_at_once(self):
+        out, calls, sleeps = self.send([http_error(401, "bad key")] * 5)
+        self.assertEqual((out, calls, sleeps), ("fatal", 1, 0))
+
+
 class VerifierDoesNotHideIt(unittest.TestCase):
     def test_fatal_errors_propagate_out_of_the_verifier(self):
         from breakpoint.codeindex import CodeIndex

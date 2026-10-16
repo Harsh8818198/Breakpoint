@@ -213,6 +213,14 @@ class LLMClient:
                     return json.loads(r.read().decode())
             except urllib.error.HTTPError as e:
                 body = e.read().decode()
+                if e.code == 403 and attempt < 3:
+                    # A 403 in the middle of a run, from a key that worked a moment ago, is usually transient (Gemini
+                    # returns it under load). A key that is really refused still fails below after three short waits.
+                    wait = 2.0 * (2 ** attempt) + random.uniform(0.1, 0.5)
+                    last_err = RuntimeError(f"LLM HTTP 403: {body[:200]}")
+                    print(f"[!] LLM HTTP 403 — retrying in {wait:.1f}s...", flush=True)
+                    time.sleep(wait)
+                    continue
                 fatal = fatal_reason(e.code, body)
                 if fatal:
                     raise LLMFatalError(fatal) from None
