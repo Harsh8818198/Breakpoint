@@ -341,6 +341,12 @@ class CodeIndex:
                 return text
         return text
 
+    def render_ranges(self, path: str, ranges: list[tuple[int, int]], limit: int | None = None) -> str:
+        """Numbered source for exactly these 1-based inclusive line ranges (merged, clipped to the file)."""
+        n = len(self._files[path])
+        clipped = [(max(1, a), min(n, b)) for a, b in ranges if b >= 1 and a <= n]
+        return self._render(path, _merge(clipped), limit)
+
     def _render(self, path: str, ranges: list[tuple[int, int]], limit: int | None) -> str:
         lines, out, used = self._files[path], [], 0
         for a, b in ranges:

@@ -154,6 +154,27 @@ These runs pre-date the code check and the code retrieval.
 **What it does not support:** that the engine finds more bugs than one prompt does. Closing that gap is the
 open work: raising how many real bugs get found, not how many false ones get through.
 
+## Route map (Express, work in progress)
+
+```bash
+python -m breakpoint.routemap path/to/express/app          # add --json for machine-readable output
+python -m tests.eval_routemap --codebase path/to/NodeGoat   # does each known bug's code sit inside some route's node?
+```
+
+Splits an Express app into one unit per route: where it is registered, the protections in front of it (login
+check, admin check), its handler, and the code the handler calls one or two hops down. It also lists protections
+that were switched off (a commented-out copy of the route with an extra check, or a commented-out `app.use(...)`),
+and which routes read request input or reach `eval`, a redirect, a database query or an outbound request.
+It reads source text only: no model is called and no code is run. It is not wired into a scan yet; it exists so
+each route can later be reviewed on its own with exactly the code that matters.
+
+Checked so far: NodeGoat gives 20 routes, and all 13 known bugs fall inside some node (9 inside a route's node,
+4 in app-wide setup such as session settings and CSRF). DVNA, which the mapper was not written against, gives 32
+routes, the same count as a plain text search for route registrations. Caveats: the NodeGoat check was used while
+writing it; "inside a node" means the code was in front of a reviewer, not that a reviewer finds the bug; it does not
+understand `app.route()` chains, dynamic `require`, routes built in loops or non-Express frameworks (it returns fewer
+routes, never invented ones).
+
 ## Tests
 
 ```bash
@@ -175,6 +196,7 @@ breakpoint/
   codeindex.py   read-only index of a repo: secret filtering, redaction, search, quote checking
   coderetrieval.py  per-agent retrieval of real source for the agent's attack category (+ control search, citation check)
   codeverify.py  the locate / judge / mechanical-check / defend verifier
+  routemap.py    Express app -> routes, protections, handlers, callees (no model calls; not wired into a scan yet)
   baseline.py    the single-prompt comparison (--baseline)
   cvg.py         causal vulnerability graph (shared root causes, minimal fix set)
   report.py      exec summary, ranked cards with evidence, rejected claims, evolution tree
