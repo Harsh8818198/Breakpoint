@@ -733,3 +733,85 @@ Rules:
 
 Respond with the JSON for your first action now.
 """
+
+# --- Per-route review (one route, one kind of problem, the code that matters) --------
+
+ROUTE_REVIEW_SYSTEM = (
+    "You are a senior application-security engineer doing a focused review of ONE part of a web application. "
+    "You report only problems you can prove from the code shown, and only inside your focus. "
+    "Output ONLY valid JSON."
+)
+
+ROUTE_REVIEW_USER = """FOCUS: {focus_name}
+{focus_question}
+
+{subject_kind}
+{subject_facts}
+
+APP-WIDE SETUP (applies to every route)
+{app_facts}
+
+CODE
+Line format: `<line number>| <code>`; a number followed by `c` (for example `12c|`) marks a comment: it is NOT active code
+and never protects anything. Secret values are redacted.
+{code_block}
+
+RULES
+- Judge only what the CODE shows. A protection counts only if it is applied to this route (listed under "protections in
+  front") or is app-wide and active. A check that is defined but not applied here, or that sits in a comment, protects nothing.
+- Report a problem only if you can copy the exact vulnerable line(s) from the CODE, without the line number and the `|`.
+  For a protection that is missing or switched off, quote the line where it should be or the commented-out line.
+- Stay inside your focus; other reviewers cover other kinds of problem. If there is no problem in your focus, return
+  {{"findings": []}}. Do not pad: zero is a good answer.
+- At most {max_findings} findings, most serious first.
+
+Return JSON:
+{{"findings": [
+  {{
+    "title": str,                      // short and specific
+    "attack_category": str,            // one of: {categories}
+    "description": str,                // what is wrong and why an attacker can reach it, citing file:line
+    "steps_to_exploit": [str],         // 2-4 concrete steps for an outsider or low-privilege user
+    "impact": str,                     // who is harmed and how
+    "exploitability": int, "impact_score": int, "spread": int, "fix_difficulty": int,   // each 0-10 (fix_difficulty 1-10)
+    "code_refs": [ {{"file": str, "line": int, "quote": str}} ]
+  }}
+]}}
+"""
+
+ROUTE_FOCUS = {
+    "authz": (
+        "Access control",
+        "Can someone who should not be able to use this route use it? Look for: a login or admin check that the route "
+        "needs but does not have; a check on the GET page that is missing on the POST that changes data; an identifier "
+        "taken from the URL, query string or body (instead of the session) that decides whose data is read or changed; "
+        "a protection that exists only in a comment; a role check that only hides a button. Compare with the "
+        "protections listed for this route and with any switched-off variant of it.",
+    ),
+    "injection": (
+        "Untrusted input reaching an interpreter",
+        "Can request input reach an interpreter without being made safe? Look for: eval or new Function, shell "
+        "commands, database queries built by string concatenation or template strings (including $where and operator "
+        "injection in NoSQL queries), and request values written into HTML or into a template whose escaping is off.",
+    ),
+    "outbound": (
+        "Where the server sends users, connects, or reads files",
+        "Can request input control where the server redirects the user, which address the server connects to, or "
+        "which file it touches? Look for: redirects to a URL taken from the request, outbound HTTP requests to a URL "
+        "built from request input (server-side request forgery), and file paths built from request input.",
+    ),
+    "session": (
+        "Credentials, sessions and the login flow",
+        "Are credentials and sessions handled safely? Look for: passwords stored or compared in plain text, weak or "
+        "missing hashing, a session id that is not regenerated at login, a session that survives logout, error "
+        "messages that reveal whether an account exists, hard-coded secrets, and tokens or passwords written to logs "
+        "or responses.",
+    ),
+    "app": (
+        "App-wide configuration",
+        "Is the setup that affects every route safe? Look for: session cookie flags (httpOnly, secure, sameSite) and "
+        "cookie names; hard-coded or default signing secrets; missing CSRF protection on state-changing routes; "
+        "template engines with escaping disabled; missing or switched-off security headers (helmet, CSP, HSTS); "
+        "verbose error or debug output; secrets in config files. Remember that code inside a comment is switched off.",
+    ),
+}

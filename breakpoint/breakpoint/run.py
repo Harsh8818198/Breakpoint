@@ -347,6 +347,11 @@ def _main(argv: list[str] | None = None) -> None:
                    help="what the single prompt sees: the real source files (default) or the blueprint's 35 x 5,000-character sample")
     p.add_argument("--baseline-n", type=int, default=15, metavar="N",
                    help="how many vulnerabilities the single prompt is asked for (default 15)")
+    p.add_argument("--route-review", metavar="OUT.json",
+                   help="Express apps: review --codebase one route and one kind of problem at a time, check the findings "
+                        "against the code, save them to OUT.json, then exit")
+    p.add_argument("--review-max-calls", type=int, default=150, metavar="N",
+                   help="most model calls --route-review may spend on reviews (default 150)")
     p.add_argument("--check", action="store_true",
                    help="verify API key works with a quick test call, then exit")
     p.add_argument("--template", action="store_true",
@@ -372,6 +377,13 @@ def _main(argv: list[str] | None = None) -> None:
             sys.exit("--baseline needs --codebase (the local folder or git URL to review)")
         from .baseline import write_baseline
         write_baseline(args.codebase, args.baseline, context=args.baseline_context, n=args.baseline_n)
+        return
+
+    if args.route_review:
+        if not args.codebase:
+            sys.exit("--route-review needs --codebase (the local folder or git URL to review)")
+        from .routereview import run_route_review
+        run_route_review(args.codebase, args.route_review, verify=not args.no_verify, max_calls=args.review_max_calls)
         return
 
     if not 1 <= args.gens <= _MAX_GENS:
