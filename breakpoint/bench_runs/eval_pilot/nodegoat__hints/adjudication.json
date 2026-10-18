@@ -1,0 +1,18 @@
+{
+  "_about": "Verdicts by Claude (one reader, not independently reviewed) for the 13 issues kept by one plain-prompt run on NodeGoat [hints removed], gemini-3.1-flash-lite, 2026-10-18. Read against the NodeGoat source.",
+  "verdicts": {
+    "app/data/allocations-dao.js:78": {"verdict": "real", "bug": "nosql-injection"},
+    "app/data/profile-dao.js:61": {"verdict": "mixed", "note": "a generic 'inputs are not validated' claim; the real weakness in that function (ssn and dob stored unencrypted) is not what it says"},
+    "app/data/user-dao.js:25": {"verdict": "real", "bug": "plaintext-passwords", "note": "mechanical scorer also credited login-user-enumeration; the claim is only about storage"},
+    "app/routes/index.js:55": {"verdict": "real", "bug": "admin-page-no-authz"},
+    "app/routes/index.js:70": {"verdict": "real", "bug": "open-redirect"},
+    "app/routes/profile.js:59": {"verdict": "real", "bug": null, "note": "ReDoS: /([0-9]+)+#/ is live code; real, not labelled"},
+    "app/routes/research.js:15": {"verdict": "real", "bug": "ssrf-research"},
+    "app/routes/session.js:116": {"verdict": "real", "bug": "session-fixation"},
+    "config/config.js:12": {"verdict": "real", "bug": null, "note": "prints the whole config, including secrets, to the console; real, not labelled"},
+    "server.js:135": {"verdict": "real", "bug": "xss-autoescape-off"},
+    "server.js:145": {"verdict": "mixed", "note": "plain HTTP by default is a development default for a demo app; the cookie-flag finding is the exploitable form of it"},
+    "server.js:20": {"verdict": "real", "bug": "cookie-flags", "note": "the claim is right (no secure or httpOnly); the evidence lines are comments about HTTPS, so the mechanical scorer also credited no-csrf, which this finding does not claim"},
+    "server.js:7": {"verdict": "real", "bug": "no-csrf"}
+  }
+}

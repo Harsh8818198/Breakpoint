@@ -178,6 +178,25 @@ gemini-3.1-flash-lite, one run each, both arms through the same code check, verd
   a re-check of those six, not a re-run of the review, so the 10 of 13 above stands as measured; with those findings
   kept it would be 12 of 13 by my reading (only the hard-coded signing secret missed).
 
+**5. Pilot of the evaluation harness** (2026-10-18). One plain-prompt run per row, gemini-3.1-flash-lite, every kept finding
+read by hand (`bench_runs/eval_pilot/`: runs, verdicts and summaries). One run is not a measurement: this shows that the
+harness works and which way a leak points.
+
+| Set and variant | Known bugs found (adjudicated) | Kept issues that are real | Calls | Est. tokens |
+|---|---|---|---|---|
+| NodeGoat raw (answers in comments and tutorial) | 11 of 13 | 12 of 13 | 45 | 525k |
+| NodeGoat, hint comments and tutorial removed | 9 of 13 | 11 of 13 | 46 | 407k |
+| NodeGoat, all comments removed | 6 of 13 | 10 of 10 | 46 | 395k |
+| DVNA, docs and learn pages removed (held out) | 12 of 18 | 12 of 12 | 46 | 354k |
+
+- The same prompt found fewer bugs as the answer key was taken out: 11, 9, 6. With one run per row the size of the drop is
+  uncertain. Part of the last drop is the code check, which proves "this protection is missing" claims (CSRF, cookie flags) only
+  from commented-out copies, and those are gone in that variant.
+- The mechanical score overcredited in every row (12, 10, 9 and 14 against 11, 9, 6 and 12).
+- Cost: the plain prompt is one generating call; checking its 15 claims took about 45 calls and most of the estimated tokens.
+- DVNA is a public teaching app that models have probably seen, so 12 of 18 says little about real code. The wall-clock for the
+  NodeGoat hints row is not reliable (the machine slept during it).
+
 **What this supports:** reported findings come with quoted evidence and few false claims.
 **What it does not support:** that the engine, or the per-route review, finds more bugs than one prompt does. On a repo
 this small the whole source fits in one prompt, so the per-route review matched its recall with more noise and about
@@ -223,6 +242,39 @@ everything else. The reviews are saved before checking starts, so a provider fai
 
 It is a measured experiment, not a proven improvement; see "Measured results", item 4.
 
+## Evaluation harness
+
+How to tell whether a way of finding bugs is better than another, on repositories whose bugs are known, with every
+number carrying its caveats. Needs an editable install (`pip install -e .`) because the sets live in `eval_sets/`.
+
+```bash
+breakpoint-eval list
+breakpoint-eval check nodegoat                              # every known bug still has live code in every variant
+breakpoint-eval info dvna --variant clean                   # size, routes, does it fit one prompt, rough calls per run
+breakpoint-eval run dvna --variant clean --arm plain --arm route-review --runs 3
+breakpoint-eval run dvna --variant clean --arm import:claude-review.json   # a result made elsewhere: our JSON or SARIF
+breakpoint-eval adjudicate --set dvna --variant clean       # writes the issues a person must read and judge
+breakpoint-eval report --set dvna --variant clean           # the comparison, with the caveats that apply
+```
+
+- **Arms.** `plain` (one prompt with as much source as fits), `route-review`, and `import:<file>` for anything produced
+  elsewhere, such as a saved Claude Code `/security-review`, Codex Security, Semgrep or CodeQL result. Every arm's
+  candidates go through the same code check, so none wins by being easier to believe.
+- **Repeated runs.** Each run is saved as it finishes (`eval_runs/<set>__<variant>/<arm>/run_<n>.json`); a provider failure
+  never loses a finished run and re-running the command resumes. One run is not a measurement, so the report flags fewer
+  than three.
+- **Two scores.** *Mechanical*: a bug counts as found when a kept finding's evidence line falls inside its labelled lines.
+  *Adjudicated*: a person reads each distinct issue once (real / false / mixed, and which known bug) and the verdict is
+  reused for every run and arm that produces the same issue. Issues without a verdict are reported as undecided. The
+  mechanical score has credited bugs a finding never claimed.
+- **Cost.** Calls, estimated tokens (characters / 4) and seconds for the arm and for the checking, and calls per bug found.
+- **Leaks.** Teaching apps announce their own bugs in comments, tutorials and solution files. Each set has cleaned variants
+  (see `eval_sets/README.md`); run an arm on `raw` and on a cleaned variant to see what the leak is worth.
+
+The three sets shipped (NodeGoat as the dev set, DVNA and Juice Shop held out) are all public teaching apps that models
+have probably seen, labelled by one reader or taken from the maintainers' own markers. They check the harness and measure
+leakage; they do not show how Breakpoint does on real code. `eval_sets/README.md` lists what is still missing.
+
 ## Tests
 
 ```bash
@@ -246,6 +298,8 @@ breakpoint/
   codeverify.py  the locate / judge / mechanical-check / defend verifier
   routemap.py    Express app -> routes, protections, handlers, callees (no model calls)
   routereview.py per-route, per-question model review on top of the route map (--route-review)
+  usage.py       counts model calls, estimated tokens and seconds (MeteredLLM)
+  evaluation/    breakpoint-eval: evaluation sets, cleaned variants, arms, repeated runs, scoring, adjudication
   baseline.py    the single-prompt comparison (--baseline)
   cvg.py         causal vulnerability graph (shared root causes, minimal fix set)
   report.py      exec summary, ranked cards with evidence, rejected claims, evolution tree

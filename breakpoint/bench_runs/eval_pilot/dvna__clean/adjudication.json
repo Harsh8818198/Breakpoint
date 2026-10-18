@@ -1,0 +1,17 @@
+{
+  "_about": "Verdicts by Claude (one reader, not independently reviewed) for the 12 issues kept by one plain-prompt run on DVNA [clean variant: docs, in-app learn pages and vulnerability list removed], gemini-3.1-flash-lite, 2026-10-18. Read against the DVNA source.",
+  "verdicts": {
+    "core/appHandler.js:10": {"verdict": "real", "bug": "sql-injection-usersearch"},
+    "core/appHandler.js:128": {"verdict": "real", "bug": null, "note": "req.flash('danger', err) shows the database error object to the user: a mild information disclosure, real but low severity, and not the labelled calculator stack trace"},
+    "core/appHandler.js:144": {"verdict": "real", "bug": "no-csrf-protection", "note": "the mechanical scorer also credited useredit-idor because the evidence sits in the same function; the claim is about CSRF"},
+    "core/appHandler.js:186": {"verdict": "real", "bug": "unvalidated-redirect"},
+    "core/appHandler.js:197": {"verdict": "real", "bug": "mathjs-eval-rce", "note": "the mechanical scorer also credited stack-trace-calc; the claim is about arbitrary evaluation"},
+    "core/appHandler.js:206": {"verdict": "real", "bug": ["admin-routes-no-role-check", "users-api-password-hashes"], "note": "two titles on one issue: the admin pages rely on hiding content rather than a server-side check, and the users API returns every column"},
+    "core/appHandler.js:218": {"verdict": "real", "bug": "insecure-deserialization"},
+    "core/appHandler.js:235": {"verdict": "real", "bug": "xxe-bulkproducts", "note": "mechanical scorer also credited no-csrf-protection, which this finding does not claim"},
+    "core/appHandler.js:39": {"verdict": "real", "bug": "command-injection-ping"},
+    "core/authHandler.js:49": {"verdict": "real", "bug": "insecure-password-reset"},
+    "server.js:24": {"verdict": "real", "bug": "hardcoded-session-secret", "note": "also notes secure:false; the mechanical scorer credited no-csrf-protection, wrongly"},
+    "views/app/products.ejs:50": {"verdict": "real", "bug": "stored-xss-product-listing", "note": "titled 'reflected' but the cited lines are the product listing fields rendered unescaped, which is the stored form"}
+  }
+}

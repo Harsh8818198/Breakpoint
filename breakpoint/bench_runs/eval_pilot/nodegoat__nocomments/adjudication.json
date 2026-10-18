@@ -1,0 +1,15 @@
+{
+  "_about": "Verdicts by Claude (one reader, not independently reviewed) for the 10 issues kept by one plain-prompt run on NodeGoat [all comments removed], gemini-3.1-flash-lite, 2026-10-18. Read against the NodeGoat source.",
+  "verdicts": {
+    "app/data/allocations-dao.js:78": {"verdict": "real", "bug": "nosql-injection"},
+    "app/data/user-dao.js:25": {"verdict": "real", "bug": "plaintext-passwords", "note": "mechanical scorer also credited login-user-enumeration; the claim is only about storage"},
+    "app/routes/benefits.js:29": {"verdict": "real", "bug": "admin-page-no-authz", "note": "same root cause (no admin check on the benefits routes), framed around the update; the 'unauthenticated' wording is loose because isLoggedIn is present"},
+    "app/routes/error.js:10": {"verdict": "real", "bug": null, "note": "raw error object rendered into the page"},
+    "app/routes/research.js:15": {"verdict": "real", "bug": "ssrf-research"},
+    "app/views/profile.html:78": {"verdict": "real", "bug": null, "note": "an instance of the XSS family (a user value in an href with escaping off); the labelled bug is the global autoescape setting, which another finding states. The mechanical scorer credited no-csrf here, wrongly"},
+    "config/config.js:12": {"verdict": "real", "bug": null, "note": "prints the whole config, including secrets, to the console"},
+    "config/env/all.js:8": {"verdict": "real", "bug": "hardcoded-session-secret"},
+    "package.json:17": {"verdict": "real", "bug": null, "note": "outdated dependencies with known vulnerabilities (marked 0.3.5 and others); real, not labelled"},
+    "server.js:135": {"verdict": "real", "bug": "xss-autoescape-off"}
+  }
+}

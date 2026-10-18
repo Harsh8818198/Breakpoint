@@ -1,0 +1,313 @@
+{
+  "id": "juice-shop",
+  "title": "OWASP Juice Shop (server-side source)",
+  "role": "heldout",
+  "repo": {
+    "url": "https://github.com/juice-shop/juice-shop",
+    "commit": "399fba76194305a312693eee44f4df64bdf0c3ce",
+    "sparse": [
+      "/routes/",
+      "/lib/",
+      "/models/",
+      "/server.ts",
+      "/app.ts",
+      "/config/",
+      "/data/*.ts",
+      "/data/static/challenges.yml",
+      "/package.json",
+      "/README.md"
+    ]
+  },
+  "language": "typescript",
+  "framework": "express",
+  "provenance": "15 bugs read from the maintainers' own vuln-code-snippet markers in the server-side source (independent of us); challenge keys that mark exactly the same lines are merged into one bug. Client-side (Angular) snippets are not included.",
+  "contamination": "Public since 2014 and extremely well documented; models have almost certainly seen it and its solutions. The source also carries the answer key (vuln-code-snippet markers and challengeUtils.solve hooks that name each challenge): use the clean variant, which removes both.",
+  "bugs": [
+    {
+      "id": "accessLogDisclosureChallenge",
+      "title": "Access Log",
+      "class": "Observability Failures",
+      "cwe": "",
+      "locations": [
+        {
+          "file": "server.ts",
+          "lines": [
+            302,
+            302
+          ]
+        },
+        {
+          "file": "server.ts",
+          "lines": [
+            304,
+            304
+          ]
+        }
+      ],
+      "notes": "challenge keys: accessLogDisclosureChallenge"
+    },
+    {
+      "id": "changeProductChallenge",
+      "title": "Product Tampering",
+      "class": "Broken Access Control",
+      "cwe": "",
+      "locations": [
+        {
+          "file": "server.ts",
+          "lines": [
+            398,
+            398
+          ]
+        }
+      ],
+      "notes": "challenge keys: changeProductChallenge"
+    },
+    {
+      "id": "chatbotGreedyInjectionChallenge",
+      "title": "Greedy Chatbot Manipulation",
+      "class": "Injection",
+      "cwe": "",
+      "locations": [
+        {
+          "file": "routes/chat.ts",
+          "lines": [
+            179,
+            179
+          ]
+        }
+      ],
+      "notes": "challenge keys: chatbotGreedyInjectionChallenge"
+    },
+    {
+      "id": "chatbotPromptInjectionChallenge",
+      "title": "Chatbot Prompt Injection",
+      "class": "Injection",
+      "cwe": "",
+      "locations": [
+        {
+          "file": "routes/chat.ts",
+          "lines": [
+            179,
+            179
+          ]
+        },
+        {
+          "file": "routes/chat.ts",
+          "lines": [
+            184,
+            184
+          ]
+        }
+      ],
+      "notes": "challenge keys: chatbotPromptInjectionChallenge"
+    },
+    {
+      "id": "directoryListingChallenge",
+      "title": "Confidential Document",
+      "class": "Sensitive Data Exposure",
+      "cwe": "",
+      "locations": [
+        {
+          "file": "server.ts",
+          "lines": [
+            290,
+            291
+          ]
+        }
+      ],
+      "notes": "challenge keys: directoryListingChallenge"
+    },
+    {
+      "id": "exposedMetricsChallenge",
+      "title": "Exposed Metrics",
+      "class": "Observability Failures",
+      "cwe": "",
+      "locations": [
+        {
+          "file": "server.ts",
+          "lines": [
+            759,
+            759
+          ]
+        }
+      ],
+      "notes": "challenge keys: exposedMetricsChallenge"
+    },
+    {
+      "id": "forgedReviewChallenge",
+      "title": "Forged Review",
+      "class": "Broken Access Control",
+      "cwe": "",
+      "locations": [
+        {
+          "file": "routes/updateProductReviews.ts",
+          "lines": [
+            16,
+            16
+          ]
+        },
+        {
+          "file": "routes/updateProductReviews.ts",
+          "lines": [
+            18,
+            18
+          ]
+        }
+      ],
+      "notes": "challenge keys: forgedReviewChallenge"
+    },
+    {
+      "id": "loginAdminChallenge",
+      "title": "Login Admin (same lines also mark: Login Bender, Login Jim)",
+      "class": "Injection",
+      "cwe": "",
+      "locations": [
+        {
+          "file": "routes/login.ts",
+          "lines": [
+            34,
+            34
+          ]
+        }
+      ],
+      "notes": "challenge keys: loginAdminChallenge, loginBenderChallenge, loginJimChallenge"
+    },
+    {
+      "id": "noSqlReviewsChallenge",
+      "title": "NoSQL Manipulation",
+      "class": "Injection",
+      "cwe": "",
+      "locations": [
+        {
+          "file": "routes/updateProductReviews.ts",
+          "lines": [
+            18,
+            18
+          ]
+        },
+        {
+          "file": "routes/updateProductReviews.ts",
+          "lines": [
+            20,
+            20
+          ]
+        }
+      ],
+      "notes": "challenge keys: noSqlReviewsChallenge"
+    },
+    {
+      "id": "redirectChallenge",
+      "title": "Allowlist Bypass",
+      "class": "Unvalidated Redirects",
+      "cwe": "",
+      "locations": [
+        {
+          "file": "lib/insecurity.ts",
+          "lines": [
+            136,
+            136
+          ]
+        }
+      ],
+      "notes": "challenge keys: redirectChallenge"
+    },
+    {
+      "id": "redirectCryptoCurrencyChallenge",
+      "title": "Outdated Allowlist",
+      "class": "Unvalidated Redirects",
+      "cwe": "",
+      "locations": [
+        {
+          "file": "lib/insecurity.ts",
+          "lines": [
+            124,
+            126
+          ]
+        }
+      ],
+      "notes": "challenge keys: redirectCryptoCurrencyChallenge"
+    },
+    {
+      "id": "registerAdminChallenge",
+      "title": "Admin Registration",
+      "class": "Improper Input Validation",
+      "cwe": "",
+      "locations": [
+        {
+          "file": "server.ts",
+          "lines": [
+            539,
+            539
+          ]
+        }
+      ],
+      "notes": "challenge keys: registerAdminChallenge"
+    },
+    {
+      "id": "resetPasswordMortyChallenge",
+      "title": "Reset Morty''s Password",
+      "class": "Broken Anti Automation",
+      "cwe": "",
+      "locations": [
+        {
+          "file": "server.ts",
+          "lines": [
+            374,
+            374
+          ]
+        }
+      ],
+      "notes": "challenge keys: resetPasswordMortyChallenge"
+    },
+    {
+      "id": "dbSchemaChallenge",
+      "title": "Database Schema (same lines also mark: User Credentials)",
+      "class": "Injection",
+      "cwe": "",
+      "locations": [
+        {
+          "file": "routes/search.ts",
+          "lines": [
+            23,
+            23
+          ]
+        }
+      ],
+      "notes": "challenge keys: dbSchemaChallenge, unionSqlInjectionChallenge"
+    },
+    {
+      "id": "weakPasswordChallenge",
+      "title": "Password Strength",
+      "class": "Broken Authentication",
+      "cwe": "",
+      "locations": [
+        {
+          "file": "models/user.ts",
+          "lines": [
+            73,
+            73
+          ]
+        }
+      ],
+      "notes": "challenge keys: weakPasswordChallenge"
+    }
+  ],
+  "variants": {
+    "clean": {
+      "drop_paths": [
+        "README.md",
+        "*.md",
+        "data/static/challenges.yml",
+        "data/static/codefixes/*"
+      ],
+      "strip_regex": [
+        "\\s*(//|#)\\s*vuln-code-snippet.*$"
+      ],
+      "blank_lines_matching": [
+        "^\\s*(//|#)\\s*vuln-code-snippet",
+        "challenges\\.\\w+Challenge",
+        "challengeUtils\\.solve"
+      ]
+    }
+  }
+}

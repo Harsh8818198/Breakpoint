@@ -16,6 +16,7 @@ server = ["fastapi>=0.111.0", "uvicorn>=0.29.0"]
 
 [project.scripts]
 breakpoint-scan = "breakpoint.run:main"
+breakpoint-eval = "breakpoint.evaluation.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["."]

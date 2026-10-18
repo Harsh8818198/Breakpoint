@@ -1,0 +1,18 @@
+{
+  "_about": "Verdicts by Claude (one reader, not independently reviewed) for the 13 issues kept by one plain-prompt run on NodeGoat [raw], gemini-3.1-flash-lite, 2026-10-18. Read against the NodeGoat source.",
+  "verdicts": {
+    "app/data/allocations-dao.js:78": {"verdict": "real", "bug": "nosql-injection"},
+    "app/data/user-dao.js:25": {"verdict": "real", "bug": "plaintext-passwords", "note": "the mechanical scorer also credited login-user-enumeration because the evidence lines sit in the same file; the claim is only about plain-text storage"},
+    "app/routes/allocations.js:16": {"verdict": "real", "bug": "allocations-idor"},
+    "app/routes/contributions.js:32": {"verdict": "real", "bug": "rce-eval"},
+    "app/routes/error.js:10": {"verdict": "real", "bug": null, "note": "the error handler renders the raw error object into the page; real, not labelled"},
+    "app/routes/index.js:55": {"verdict": "real", "bug": "admin-page-no-authz"},
+    "app/routes/index.js:70": {"verdict": "real", "bug": "open-redirect"},
+    "app/routes/research.js:15": {"verdict": "real", "bug": "ssrf-research"},
+    "app/views/memos.html:31": {"verdict": "real", "bug": "xss-autoescape-off", "note": "cites server.js:135 autoescape false; the mechanical scorer also credited no-csrf, which this claim does not make"},
+    "config/config.js:12": {"verdict": "real", "bug": null, "note": "config.js prints the whole config object, including the cookie secret and database URI, to the console; real, not labelled"},
+    "config/env/all.js:3": {"verdict": "false", "note": "a default localhost database URI for development is not a vulnerability"},
+    "config/env/all.js:8": {"verdict": "real", "bug": ["cookie-flags", "hardcoded-session-secret"], "note": "one finding that states both: cookie lacks httpOnly/secure and the signing secret is hard-coded"},
+    "server.js:7": {"verdict": "real", "bug": "no-csrf"}
+  }
+}

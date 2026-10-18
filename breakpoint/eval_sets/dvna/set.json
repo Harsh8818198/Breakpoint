@@ -1,0 +1,357 @@
+{
+  "id": "dvna",
+  "title": "Damn Vulnerable NodeJS Application",
+  "role": "heldout",
+  "repo": {
+    "url": "https://github.com/appsecco/dvna",
+    "commit": "9ba473add536f66ac9007966acb2a775dd31277a"
+  },
+  "language": "javascript",
+  "framework": "express",
+  "provenance": "18 bugs: the project's own documented list (docs/solution) mapped to source lines by Claude; one reader, not independently reviewed. 'Insufficient logging and monitoring' is documented but is an absence with no code location, so it is not a label.",
+  "contamination": "Public teaching app since 2017; models have probably seen it and its write-ups. The docs and the in-app 'learn' pages explain every bug: use the cleaned variants.",
+  "bugs": [
+    {
+      "id": "sql-injection-usersearch",
+      "title": "SQL injection in the user search query",
+      "class": "injection",
+      "cwe": "CWE-89",
+      "locations": [
+        {
+          "file": "core/appHandler.js",
+          "lines": [
+            10,
+            11
+          ]
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "id": "command-injection-ping",
+      "title": "OS command injection in the ping feature",
+      "class": "injection",
+      "cwe": "CWE-78",
+      "locations": [
+        {
+          "file": "core/appHandler.js",
+          "lines": [
+            39,
+            39
+          ]
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "id": "insecure-password-reset",
+      "title": "Password reset token is predictable (md5 of the login name)",
+      "class": "authentication",
+      "cwe": "CWE-640",
+      "locations": [
+        {
+          "file": "core/authHandler.js",
+          "lines": [
+            49,
+            49
+          ]
+        },
+        {
+          "file": "core/authHandler.js",
+          "lines": [
+            78,
+            78
+          ]
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "id": "hardcoded-session-secret",
+      "title": "Hard-coded session signing secret",
+      "class": "secrets",
+      "cwe": "CWE-798",
+      "locations": [
+        {
+          "file": "server.js",
+          "lines": [
+            24,
+            24
+          ]
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "id": "admin-routes-no-role-check",
+      "title": "Admin pages and the users API are open to any logged-in user",
+      "class": "authorization",
+      "cwe": "CWE-862",
+      "locations": [
+        {
+          "file": "routes/app.js",
+          "lines": [
+            36,
+            46
+          ]
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "id": "users-api-password-hashes",
+      "title": "Users API returns password hashes",
+      "class": "data-exposure",
+      "cwe": "CWE-200",
+      "locations": [
+        {
+          "file": "core/appHandler.js",
+          "lines": [
+            206,
+            213
+          ]
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "id": "xxe-bulkproducts",
+      "title": "XML external entity injection in the bulk product upload",
+      "class": "xxe",
+      "cwe": "CWE-611",
+      "locations": [
+        {
+          "file": "core/appHandler.js",
+          "lines": [
+            235,
+            235
+          ]
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "id": "useredit-idor",
+      "title": "Edit-user takes the target user id from the request body, not the session",
+      "class": "authorization",
+      "cwe": "CWE-639",
+      "locations": [
+        {
+          "file": "core/appHandler.js",
+          "lines": [
+            144,
+            149
+          ]
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "id": "stack-trace-calc",
+      "title": "Calculator errors are not handled and reach the user",
+      "class": "misconfiguration",
+      "cwe": "CWE-209",
+      "locations": [
+        {
+          "file": "core/appHandler.js",
+          "lines": [
+            194,
+            199
+          ]
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "id": "x-powered-by-header",
+      "title": "Server announces itself in the X-Powered-By header",
+      "class": "misconfiguration",
+      "cwe": "CWE-200",
+      "locations": [
+        {
+          "file": "server.js",
+          "lines": [
+            11,
+            11
+          ]
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "id": "reflected-xss-product-search",
+      "title": "Reflected XSS: the product search term is rendered unescaped",
+      "class": "xss",
+      "cwe": "CWE-79",
+      "locations": [
+        {
+          "file": "views/app/products.ejs",
+          "lines": [
+            20,
+            20
+          ]
+        },
+        {
+          "file": "core/appHandler.js",
+          "lines": [
+            66,
+            69
+          ]
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "id": "stored-xss-product-listing",
+      "title": "Stored XSS: product fields are rendered unescaped",
+      "class": "xss",
+      "cwe": "CWE-79",
+      "locations": [
+        {
+          "file": "views/app/products.ejs",
+          "lines": [
+            49,
+            53
+          ]
+        },
+        {
+          "file": "core/appHandler.js",
+          "lines": [
+            115,
+            118
+          ]
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "id": "dom-xss-user-listing",
+      "title": "DOM XSS: user fields are written with innerHTML",
+      "class": "xss",
+      "cwe": "CWE-79",
+      "locations": [
+        {
+          "file": "views/app/adminusers.ejs",
+          "lines": [
+            40,
+            42
+          ]
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "id": "insecure-deserialization",
+      "title": "Insecure deserialization of an uploaded file (node-serialize)",
+      "class": "deserialization",
+      "cwe": "CWE-502",
+      "locations": [
+        {
+          "file": "core/appHandler.js",
+          "lines": [
+            218,
+            218
+          ]
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "id": "mathjs-eval-rce",
+      "title": "Remote code execution through mathjs.eval on user input (vulnerable mathjs version)",
+      "class": "injection",
+      "cwe": "CWE-95",
+      "locations": [
+        {
+          "file": "core/appHandler.js",
+          "lines": [
+            197,
+            197
+          ]
+        },
+        {
+          "file": "package.json",
+          "lines": [
+            25,
+            25
+          ]
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "id": "no-csrf-protection",
+      "title": "No CSRF protection on state-changing routes",
+      "class": "csrf",
+      "cwe": "CWE-352",
+      "locations": [
+        {
+          "file": "server.js",
+          "lines": [
+            16,
+            35
+          ]
+        },
+        {
+          "file": "routes/app.js",
+          "lines": [
+            50,
+            64
+          ]
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "id": "unvalidated-redirect",
+      "title": "Open redirect: /app/redirect sends the user to any url",
+      "class": "redirect",
+      "cwe": "CWE-601",
+      "locations": [
+        {
+          "file": "core/appHandler.js",
+          "lines": [
+            186,
+            188
+          ]
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "id": "sensitive-sql-logging",
+      "title": "Every SQL query, including user input, is logged by Sequelize",
+      "class": "logging",
+      "cwe": "CWE-532",
+      "locations": [
+        {
+          "file": "models/index.js",
+          "lines": [
+            12,
+            15
+          ]
+        }
+      ],
+      "notes": ""
+    }
+  ],
+  "variants": {
+    "clean": {
+      "drop_paths": [
+        "docs/*",
+        "README.md",
+        "views/vulnerabilities/*",
+        "config/vulns.js"
+      ]
+    },
+    "nocomments": {
+      "drop_paths": [
+        "docs/*",
+        "README.md",
+        "views/vulnerabilities/*",
+        "config/vulns.js"
+      ],
+      "blank_all_comments": true
+    }
+  }
+}

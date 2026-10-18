@@ -12,3 +12,7 @@ build/
 /prism_gui_report.json
 /nodegoat_gemini.json
 /bench_runs/retrieval_eval/
+
+# evaluation: clones of other people's repositories, and run output
+.breakpoint/
+/eval_runs/
