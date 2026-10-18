@@ -167,6 +167,40 @@ class MappingAnExpressApp(unittest.TestCase):
         self.assertIn("GET    /a", render(rm))
 
 
+TS_APP = {
+    "server.ts": ("import * as security from './lib/security'\nimport { login } from './routes/login'\n"
+                  "import * as utils from './lib/utils'\nimport { upload } from './routes/upload'\n"
+                  "const app = express()\napp.post('/rest/login', login())\napp.get('/api/Users', security.isAuthorized())\n"
+                  "app.post('/upload', utils.asyncHandler(upload()))\napp.listen(3000)\n"),
+    "lib/security.ts": "export const isAuthorized = () => expressJwt({ secret: 'k' })\n",
+    "lib/utils.ts": "export const asyncHandler = (fn: any) => (req: any, res: any, next: any) => Promise.resolve(fn(req, res, next)).catch(next)\n",
+    "routes/login.ts": ("export function login () {\n  return (req: any, res: any, next: any) => {\n"
+                        "    db.query(`SELECT * FROM Users WHERE email = '${req.body.email}'`)\n  }\n}\n"),
+    "routes/upload.ts": "export function upload () {\n  return async (req: any, res: any) => {\n    res.send(req.body)\n  }\n}\n",
+}
+
+
+class FactoryStyleHandlers(unittest.TestCase):
+    """TypeScript apps often register `login()` or `asyncHandler(upload())`: a function that RETURNS the handler."""
+
+    def setUp(self):
+        self.rm = map_routes(CodeIndex.from_dir(make_repo(TS_APP)))
+
+    def test_a_factory_call_resolves_to_the_function_that_builds_the_handler(self):
+        r = by_label(self.rm, "POST /rest/login")
+        self.assertEqual((r.handler["span"].file, r.handler["span"].start, r.handler["span"].end), ("routes/login.ts", 1, 5))
+        self.assertTrue(r.reads_input)
+        self.assertIn("db_query", r.sinks)
+
+    def test_a_wrapper_is_skipped_in_favour_of_the_handler_it_wraps(self):
+        r = by_label(self.rm, "POST /upload")
+        self.assertEqual(r.handler["span"].file, "routes/upload.ts")             # not lib/utils.ts, the wrapper
+
+    def test_a_namespace_import_is_followed(self):
+        r = by_label(self.rm, "GET /api/Users")
+        self.assertEqual(r.handler["span"].file, "lib/security.ts")
+
+
 class WhenThereIsNothingToMap(unittest.TestCase):
     def test_a_repo_without_express_returns_an_empty_map_not_invented_routes(self):
         idx = CodeIndex.from_dir(make_repo({"app.py": "from flask import Flask\napp = Flask(__name__)\n@app.get('/x')\ndef x(): pass\n"}))

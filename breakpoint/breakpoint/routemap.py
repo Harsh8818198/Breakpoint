@@ -95,6 +95,7 @@ def _scrub(text: str) -> tuple[str, str]:
 
 
 _PAIRS = {"(": ")", "{": "}", "[": "]"}
+_CONTINUES = ("=>", "=", ",", "(", ".", "+", "&&", "||", "?", ":")      # a line ending like this continues on the next one
 
 
 def _close_of(sk: str, i: int) -> int:
@@ -303,6 +304,8 @@ class _Repo:
                 bits = [b.strip() for b in re.split(r"\s+as\s+", part.strip())]
                 if bits and re.fullmatch(_IDENT, bits[0] or ""):
                     out[bits[-1]] = (m.group(3), bits[0])
+        for m in re.finditer(rf"import\s*\*\s*as\s+({_IDENT})\s+from\s+([\"'])([^\"']+)\2", nc):      # import * as utils from ...
+            out[m.group(1)] = (m.group(3), None)
         self._imports[path] = out
         return out
 
@@ -365,7 +368,12 @@ class _Repo:
             elif paren <= 0 and ch == ";":
                 semi = j
                 break
+            elif paren <= 0 and ch == "\n" and s.nc[after:j].strip() and not s.nc[after:j].rstrip().endswith(_CONTINUES):
+                semi = j                          # no semicolon (TypeScript style): the statement ends with its line
+                break
             j += 1
+        if brace == -1 and semi == -1 and s.nc[after:].strip():
+            semi = len(s.sk)                      # the statement is the last thing in the file and has no semicolon
         if brace != -1:
             end = _close_of(s.sk, brace)
             if end == -1:
@@ -403,6 +411,23 @@ class _Repo:
         if not rest:
             return self._follow(path, base, depth)
         return None
+
+    def resolve_expr(self, path: str, text: str, depth: int = 0) -> Span | None:
+        """A middleware or handler argument to the code behind it. Besides a plain name this follows the factory style
+        (`login()`, `security.isAuthorized()`) and wrappers (`utils.asyncHandler(upload())`): arguments that are themselves
+        calls are tried first, because the wrapper is rarely the interesting code, then the called function itself."""
+        text = text.strip()
+        if _CHAIN.fullmatch(text):
+            return self.resolve(path, text)
+        m = re.fullmatch(rf"({_IDENT}(?:\.{_IDENT})*)\s*\((.*)\)", text, re.S)
+        if not m or depth > 3:
+            return None
+        inner = m.group(2)
+        for a, b in _split_args(_scrub(inner)[1], 0, len(inner)):
+            span = self.resolve_expr(path, inner[a:b], depth + 1)
+            if span:
+                return span
+        return self.resolve(path, m.group(1))
 
     def _follow(self, path: str, name: str, depth: int) -> Span | None:
         span, alias = self.find_def(path, name)
@@ -613,7 +638,7 @@ def _ref(repo: _Repo, path: str, src: _Src, text: str, a: int, b: int) -> dict:
         return {"name": "<inline>", "span": Span(path, src.line(a + lead), src.line(max(a, b - 1)), "inline handler"),
                 "line": src.line(a + lead)}
     name = " ".join(text.split())[:80]
-    span = repo.resolve(path, text) if _CHAIN.fullmatch(text) else None
+    span = repo.resolve_expr(path, text)
     if span:
         span = Span(span.file, span.start, span.end, name)
     return {"name": name, "span": span, "line": src.line(a)}
