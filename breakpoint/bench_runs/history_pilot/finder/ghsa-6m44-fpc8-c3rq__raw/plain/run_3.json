@@ -1,0 +1,777 @@
+{
+  "schema": 1,
+  "set": "ghsa-6m44-fpc8-c3rq",
+  "variant": "raw",
+  "arm": "plain",
+  "run": 3,
+  "commit": "9946c9207d74a55eed872483ab3c9cdc698b89cc",
+  "started_at": "2026-10-24T10:48:09+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": false,
+  "status": "ok",
+  "candidates": 15,
+  "kept": [
+    {
+      "title": "Arbitrary File Read via Include Directive",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `Include` directive in `src/mistune/directives/include.py` allows files to be read and rendered into the output. While it attempts a check using `commonpath`, the logic is insufficient to prevent traversal if `source_dir` can be misaligned or if environmental inputs are manipulated, allowing sensitive file exposure.",
+      "steps_to_exploit": [
+        "Craft a Markdown file using the `.. include::` directive.",
+        "Use path traversal sequences (e.g., ../../../etc/passwd) as the directive value.",
+        "The parser reads and renders the contents of the target file into the generated HTML."
+      ],
+      "impact": "An attacker can read arbitrary files from the server's filesystem, leading to sensitive data exposure or configuration leaks.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/mistune/directives/include.py",
+          "line": 33,
+          "quote": "dest = os.path.realpath(os.path.join(source_dir, relpath))"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/mistune/directives/include.py",
+          "line": 33,
+          "quote": "dest = os.path.realpath(os.path.join(source_dir, relpath))"
+        }
+      ],
+      "id": "019354ae",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unsafe Output File Writing in CLI",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The command-line interface in `src/mistune/__main__.py` accepts an `--output` path and blindly writes the rendered Markdown content to it. There is no validation to prevent overwriting critical system files or sensitive user data.",
+      "steps_to_exploit": [
+        "Run the mistune CLI with the `--output` argument.",
+        "Point the argument to a sensitive file, such as `~/.ssh/authorized_keys` or a configuration file.",
+        "The tool truncates and overwrites the specified file with the rendered output."
+      ],
+      "impact": "Arbitrary file destruction or system compromise via overwriting configuration/system files.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/mistune/__main__.py",
+          "line": 38,
+          "quote": "with open(args.output, \"w\", encoding=\"utf-8\") as f:"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/mistune/__main__.py",
+          "line": 38,
+          "quote": "with open(args.output, \"w\", encoding=\"utf-8\") as f:"
+        }
+      ],
+      "id": "1589b54f",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unsafe URL Protocol Usage",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The HTML renderer uses a hardcoded whitelist of protocols to sanitize URLs. However, the logic in `_is_safe_url` is permissive and does not adequately account for variations or potential bypasses in URL parsing, potentially allowing `javascript:` URIs if bypasses in `urllib.parse.unquote` logic are found.",
+      "steps_to_exploit": [
+        "Inject a payload like `[click](javascript:alert(1))` into the Markdown.",
+        "The renderer fails to properly neutralize the harmful URI scheme.",
+        "The resulting HTML executes arbitrary JavaScript in the victim's browser when clicked."
+      ],
+      "impact": "Cross-Site Scripting (XSS) in the context of the rendered document.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/mistune/renderers/html.py",
+          "line": 177,
+          "quote": "if url.startswith(safe_protocols):"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/mistune/renderers/html.py",
+          "line": 177,
+          "quote": "if url.startswith(safe_protocols):"
+        }
+      ],
+      "id": "c4ed9d6c",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Plugin Code Execution via arbitrary module loading",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `import_plugin` function in `src/mistune/plugins/__init__.py` uses `import_module` on user-provided strings. While intended for internal plugins, the structure allows loading any arbitrary Python module available in the environment if the input string can be influenced.",
+      "steps_to_exploit": [
+        "Influence the list of plugins passed to `create_markdown` (e.g., if application settings are exposed).",
+        "Pass an arbitrary module path as a plugin name.",
+        "The application executes the code within the imported module."
+      ],
+      "impact": "Remote Code Execution (RCE) via arbitrary module import.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/mistune/plugins/__init__.py",
+          "line": 47,
+          "quote": "module = import_module(module_path)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/mistune/plugins/__init__.py",
+          "line": 47,
+          "quote": "module = import_module(module_path)"
+        }
+      ],
+      "id": "ca9d3949",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Denial of Service via ReDoS in Inline Parsing",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `InlineParser` uses complex regex patterns for identifying markers (e.g., links, emphasis). These patterns are prone to Catastrophic Backtracking (ReDoS) when processing deeply nested or specifically crafted, long, non-matching strings.",
+      "steps_to_exploit": [
+        "Supply a specially crafted long string with many overlapping Markdown markers.",
+        "The parser's regex engine enters an exponential state expansion attempting to match.",
+        "The thread or process consuming the input becomes unresponsive."
+      ],
+      "impact": "Denial of Service by crashing the parser or consuming excessive CPU resources.",
+      "evolved_from": [],
+      "attack_category": "scalability",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/mistune/inline_parser.py",
+          "line": 58,
+          "quote": "SPECIFICATION = {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/mistune/inline_parser.py",
+          "line": 58,
+          "quote": "SPECIFICATION = {"
+        }
+      ],
+      "id": "0da57831",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of unsafe HTML in Admonition renderer",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `render_admonition` function in `src/mistune/directives/admonition.py` takes class attributes and directly injects them into HTML output. While `escape_text` is used, the logic surrounding it can be bypassed if the context of the injection is mishandled.",
+      "steps_to_exploit": [
+        "Use an admonition directive with a crafted `class` attribute.",
+        "If the input string is not properly sanitized, the injection might escape the attribute context.",
+        "Resulting HTML reflects the user input as a class or other attribute."
+      ],
+      "impact": "Potentially enables XSS by breaking out of the attribute context.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/mistune/directives/admonition.py",
+          "line": 68,
+          "quote": "html += \" \" + escape_text(_cls)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/mistune/directives/admonition.py",
+          "line": 68,
+          "quote": "html += \" \" + escape_text(_cls)"
+        }
+      ],
+      "id": "608c6a04",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Incomplete Sanitization of HTML tags in `striptags`",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `striptags` utility in `src/mistune/util.py` uses a regex to strip tags, which is notoriously prone to bypasses by variations in HTML tag syntax (e.g., malformed tags, whitespace, or nested null bytes).",
+      "steps_to_exploit": [
+        "Supply a crafted string with malformed tags, e.g., `<img/src='x'onerror='alert(1)'>`.",
+        "The `striptags` regex fails to fully parse the tag structure.",
+        "Malicious content passes through the sanitizer and reaches the DOM."
+      ],
+      "impact": "Cross-Site Scripting (XSS) via filtered input.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/mistune/util.py",
+          "line": 71,
+          "quote": "_striptags_re = re.compile(r\"(<!--.*?-->|<[^>]*>)\")"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/mistune/util.py",
+          "line": 71,
+          "quote": "_striptags_re = re.compile(r\"(<!--.*?-->|<[^>]*>)\")"
+        }
+      ],
+      "id": "7b2dd2cf",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potential Circular Reference DoS in Include Directive",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Although `Include` attempts to track a stack, deep recursion can still lead to stack overflow if the environment state is manipulated or if large nested structures are provided.",
+      "steps_to_exploit": [
+        "Create a file that recursively includes itself or deep trees of files.",
+        "The parser exhausts memory or stack space attempting to resolve the document structure.",
+        "The process terminates."
+      ],
+      "impact": "Denial of Service by crashing the parser process.",
+      "evolved_from": [],
+      "attack_category": "scalability",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/mistune/directives/include.py",
+          "line": 80,
+          "quote": "block.parse(new_state)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/mistune/directives/include.py",
+          "line": 80,
+          "quote": "block.parse(new_state)"
+        }
+      ],
+      "id": "13d1a294",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Lack of CSRF or Origin protection in `serve-doc.py`",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `serve-doc.py` script uses `livereload`, which is meant for development environments. It binds to the default address/port without authentication, allowing remote users to trigger the rebuild process, essentially enabling a remote Command Execution vulnerability by proxy.",
+      "steps_to_exploit": [
+        "Wait for the developer to run `python serve-doc.py`.",
+        "Identify the port (typically 35729 or similar).",
+        "Interact with the Livereload service to trigger build tasks which contain OS commands."
+      ],
+      "impact": "Execution of OS-level commands by an attacker.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "serve-doc.py",
+          "line": 4,
+          "quote": "app.watch(\"docs\", shell(\"make build-docs\"), delay=2)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "serve-doc.py",
+          "line": 4,
+          "quote": "app.watch(\"docs\", shell(\"make build-docs\"), delay=2)"
+        }
+      ],
+      "id": "191070dc",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unsafe handling of `inline_html` with escape=false",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "When `escape=false` is set during `create_markdown` creation, raw HTML input is rendered directly. If this is combined with user-supplied content, it creates an immediate XSS vector.",
+      "steps_to_exploit": [
+        "Ensure the Markdown parser is configured with `escape=false`.",
+        "Pass raw HTML tags with event handlers (e.g., `<img src=x onerror=alert(1)>`).",
+        "The parser emits the payload into the output document."
+      ],
+      "impact": "Full Cross-Site Scripting (XSS).",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [],
+      "code_refs": [],
+      "id": "0d344704",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Integer Overflow/Negative handling in TOC levels",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `TableOfContents` directive accepts numeric values for heading levels. If negative integers or invalid types are passed that bypass validation, downstream logic might throw errors, potentially leading to application crashes.",
+      "steps_to_exploit": [
+        "Use `.. toc::` with invalid negative levels (e.g., `:min-level: -100`).",
+        "The system attempts to build a hierarchy based on these integers.",
+        "This triggers an unhandled `ValueError` or unexpected behavior in the rendering loop."
+      ],
+      "impact": "Denial of Service via application error loop.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/mistune/directives/toc.py",
+          "line": 44,
+          "quote": "raise ValueError(f'\"min-level\" option MUST be >= {self.min_level}')"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/mistune/directives/toc.py",
+          "line": 44,
+          "quote": "raise ValueError(f'\"min-level\" option MUST be >= {self.min_level}')"
+        }
+      ],
+      "id": "dd42dcee",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Implicitly Trusted Data Protocols in safe_url",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `GOOD_DATA_PROTOCOLS` whitelist explicitly permits `data:` URI images. If misused or if the browser treats these as something other than images (e.g., SVG/HTML payloads), it can lead to XSS.",
+      "steps_to_exploit": [
+        "Embed a base64 encoded SVG image with embedded scripts as a `data:` URI.",
+        "The sanitizer accepts it because it starts with `data:image/`.",
+        "The victim browser executes the script contained within the SVG."
+      ],
+      "impact": "Cross-Site Scripting (XSS) via base64 encoded payload.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/mistune/renderers/html.py",
+          "line": 24,
+          "quote": "GOOD_DATA_PROTOCOLS: ClassVar[Tuple[str, ...]] = ("
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/mistune/renderers/html.py",
+          "line": 24,
+          "quote": "GOOD_DATA_PROTOCOLS: ClassVar[Tuple[str, ...]] = ("
+        }
+      ],
+      "id": "4cf1c4e1",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Incomplete handling of `null` in `__main__.py` CLI",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The CLI code asserts the result is a string, but the `Markdown` instance is configurable via plugins. If a plugin modifies the return type, the `assert` statement in the CLI will trigger an `AssertionError` in production.",
+      "steps_to_exploit": [
+        "Configure a custom plugin that returns a list or dict instead of a string.",
+        "Run the CLI.",
+        "The program raises an `AssertionError`."
+      ],
+      "impact": "Unplanned application crash (Denial of Service).",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/mistune/__main__.py",
+          "line": 115,
+          "quote": "assert isinstance(text, str)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/mistune/__main__.py",
+          "line": 115,
+          "quote": "assert isinstance(text, str)"
+        }
+      ],
+      "id": "33bb913b",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of `eval`-like behavior in `getattr` lookups",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The renderer uses `getattr(self, name)` to look up rendering methods. While restricted to the instance, this is a dangerous pattern if `self` can be manipulated to call arbitrary methods of the object or its parent classes.",
+      "steps_to_exploit": [
+        "The user influences the token `type` field.",
+        "The parser calls `getattr` with that field.",
+        "The system attempts to call unauthorized methods of the `HTMLRenderer` object."
+      ],
+      "impact": "Unexpected object behavior or potential for Information Disclosure.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/mistune/core.py",
+          "line": 251,
+          "quote": "return cast(Callable[..., str], object.__getattribute__(self, name))"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/mistune/core.py",
+          "line": 251,
+          "quote": "return cast(Callable[..., str], object.__getattribute__(self, name))"
+        }
+      ],
+      "id": "80afef80",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure `temp` logic in `Include` directive",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `Include` directive uses `source_file` as an environment variable to resolve paths. If `env` state is leaked or improperly initialized across parser instances, this could lead to information leaks between documents.",
+      "steps_to_exploit": [
+        "Trigger concurrent parsing where one parser shares `env` state with another.",
+        "The `__file__` variable points to a secret file.",
+        "The second parser inadvertently includes the content of that secret file."
+      ],
+      "impact": "Information disclosure across tenant boundaries.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/mistune/directives/include.py",
+          "line": 17,
+          "quote": "source_file = state.env.get(\"__file__\")"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/mistune/directives/include.py",
+          "line": 17,
+          "quote": "source_file = state.env.get(\"__file__\")"
+        }
+      ],
+      "id": "64721a25",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "proposed": [
+    {
+      "title": "Arbitrary File Read via Include Directive",
+      "code_refs": [
+        {
+          "file": "src/mistune/directives/include.py",
+          "line": 33,
+          "quote": "dest = os.path.realpath(os.path.join(source_dir, relpath))"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unsafe Output File Writing in CLI",
+      "code_refs": [
+        {
+          "file": "src/mistune/__main__.py",
+          "line": 38,
+          "quote": "with open(args.output, \"w\", encoding=\"utf-8\") as f:"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unsafe URL Protocol Usage",
+      "code_refs": [
+        {
+          "file": "src/mistune/renderers/html.py",
+          "line": 177,
+          "quote": "if url.startswith(safe_protocols):"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Plugin Code Execution via arbitrary module loading",
+      "code_refs": [
+        {
+          "file": "src/mistune/plugins/__init__.py",
+          "line": 47,
+          "quote": "module = import_module(module_path)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Denial of Service via ReDoS in Inline Parsing",
+      "code_refs": [
+        {
+          "file": "src/mistune/inline_parser.py",
+          "line": 58,
+          "quote": "SPECIFICATION = {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of unsafe HTML in Admonition renderer",
+      "code_refs": [
+        {
+          "file": "src/mistune/directives/admonition.py",
+          "line": 68,
+          "quote": "html += \" \" + escape_text(_cls)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Incomplete Sanitization of HTML tags in `striptags`",
+      "code_refs": [
+        {
+          "file": "src/mistune/util.py",
+          "line": 71,
+          "quote": "_striptags_re = re.compile(r\"(<!--.*?-->|<[^>]*>)\")"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potential Circular Reference DoS in Include Directive",
+      "code_refs": [
+        {
+          "file": "src/mistune/directives/include.py",
+          "line": 80,
+          "quote": "block.parse(new_state)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Lack of CSRF or Origin protection in `serve-doc.py`",
+      "code_refs": [
+        {
+          "file": "serve-doc.py",
+          "line": 4,
+          "quote": "app.watch(\"docs\", shell(\"make build-docs\"), delay=2)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unsafe handling of `inline_html` with escape=false",
+      "code_refs": [],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Integer Overflow/Negative handling in TOC levels",
+      "code_refs": [
+        {
+          "file": "src/mistune/directives/toc.py",
+          "line": 44,
+          "quote": "raise ValueError(f'\"min-level\" option MUST be >= {self.min_level}')"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Implicitly Trusted Data Protocols in safe_url",
+      "code_refs": [
+        {
+          "file": "src/mistune/renderers/html.py",
+          "line": 24,
+          "quote": "GOOD_DATA_PROTOCOLS: ClassVar[Tuple[str, ...]] = ("
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Incomplete handling of `null` in `__main__.py` CLI",
+      "code_refs": [
+        {
+          "file": "src/mistune/__main__.py",
+          "line": 115,
+          "quote": "assert isinstance(text, str)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of `eval`-like behavior in `getattr` lookups",
+      "code_refs": [
+        {
+          "file": "src/mistune/core.py",
+          "line": 251,
+          "quote": "return cast(Callable[..., str], object.__getattribute__(self, name))"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure `temp` logic in `Include` directive",
+      "code_refs": [
+        {
+          "file": "src/mistune/directives/include.py",
+          "line": 17,
+          "quote": "source_file = state.env.get(\"__file__\")"
+        }
+      ],
+      "outcome": "unchecked"
+    }
+  ],
+  "rejected": [],
+  "verification": null,
+  "arm_meta": {
+    "baseline": {
+      "model": "gemini/gemini-3.1-flash-lite",
+      "context": "code",
+      "requested": 15,
+      "returned": 15,
+      "files_shown": 50,
+      "chars_shown": 244796,
+      "files_that_did_not_fit": []
+    }
+  },
+  "seconds": {
+    "arm": 34.3,
+    "check": 0.0,
+    "total": 34.3
+  },
+  "usage": {
+    "arm": {
+      "calls": 1,
+      "failed": 0,
+      "est_tokens": 64792,
+      "seconds_in_calls": 34.2,
+      "by_task": {
+        "baseline": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 245928,
+          "completion_chars": 13239,
+          "seconds": 34.16498869995121,
+          "est_tokens": 64792
+        }
+      }
+    },
+    "check": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    }
+  }
+}

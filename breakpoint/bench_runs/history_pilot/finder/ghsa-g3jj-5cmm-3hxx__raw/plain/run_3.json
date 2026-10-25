@@ -1,0 +1,785 @@
+{
+  "schema": 1,
+  "set": "ghsa-g3jj-5cmm-3hxx",
+  "variant": "raw",
+  "arm": "plain",
+  "run": 3,
+  "commit": "0c7813ead3e6dfc8e9cd83d78dca6948a004f9b9",
+  "started_at": "2026-10-24T10:55:33+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": false,
+  "status": "ok",
+  "candidates": 15,
+  "kept": [
+    {
+      "title": "Hardcoded Development Secrets in Benchmarking",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Hardcoded secret strings like 'secretsecretsecret' are used in benchmarking server and test utilities, risking accidental deployment and credential exposure.",
+      "steps_to_exploit": [
+        "Access the codebase repository.",
+        "Identify the hardcoded 'secretsecretsecret' string.",
+        "Use this key to sign malicious JWT tokens to gain unauthorized access to any system relying on this key."
+      ],
+      "impact": "Full authentication bypass by forging valid tokens for any system using the default/hardcoded secret.",
+      "evolved_from": [],
+      "attack_category": "auth",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "benchmarks/clinic-server.js",
+          "line": 6,
+          "quote": "const key = 'secretsecretsecret'"
+        },
+        {
+          "file": "benchmarks/keys/generate-tokens.js",
+          "line": 9,
+          "quote": "HS: 'secretsecretsecret',"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "benchmarks/clinic-server.js",
+          "line": 6,
+          "quote": "const key = 'secretsecretsecret'"
+        },
+        {
+          "file": "benchmarks/keys/generate-tokens.js",
+          "line": 9,
+          "quote": "HS: 'secretsecretsecret',"
+        }
+      ],
+      "id": "d4cd7424",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of 'none' Algorithm Allowed",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The library explicitly supports the 'none' algorithm in signer logic, which allows creating unauthenticated JWTs if incorrectly configured or bypassed.",
+      "steps_to_exploit": [
+        "Set up a system using fast-jwt.",
+        "Submit a token where the header 'alg' is set to 'none'.",
+        "Observe the system accepting the unverified token as valid."
+      ],
+      "impact": "Allows attackers to impersonate any user without possessing a private key.",
+      "evolved_from": [],
+      "attack_category": "crypto",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/signer.js",
+          "line": 18,
+          "quote": "const supportedAlgorithms = new Set([...hsAlgorithms, ...esAlgorithms, ...rsaAlgorithms, ...edAlgorithms, 'none'])"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/signer.js",
+          "line": 18,
+          "quote": "const supportedAlgorithms = new Set([...hsAlgorithms, ...esAlgorithms, ...rsaAlgorithms, ...edAlgorithms, 'none'])"
+        }
+      ],
+      "id": "988abc3d",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Cache Key Generation",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The default cache key builder uses hashToken, which only considers a part of the token header and may not be collision-resistant across different JWT structures.",
+      "steps_to_exploit": [
+        "Craft two different tokens that produce the same cache key hash.",
+        "Wait for the server to cache the legitimate result for the first token.",
+        "Present the second malicious token; the server returns the cached result of the legitimate one."
+      ],
+      "impact": "Potential identity/authorization bypass due to cache collisions.",
+      "evolved_from": [],
+      "attack_category": "auth",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/verifier.js",
+          "line": 499,
+          "quote": "cacheKeyBuilder: hashToken"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/verifier.js",
+          "line": 499,
+          "quote": "cacheKeyBuilder: hashToken"
+        }
+      ],
+      "id": "ef58309f",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Cache Key Builder Security Risk Warning",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The library allows users to provide a custom cacheKeyBuilder, and if not implemented correctly, leads to vulnerabilities.",
+      "steps_to_exploit": [
+        "Define a custom weak cacheKeyBuilder that maps different payloads to the same key.",
+        "Enable caching in the verifier.",
+        "Exploit the cache collision to authorize unauthorized requests."
+      ],
+      "impact": "Authorization bypass due to flawed custom cache key logic.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/verifier.js",
+          "line": 582,
+          "quote": "if (cache && options?.cacheKeyBuilder) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/verifier.js",
+          "line": 582,
+          "quote": "if (cache && options?.cacheKeyBuilder) {"
+        }
+      ],
+      "id": "b4117084",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unsafe Regular Expression in Verification",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Several verification options accept user-defined Regular Expressions which are not validated against ReDoS (Regular Expression Denial of Service) vulnerabilities.",
+      "steps_to_exploit": [
+        "Supply a complex, evil Regex to the 'allowedJti' or 'allowedAud' verifier options.",
+        "Send a token that causes the RegEx engine to backtrack exponentially.",
+        "Observe the event loop blocking, causing a denial of service."
+      ],
+      "impact": "Denial of Service (DoS) via CPU exhaustion.",
+      "evolved_from": [],
+      "attack_category": "rate_limiting",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/verifier.js",
+          "line": 565,
+          "quote": "if (allowedJti) checkForUnsafeRegExp(allowedJti, 'allowedJti')"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/verifier.js",
+          "line": 565,
+          "quote": "if (allowedJti) checkForUnsafeRegExp(allowedJti, 'allowedJti')"
+        }
+      ],
+      "id": "f9aabedf",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Exposure of Internals via Stack Traces",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "TokenError.captureStackTrace is used during error instantiation, which may leak internal path names or execution context in production error responses.",
+      "steps_to_exploit": [
+        "Trigger an error in the JWT verification process.",
+        "Observe the server returning the full stack trace in the API response."
+      ],
+      "impact": "Information disclosure of server-side code structure.",
+      "evolved_from": [],
+      "attack_category": "error_handling",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/error.js",
+          "line": 27,
+          "quote": "Error.captureStackTrace(this, this.constructor)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/error.js",
+          "line": 27,
+          "quote": "Error.captureStackTrace(this, this.constructor)"
+        }
+      ],
+      "id": "4a2f6a8f",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Missing Signature Verification on Empty Keys",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The verifier logic checks for signature presence but contains complex branches for 'hasKey' that might fail open under specific library versions.",
+      "steps_to_exploit": [
+        "Pass an empty/null key to the verifier.",
+        "The code proceeds to verifyToken, where if signature is missing or manipulated, logic might bypass verification."
+      ],
+      "impact": "Bypassing signature validation.",
+      "evolved_from": [],
+      "attack_category": "auth",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/verifier.js",
+          "line": 272,
+          "quote": "const hasKey = key instanceof Buffer ? key.length : !!key"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/verifier.js",
+          "line": 272,
+          "quote": "const hasKey = key instanceof Buffer ? key.length : !!key"
+        }
+      ],
+      "id": "59681bfc",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potential Prototype Pollution via Additional Claims",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The library accepts user-provided objects for JWT claims and uses them throughout without deep freezing or careful validation against prototype manipulation.",
+      "steps_to_exploit": [
+        "Pass an object with '__proto__' properties in the payload to the signer.",
+        "The resulting JWT includes the polluted payload.",
+        "If the application consuming this JWT uses the data in a vulnerable way, it can lead to remote code execution."
+      ],
+      "impact": "Remote Code Execution (RCE) downstream.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [],
+      "code_refs": [],
+      "id": "6df5d696",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Sensitive Information in Logs",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The benchmarking suite logs generated JWTs and verification results to files in the 'logs' directory without scrubbing.",
+      "steps_to_exploit": [
+        "Run the benchmark suite.",
+        "Inspect the generated files in 'benchmarks/logs'.",
+        "Obtain sensitive JWT tokens used for testing."
+      ],
+      "impact": "Exposure of sensitive tokens if test logs are committed to VCS or hosted on insecure environments.",
+      "evolved_from": [],
+      "attack_category": "data_privacy",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "benchmarks/utils.mjs",
+          "line": 85,
+          "quote": "await writeFile(resolve(directory, `${type}-${now}.log`), output.join('\\n'), 'utf-8')"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "benchmarks/utils.mjs",
+          "line": 85,
+          "quote": "await writeFile(resolve(directory, `${type}-${now}.log`), output.join('\\n'), 'utf-8')"
+        }
+      ],
+      "id": "7ad6db0c",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure `process.exit(1)` on Server Error",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The benchmarking server uses `process.exit(1)` if listening fails, which is inappropriate for production services as it kills the process abruptly.",
+      "steps_to_exploit": [
+        "Trigger a conflict on the server port (3000).",
+        "The server process dies instantly, preventing automated recovery."
+      ],
+      "impact": "Denial of service through brittle startup behavior.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "benchmarks/clinic-server.js",
+          "line": 104,
+          "quote": "process.exit(1)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "benchmarks/clinic-server.js",
+          "line": 104,
+          "quote": "process.exit(1)"
+        }
+      ],
+      "id": "f57d7fdc",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of `any` Type in TypeScript",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The eslint config disables 'no-explicit-any', which hides potential type-safety bugs that could lead to runtime security issues during payload processing.",
+      "steps_to_exploit": [
+        "Inject unexpected data types via an 'any' typed variable.",
+        "The library fails to type-check, causing a crash or unexpected processing state."
+      ],
+      "impact": "Reduced code maintainability and increased risk of runtime security bugs.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "eslint.config.js",
+          "line": 13,
+          "quote": "'@typescript-eslint/no-explicit-any': 'off'"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "eslint.config.js",
+          "line": 13,
+          "quote": "'@typescript-eslint/no-explicit-any': 'off'"
+        }
+      ],
+      "id": "b4a16384",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Default Algorithm Detection",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `detectPrivateKeyAlgorithm` function performs heuristics on strings/buffers to guess the algorithm, which is susceptible to algorithm confusion.",
+      "steps_to_exploit": [
+        "Provide a custom string that looks like a public key to the `detectPrivateKeyAlgorithm` function.",
+        "The logic fails to identify the intended algorithm correctly, falling back to a weaker default (HS256)."
+      ],
+      "impact": "Downgrade of security, algorithm confusion.",
+      "evolved_from": [],
+      "attack_category": "crypto",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/crypto.js",
+          "line": 109,
+          "quote": "return 'HS256'"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/crypto.js",
+          "line": 109,
+          "quote": "return 'HS256'"
+        }
+      ],
+      "id": "0c9625bd",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Lack of Strict Token Parsing",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The decoder performs basic regex checks but then passes raw data to `JSON.parse` which can throw unhandled exceptions if the base64-decoded string is malicious JSON.",
+      "steps_to_exploit": [
+        "Craft a payload segment containing extremely large or deeply nested JSON.",
+        "Send it to the decoder, potentially crashing the node process."
+      ],
+      "impact": "Node.js process crash due to memory or stack overflow.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/decoder.js",
+          "line": 59,
+          "quote": "payload = JSON.parse(payload)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/decoder.js",
+          "line": 59,
+          "quote": "payload = JSON.parse(payload)"
+        }
+      ],
+      "id": "082d2ebc",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Incomplete Validation of 'crit' Headers",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "While 'crit' headers are validated, the support for custom critical headers relies on an allowlist provided at runtime, which might be too broad in standard implementations.",
+      "steps_to_exploit": [
+        "Define a custom critical header that the validator does not recognize.",
+        "Force the application to accept a broader set of critical headers than intended."
+      ],
+      "impact": "Protocol-level bypass of extension headers.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/verifier.js",
+          "line": 251,
+          "quote": "if (!allowedCritHeaders.has(ext)) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/verifier.js",
+          "line": 251,
+          "quote": "if (!allowedCritHeaders.has(ext)) {"
+        }
+      ],
+      "id": "738766d8",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Dependencies Relying on Deprecated Ecosystem",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The project uses 'asn1.js' and 'ecdsa-sig-formatter', which are older libraries that often serve as vectors for supply chain attacks in the JS ecosystem.",
+      "steps_to_exploit": [
+        "Identify vulnerable versions in `package.json`.",
+        "Monitor for new CVEs published against these legacy dependencies.",
+        "Use automated tools to exploit outdated dependency chains."
+      ],
+      "impact": "Full system compromise through dependency vulnerability.",
+      "evolved_from": [],
+      "attack_category": "supply_chain",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "package.json",
+          "line": 56,
+          "quote": "\"asn1.js\": \"^5.4.1\","
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "package.json",
+          "line": 56,
+          "quote": "\"asn1.js\": \"^5.4.1\","
+        }
+      ],
+      "id": "0b4ab39a",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "proposed": [
+    {
+      "title": "Hardcoded Development Secrets in Benchmarking",
+      "code_refs": [
+        {
+          "file": "benchmarks/clinic-server.js",
+          "line": 6,
+          "quote": "const key = 'secretsecretsecret'"
+        },
+        {
+          "file": "benchmarks/keys/generate-tokens.js",
+          "line": 9,
+          "quote": "HS: 'secretsecretsecret',"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of 'none' Algorithm Allowed",
+      "code_refs": [
+        {
+          "file": "src/signer.js",
+          "line": 18,
+          "quote": "const supportedAlgorithms = new Set([...hsAlgorithms, ...esAlgorithms, ...rsaAlgorithms, ...edAlgorithms, 'none'])"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure Cache Key Generation",
+      "code_refs": [
+        {
+          "file": "src/verifier.js",
+          "line": 499,
+          "quote": "cacheKeyBuilder: hashToken"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Cache Key Builder Security Risk Warning",
+      "code_refs": [
+        {
+          "file": "src/verifier.js",
+          "line": 582,
+          "quote": "if (cache && options?.cacheKeyBuilder) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unsafe Regular Expression in Verification",
+      "code_refs": [
+        {
+          "file": "src/verifier.js",
+          "line": 565,
+          "quote": "if (allowedJti) checkForUnsafeRegExp(allowedJti, 'allowedJti')"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Exposure of Internals via Stack Traces",
+      "code_refs": [
+        {
+          "file": "src/error.js",
+          "line": 27,
+          "quote": "Error.captureStackTrace(this, this.constructor)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Missing Signature Verification on Empty Keys",
+      "code_refs": [
+        {
+          "file": "src/verifier.js",
+          "line": 272,
+          "quote": "const hasKey = key instanceof Buffer ? key.length : !!key"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potential Prototype Pollution via Additional Claims",
+      "code_refs": [],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Sensitive Information in Logs",
+      "code_refs": [
+        {
+          "file": "benchmarks/utils.mjs",
+          "line": 85,
+          "quote": "await writeFile(resolve(directory, `${type}-${now}.log`), output.join('\\n'), 'utf-8')"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure `process.exit(1)` on Server Error",
+      "code_refs": [
+        {
+          "file": "benchmarks/clinic-server.js",
+          "line": 104,
+          "quote": "process.exit(1)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of `any` Type in TypeScript",
+      "code_refs": [
+        {
+          "file": "eslint.config.js",
+          "line": 13,
+          "quote": "'@typescript-eslint/no-explicit-any': 'off'"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure Default Algorithm Detection",
+      "code_refs": [
+        {
+          "file": "src/crypto.js",
+          "line": 109,
+          "quote": "return 'HS256'"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Lack of Strict Token Parsing",
+      "code_refs": [
+        {
+          "file": "src/decoder.js",
+          "line": 59,
+          "quote": "payload = JSON.parse(payload)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Incomplete Validation of 'crit' Headers",
+      "code_refs": [
+        {
+          "file": "src/verifier.js",
+          "line": 251,
+          "quote": "if (!allowedCritHeaders.has(ext)) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Dependencies Relying on Deprecated Ecosystem",
+      "code_refs": [
+        {
+          "file": "package.json",
+          "line": 56,
+          "quote": "\"asn1.js\": \"^5.4.1\","
+        }
+      ],
+      "outcome": "unchecked"
+    }
+  ],
+  "rejected": [],
+  "verification": null,
+  "arm_meta": {
+    "baseline": {
+      "model": "gemini/gemini-3.1-flash-lite",
+      "context": "code",
+      "requested": 15,
+      "returned": 15,
+      "files_shown": 27,
+      "chars_shown": 97195,
+      "files_that_did_not_fit": []
+    }
+  },
+  "seconds": {
+    "arm": 9.5,
+    "check": 0.0,
+    "total": 9.5
+  },
+  "usage": {
+    "arm": {
+      "calls": 1,
+      "failed": 0,
+      "est_tokens": 27354,
+      "seconds_in_calls": 9.4,
+      "by_task": {
+        "baseline": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 98281,
+          "completion_chars": 11135,
+          "seconds": 9.449166599893942,
+          "est_tokens": 27354
+        }
+      }
+    },
+    "check": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    }
+  }
+}

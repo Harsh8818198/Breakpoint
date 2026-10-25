@@ -1,0 +1,765 @@
+{
+  "schema": 1,
+  "set": "ghsa-5846-7qm3-r52j",
+  "variant": "raw",
+  "arm": "plain",
+  "run": 3,
+  "commit": "2eef49dc0fc3a864e566f44bf6cf9c95e4410798",
+  "started_at": "2026-10-24T10:46:46+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": false,
+  "status": "ok",
+  "candidates": 15,
+  "kept": [
+    {
+      "title": "Unauthenticated SSRF via DNS Rebinding Mitigation Bypass",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The logic in `is_hostname_resolve_to_internal_ip` (helpers.ts:310) attempts to prevent DNS rebinding by performing two resolutions and comparing results, but it uses a flawed delay-based strategy and does not fully sanitize inputs, allowing attackers to exploit race conditions between resolution and final URL usage.",
+      "steps_to_exploit": [
+        "Register a malicious domain",
+        "Point it to an external public IP initially",
+        "Trigger the check which sees the external IP",
+        "Update the domain record to point to 127.0.0.1 immediately after the first check completes",
+        "The subsequent HTTP request by the application will target the internal IP"
+      ],
+      "impact": "Attackers can bypass security controls to access internal network resources, services, or metadata APIs.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/helpers.ts",
+          "line": 310,
+          "quote": "export async function is_hostname_resolve_to_internal_ip(hostname: string): Promise<boolean> {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 310,
+          "quote": "export async function is_hostname_resolve_to_internal_ip(hostname: string): Promise<boolean> {"
+        }
+      ],
+      "id": "4122ca61",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of 'got' Dependency without Agent/Proxy Pinning",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `is_redirect_safe` function (helpers.ts:460) uses the `got` library to perform HEAD requests for validation. Without a custom agent that explicitly restricts connections to internal IPs, the `got` library will follow redirects or resolve addresses that are not properly blocked at the transport layer.",
+      "steps_to_exploit": [
+        "Supply a URL that performs an HTTP 302 redirect",
+        "Redirect the URL to an internal IP address (e.g., http://169.254.169.254/)",
+        "The `got` client will follow the redirect to the forbidden internal resource bypassing the initial validation"
+      ],
+      "impact": "Full SSRF bypass enabling internal network scanning and data exfiltration.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/helpers.ts",
+          "line": 468,
+          "quote": "const res = await got(current.toString(), {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 468,
+          "quote": "const res = await got(current.toString(), {"
+        }
+      ],
+      "id": "c0625706",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Incomplete Blacklist for Internal IP Ranges",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `BAD_RANGE_USED_IN_SSRF` list in `src/helpers.ts` (lines 21-36) is hardcoded and incomplete, failing to include specific IPv6 unique local addresses or other obscure reserved segments that are reachable in cloud environments.",
+      "steps_to_exploit": [
+        "Identify an internal service or cloud metadata IP not present in the manual list",
+        "Use the application's URL validation functions to reach the forbidden host",
+        "Application will classify the IP as safe and allow the request"
+      ],
+      "impact": "Bypass of SSRF protection for non-standard internal addresses.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/helpers.ts",
+          "line": 21,
+          "quote": "const BAD_RANGE_USED_IN_SSRF: CIDR[] = ["
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 21,
+          "quote": "const BAD_RANGE_USED_IN_SSRF: CIDR[] = ["
+        }
+      ],
+      "id": "789585f1",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Dangerous use of require() for 'got' dependency",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `src/helpers.ts` file uses `require(\"got\").default` (line 6), which is brittle in an ESM-heavy environment and can lead to unexpected module loading behaviors or prototype pollution if dependencies are improperly resolved.",
+      "steps_to_exploit": [
+        "Perform a dependency confusion attack if the environment is misconfigured",
+        "Inject a malicious 'got' module",
+        "Execution of arbitrary code during the validation logic"
+      ],
+      "impact": "Remote code execution in the context of the application server.",
+      "evolved_from": [],
+      "attack_category": "supply_chain",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/helpers.ts",
+          "line": 6,
+          "quote": "const got = require(\"got\").default;"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 6,
+          "quote": "const got = require(\"got\").default;"
+        }
+      ],
+      "id": "68057173",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insufficient Unicode Normalization Logic",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `normalize_unicode` function uses NFKC (src/helpers.ts:496). While helpful, it does not address bypasses related to Homograph attacks or non-standard Unicode variations that could confuse DNS resolution or internal proxy logic.",
+      "steps_to_exploit": [
+        "Use a domain name containing visually similar Unicode characters (homoglyphs)",
+        "Bypass blacklist filters that rely on string matching rather than canonicalized representations"
+      ],
+      "impact": "Allows attackers to bypass domain-based blacklists and masking filters.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/helpers.ts",
+          "line": 498,
+          "quote": "return input.normalize(\"NFKC\");"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 498,
+          "quote": "return input.normalize(\"NFKC\");"
+        }
+      ],
+      "id": "106336b9",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of 'ts-ignore' for internal security checks",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `is_ip_internal` function contains several `@ts-ignore` comments (src/helpers.ts:240, 259) to suppress type checking on IP parsing and matching. This masks potential runtime errors where types mismatch, leading to bypasses in logic evaluation.",
+      "steps_to_exploit": [
+        "Pass specially crafted malformed IP structures that break logic when forced as strings",
+        "Observe where the code bypasses checks because the comparison logic fails due to type mismatches"
+      ],
+      "impact": "Security logic failures causing the library to incorrectly validate malicious URLs as safe.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [],
+      "code_refs": [],
+      "id": "8ad0a82b",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Timing for DNS Resolution",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The implementation of `resolveWithDelay` (src/helpers.ts:320) uses `setTimeout` with very short, randomized delays. These are insufficient to prevent fast-flux DNS rebinding attacks where the TTL is set to zero.",
+      "steps_to_exploit": [
+        "Configure DNS TTL to 0 for a domain",
+        "Swap the IP address during the ~200ms delay window",
+        "The check will return inconsistent results that fail to block the request"
+      ],
+      "impact": "Successful DNS rebinding leading to SSRF.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/helpers.ts",
+          "line": 329,
+          "quote": "await new Promise(r => setTimeout(r, delay));"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 329,
+          "quote": "await new Promise(r => setTimeout(r, delay));"
+        }
+      ],
+      "id": "5d745a90",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Over-reliance on 'URL' constructor for parsing",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `is_url_safe` function (src/helpers.ts:503) relies on the `URL` constructor. The behavior of `new URL()` varies across Node.js versions, and it may not properly parse edge-case URL formats that might be interpreted differently by the underlying request library (`got`).",
+      "steps_to_exploit": [
+        "Pass a URL with non-standard syntax (e.g., encoded backslashes or multiple fragments)",
+        "The parser might misidentify the hostname, while the final request client resolves it to the correct internal address"
+      ],
+      "impact": "SSRF vulnerability due to parsing discrepancy.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/helpers.ts",
+          "line": 509,
+          "quote": "const parsed = new URL(u);"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 509,
+          "quote": "const parsed = new URL(u);"
+        }
+      ],
+      "id": "100e66a7",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Lack of Input Sanitization for 'is_ipv6'",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `is_ipv6` function (src/helpers.ts:12) uses `ipaddr.IPv6.isValid(ip)`. This function is highly sensitive to input format; if passed non-string types or malformed objects, it may crash or behave unexpectedly (handled via generic try-catch returning false).",
+      "steps_to_exploit": [
+        "Pass non-string objects to trigger the catch block",
+        "If used in a critical path, bypasses may occur due to incorrect handling of type casting"
+      ],
+      "impact": "Potential security bypasses if IPv6 addresses are misclassified.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/helpers.ts",
+          "line": 12,
+          "quote": "export function is_ipv6(ip: string): boolean {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 12,
+          "quote": "export function is_ipv6(ip: string): boolean {"
+        }
+      ],
+      "id": "35a0b533",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unsafe Regex in `normalize_ipv4`",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The regex `^\\d{1,3}(\\.\\d{1,3}){3}$` (src/helpers.ts:196) does not check the bounds of the octets before parsing, relying on manual checks that might be skipped if the logic flow is manipulated.",
+      "steps_to_exploit": [
+        "Inject long numeric strings that overflow or cause unexpected parsing behavior before the octet range check occurs"
+      ],
+      "impact": "Incorrect normalization of IP addresses leading to potential blacklist bypasses.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/helpers.ts",
+          "line": 196,
+          "quote": "if (!/^\\d{1,3}(\\.\\d{1,3}){3}$/.test(trimmed)) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 196,
+          "quote": "if (!/^\\d{1,3}(\\.\\d{1,3}){3}$/.test(trimmed)) {"
+        }
+      ],
+      "id": "2dc57fdf",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of 'process.env.DSSRF_MAKE_REQUEST'",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The library reads `process.env.DSSRF_MAKE_REQUEST` (src/helpers.ts:8), which suggests there might be an execution path that performs requests not intended for production usage, potentially leading to unauthorized data exfiltration.",
+      "steps_to_exploit": [
+        "Set the environment variable in a development or production container to enable dangerous features"
+      ],
+      "impact": "Exposing unintended functionality that could lead to unauthorized network requests.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/helpers.ts",
+          "line": 8,
+          "quote": "const DSSRF_MAKE_REQUEST = process.env.DSSRF_MAKE_REQUEST;"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 8,
+          "quote": "const DSSRF_MAKE_REQUEST = process.env.DSSRF_MAKE_REQUEST;"
+        }
+      ],
+      "id": "e3f09516",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Excessive reliance on try-catch for security validation",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Many functions, including `is_url_safe` (src/helpers.ts:503), return `false` on any exception. If an exception occurs, it defaults to blocking, but if the logic is malformed, it could inadvertently permit unsafe paths if logic flow assumes successful parsing occurred.",
+      "steps_to_exploit": [
+        "Pass malformed strings that trigger exceptions in early stages of the validation chain"
+      ],
+      "impact": "Denial of service or incorrect security classification of input URLs.",
+      "evolved_from": [],
+      "attack_category": "error_handling",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/helpers.ts",
+          "line": 518,
+          "quote": "} catch { return false; }"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 518,
+          "quote": "} catch { return false; }"
+        }
+      ],
+      "id": "b6d7599d",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Manual string replacement for URL structure",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Functions like `replace_backslash_with_slash_in_string` (src/helpers.ts:378) modify URL structure before validation. This manual manipulation is a common anti-pattern that deviates from standard URL parsing (RFC 3986), causing discrepancies.",
+      "steps_to_exploit": [
+        "Use backslashes or other non-standard separators that are ignored by some browsers but interpreted differently by `new URL()`"
+      ],
+      "impact": "Bypassing filters by masquerading malicious characters as benign URL components.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/helpers.ts",
+          "line": 381,
+          "quote": "let u = s.replace(/\\\\/g, \"/\");"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 381,
+          "quote": "let u = s.replace(/\\\\/g, \"/\");"
+        }
+      ],
+      "id": "8db3753c",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Hardcoded debug logs in exposed functions",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The function `is_url_safe_debug` (src/helpers.ts:525) logs input parameters, which might include sensitive user-supplied URLs potentially containing tokens, credentials, or PII.",
+      "steps_to_exploit": [
+        "Call the debug function with a URL containing sensitive data",
+        "The sensitive data will appear in the application logs or console"
+      ],
+      "impact": "Information disclosure of potentially sensitive user input.",
+      "evolved_from": [],
+      "attack_category": "data_privacy",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/helpers.ts",
+          "line": 525,
+          "quote": "export async function is_url_safe_debug(url: string): Promise<boolean> { try { console.log(\"STEP 1 input:\", url);"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 525,
+          "quote": "export async function is_url_safe_debug(url: string): Promise<boolean> { try { console.log(\"STEP 1 input:\", url);"
+        }
+      ],
+      "id": "6e176824",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure default configuration for redirects",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Redirection checking is disabled by default via `DSSRF_CHECK_REDIRECTS` (helpers.ts:513). Developers may integrate this library assuming it is secure, while failing to set the environment variable, leading to an SSRF vulnerability via redirects.",
+      "steps_to_exploit": [
+        "Integrate the library without setting the environment variable",
+        "Perform an SSRF attack through a simple HTTP redirect"
+      ],
+      "impact": "SSRF vulnerabilities in applications that rely on this library for URL validation.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/helpers.ts",
+          "line": 513,
+          "quote": "if (process.env.DSSRF_CHECK_REDIRECTS === \"1\") {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 513,
+          "quote": "if (process.env.DSSRF_CHECK_REDIRECTS === \"1\") {"
+        }
+      ],
+      "id": "f5bd75c4",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "proposed": [
+    {
+      "title": "Unauthenticated SSRF via DNS Rebinding Mitigation Bypass",
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 310,
+          "quote": "export async function is_hostname_resolve_to_internal_ip(hostname: string): Promise<boolean> {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of 'got' Dependency without Agent/Proxy Pinning",
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 468,
+          "quote": "const res = await got(current.toString(), {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Incomplete Blacklist for Internal IP Ranges",
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 21,
+          "quote": "const BAD_RANGE_USED_IN_SSRF: CIDR[] = ["
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Dangerous use of require() for 'got' dependency",
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 6,
+          "quote": "const got = require(\"got\").default;"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insufficient Unicode Normalization Logic",
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 498,
+          "quote": "return input.normalize(\"NFKC\");"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of 'ts-ignore' for internal security checks",
+      "code_refs": [],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure Timing for DNS Resolution",
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 329,
+          "quote": "await new Promise(r => setTimeout(r, delay));"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Over-reliance on 'URL' constructor for parsing",
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 509,
+          "quote": "const parsed = new URL(u);"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Lack of Input Sanitization for 'is_ipv6'",
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 12,
+          "quote": "export function is_ipv6(ip: string): boolean {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unsafe Regex in `normalize_ipv4`",
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 196,
+          "quote": "if (!/^\\d{1,3}(\\.\\d{1,3}){3}$/.test(trimmed)) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of 'process.env.DSSRF_MAKE_REQUEST'",
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 8,
+          "quote": "const DSSRF_MAKE_REQUEST = process.env.DSSRF_MAKE_REQUEST;"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Excessive reliance on try-catch for security validation",
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 518,
+          "quote": "} catch { return false; }"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Manual string replacement for URL structure",
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 381,
+          "quote": "let u = s.replace(/\\\\/g, \"/\");"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Hardcoded debug logs in exposed functions",
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 525,
+          "quote": "export async function is_url_safe_debug(url: string): Promise<boolean> { try { console.log(\"STEP 1 input:\", url);"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure default configuration for redirects",
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 513,
+          "quote": "if (process.env.DSSRF_CHECK_REDIRECTS === \"1\") {"
+        }
+      ],
+      "outcome": "unchecked"
+    }
+  ],
+  "rejected": [],
+  "verification": null,
+  "arm_meta": {
+    "baseline": {
+      "model": "gemini/gemini-3.1-flash-lite",
+      "context": "code",
+      "requested": 15,
+      "returned": 15,
+      "files_shown": 20,
+      "chars_shown": 37387,
+      "files_that_did_not_fit": []
+    }
+  },
+  "seconds": {
+    "arm": 8.5,
+    "check": 0.0,
+    "total": 8.5
+  },
+  "usage": {
+    "arm": {
+      "calls": 1,
+      "failed": 0,
+      "est_tokens": 12528,
+      "seconds_in_calls": 8.5,
+      "by_task": {
+        "baseline": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 38459,
+          "completion_chars": 11652,
+          "seconds": 8.454045000020415,
+          "est_tokens": 12528
+        }
+      }
+    },
+    "check": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    }
+  }
+}

@@ -1,0 +1,42 @@
+{
+ "findings": [
+  {
+   "title": "Potential Prototype Pollution via Object.assign/spread",
+   "generation": 1,
+   "discovered_by": "single-prompt baseline",
+   "description": "Several areas of the code use spread operators and manual object manipulation on user-supplied options without filtering dangerous properties like `__proto__`.",
+   "steps_to_exploit": [
+    "Attacker provides a malicious options object with a `__proto__` property.",
+    "The object is spread or merged into `kDefaultOptions` or other configurations.",
+    "Prototype pollution occurs, affecting all objects of that type across the application."
+   ],
+   "impact": "Global application state manipulation leading to denial of service or code execution.",
+   "evolved_from": [],
+   "attack_category": "injection",
+   "confidence": 1.0,
+   "exploitability": 0.0,
+   "impact_score": 0.0,
+   "spread": 0.0,
+   "fix_difficulty": 1.0,
+   "verification": "",
+   "evidence": [
+    {
+     "file": "src/index.ts",
+     "line": 658,
+     "quote": "this.options = { ...kDefaultOptions, ...options, filename, maxQueue: 0 }"
+    }
+   ],
+   "code_refs": [
+    {
+     "file": "src/index.ts",
+     "line": 658,
+     "quote": "this.options = { ...kDefaultOptions, ...options, filename, maxQueue: 0 }"
+    }
+   ],
+   "id": "4af762ef",
+   "bss": 0.0,
+   "severity_band": "LOW",
+   "fix_priority": "MONITOR"
+  }
+ ]
+}

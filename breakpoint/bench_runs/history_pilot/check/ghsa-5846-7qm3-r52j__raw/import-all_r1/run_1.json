@@ -1,0 +1,407 @@
+{
+  "schema": 1,
+  "set": "ghsa-5846-7qm3-r52j",
+  "variant": "raw",
+  "arm": "import-all_r1",
+  "run": 1,
+  "commit": "2eef49dc0fc3a864e566f44bf6cf9c95e4410798",
+  "started_at": "2026-10-24T11:34:07+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": true,
+  "status": "ok",
+  "candidates": 15,
+  "kept": [
+    {
+      "title": "Exposure of Debug Logic in Production",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The function `is_url_safe_debug` contains sensitive logic and logs input data to the console, which could lead to information disclosure if enabled or exposed.",
+      "steps_to_exploit": [
+        "Find an integration path that calls the debug function",
+        "Observe application logs to capture user-submitted URLs",
+        "Use captured data for further reconnaissance or attack planning"
+      ],
+      "impact": "Information disclosure of internal application states and user input logs.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "CONFIRMED",
+      "evidence": [
+        {
+          "file": "src/helpers.ts",
+          "line": 525,
+          "quote": "export async function is_url_safe_debug(url: string): Promise<boolean> { try { console.log(\"STEP 1 input:\", url); let u = normalize_unicode(url); console.log(\"STEP 2 unicode:\", u); u = replace_backslash_with_slash_in_string(u); console.log("
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 525,
+          "quote": "export async function is_url_safe_debug(url: string): Promise<boolean> { try { console.log(\"STEP 1 input:\", url); let u = normalize_unicode(url); console.log(\"STEP 2 unicode:\", u); u = replace_backslash_with_slash_in_string(u); console.log("
+        }
+      ],
+      "id": "dbd3d654",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "NFKC Normalization May Create Ambiguities",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Using NFKC normalization for URLs can collapse characters in ways that are not consistent with the host's actual domain resolution, leading to 'homograph' type vulnerabilities.",
+      "steps_to_exploit": [
+        "Register a domain that looks similar to an internal service under NFKC normalization",
+        "Pass this domain to the validator",
+        "The validator evaluates the normalized domain while the browser/client requests the literal domain"
+      ],
+      "impact": "Confusion and bypass of domain-based filtering.",
+      "evolved_from": [],
+      "attack_category": "data_privacy",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "CONFIRMED",
+      "evidence": [
+        {
+          "file": "src/helpers.ts",
+          "line": 505,
+          "quote": "let u = normalize_unicode(url);"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 498,
+          "quote": "return input.normalize(\"NFKC\");"
+        }
+      ],
+      "id": "eea4550c",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "proposed": [
+    {
+      "title": "Time-of-Check Time-of-Use (TOCTOU) DNS Rebinding Vulnerability",
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 310,
+          "quote": "export async function is_hostname_resolve_to_internal_ip(hostname: string): Promise<boolean> {"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    },
+    {
+      "title": "Incomplete Blacklist for Internal IP Ranges",
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 21,
+          "quote": "const BAD_RANGE_USED_IN_SSRF: CIDR[] = ["
+        }
+      ],
+      "outcome": "UNVERIFIED:quote_not_in_code"
+    },
+    {
+      "title": "Unsafe Dependency Resolution via require() in ESM Context",
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 6,
+          "quote": "const got = require(\"got\").default;"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    },
+    {
+      "title": "Exposure of Debug Logic in Production",
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 525,
+          "quote": "export async function is_url_safe_debug(url: string): Promise<boolean> { try { console.log(\"STEP 1 input:\", url); let u = normalize_unicode(url); console.log(\"STEP 2 unicode:\", u); u = replace_backslash_with_slash_in_string(u); console.log("
+        }
+      ],
+      "outcome": "kept"
+    },
+    {
+      "title": "Insufficient Input Normalization for Protocols",
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 427,
+          "quote": "export function is_proto_safe(url: string): boolean {"
+        }
+      ],
+      "outcome": "REFUTED:defence_found"
+    },
+    {
+      "title": "Use of 'new URL()' on Unvalidated Input",
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 509,
+          "quote": "const parsed = new URL(u);"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    },
+    {
+      "title": "Dangerous Redirect Handling",
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 460,
+          "quote": "export async function is_redirect_safe(url: string): Promise<boolean> {"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    },
+    {
+      "title": "Insecure Use of Shell/Exec Pattern in Workflow",
+      "code_refs": [
+        {
+          "file": ".github/workflows/njsscan.yml",
+          "line": 33,
+          "quote": "args: '. --sarif --output results.sarif || true'"
+        }
+      ],
+      "outcome": "REFUTED:defence_found"
+    },
+    {
+      "title": "Weak Binary IP Conversion Logic",
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 126,
+          "quote": "export function bin_ip_to_normal_ip(bin: string): string {"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    },
+    {
+      "title": "Implicitly Trusted DNS Resolution",
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 270,
+          "quote": "import { promises as dns } from \"dns\";"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    },
+    {
+      "title": "Lack of Strict Input Validation on Port Numbers",
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 509,
+          "quote": "const parsed = new URL(u);"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    },
+    {
+      "title": "Excessive GitHub Actions Permissions",
+      "code_refs": [
+        {
+          "file": ".github/workflows/labeler.yml",
+          "line": 17,
+          "quote": "repo-token: \"${{ secrets.LABELER_TOKEN }}\""
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    },
+    {
+      "title": "Inconsistent Normalization of Backslashes",
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 378,
+          "quote": "export function replace_backslash_with_slash_in_string(s: string): string {"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    },
+    {
+      "title": "NFKC Normalization May Create Ambiguities",
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 498,
+          "quote": "return input.normalize(\"NFKC\");"
+        }
+      ],
+      "outcome": "kept"
+    },
+    {
+      "title": "Use of deprecated and potentially insecure dependencies",
+      "code_refs": [
+        {
+          "file": "package.json",
+          "line": 44,
+          "quote": "\"got\": \"15.0.3\","
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    }
+  ],
+  "rejected": [
+    {
+      "title": "Time-of-Check Time-of-Use (TOCTOU) DNS Rebinding Vulnerability",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    },
+    {
+      "title": "Incomplete Blacklist for Internal IP Ranges",
+      "status": "UNVERIFIED",
+      "code": "quote_not_in_code",
+      "why": "the reviewer's quotes do not exist in the files named"
+    },
+    {
+      "title": "Unsafe Dependency Resolution via require() in ESM Context",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    },
+    {
+      "title": "Insufficient Input Normalization for Protocols",
+      "status": "REFUTED",
+      "code": "defence_found",
+      "why": "a protection enforced in the code defeats the claim"
+    },
+    {
+      "title": "Use of 'new URL()' on Unvalidated Input",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    },
+    {
+      "title": "Dangerous Redirect Handling",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    },
+    {
+      "title": "Insecure Use of Shell/Exec Pattern in Workflow",
+      "status": "REFUTED",
+      "code": "defence_found",
+      "why": "a protection enforced in the code defeats the claim"
+    },
+    {
+      "title": "Weak Binary IP Conversion Logic",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    },
+    {
+      "title": "Implicitly Trusted DNS Resolution",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    },
+    {
+      "title": "Lack of Strict Input Validation on Port Numbers",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    },
+    {
+      "title": "Excessive GitHub Actions Permissions",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    },
+    {
+      "title": "Inconsistent Normalization of Backslashes",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    },
+    {
+      "title": "Use of deprecated and potentially insecure dependencies",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    }
+  ],
+  "verification": {
+    "mode": "source-code",
+    "files_indexed": 29,
+    "checked": 15,
+    "confirmed": 2,
+    "refuted": 12,
+    "unverified": 1,
+    "errors": 0,
+    "defender_pass": true,
+    "appeal_pass": true
+  },
+  "arm_meta": {
+    "imported_from": "eval_runs_check/inputs/ghsa-5846-7qm3-r52j/all_r1.json",
+    "note": "produced elsewhere; not repeatable by this harness"
+  },
+  "seconds": {
+    "arm": 0.0,
+    "check": 271.2,
+    "total": 271.2
+  },
+  "usage": {
+    "arm": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    },
+    "check": {
+      "calls": 46,
+      "failed": 0,
+      "est_tokens": 311458,
+      "seconds_in_calls": 270.9,
+      "by_task": {
+        "verify_appeal": {
+          "calls": 12,
+          "failed": 0,
+          "prompt_chars": 484257,
+          "completion_chars": 8440,
+          "seconds": 67.18134590005502,
+          "est_tokens": 123174
+        },
+        "verify_defend": {
+          "calls": 4,
+          "failed": 0,
+          "prompt_chars": 130513,
+          "completion_chars": 2394,
+          "seconds": 19.868704300024547,
+          "est_tokens": 33227
+        },
+        "verify_judge": {
+          "calls": 15,
+          "failed": 0,
+          "prompt_chars": 567018,
+          "completion_chars": 17928,
+          "seconds": 78.3400436998345,
+          "est_tokens": 146236
+        },
+        "verify_locate": {
+          "calls": 15,
+          "failed": 0,
+          "prompt_chars": 31535,
+          "completion_chars": 3749,
+          "seconds": 105.55754339997657,
+          "est_tokens": 8821
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,79 @@
+{
+ "findings": [
+  {
+   "title": "Regex Injection in Header Filter",
+   "generation": 1,
+   "discovered_by": "single-prompt baseline",
+   "description": "The `sensitiveHeaders` filter is constructed using `new RegExp`, and while there is an `escapeRegex` function, any misconfiguration or future changes to `sensitiveHeaders` could lead to regex injection.",
+   "steps_to_exploit": [
+    "An attacker influences the contents of `sensitiveHeaders` if exposed through configuration.",
+    "The library constructs a regex from user-controlled strings.",
+    "The regex logic fails to safely block headers."
+   ],
+   "impact": "Incomplete sanitization of sensitive headers.",
+   "evolved_from": [],
+   "attack_category": "injection",
+   "confidence": 1.0,
+   "exploitability": 0.0,
+   "impact_score": 0.0,
+   "spread": 0.0,
+   "fix_difficulty": 1.0,
+   "verification": "",
+   "evidence": [
+    {
+     "file": "index.js",
+     "line": 118,
+     "quote": "this._headerFilter = new RegExp(\"^(?:\" +"
+    }
+   ],
+   "code_refs": [
+    {
+     "file": "index.js",
+     "line": 118,
+     "quote": "this._headerFilter = new RegExp(\"^(?:\" +"
+    }
+   ],
+   "id": "72bf5180",
+   "bss": 0.0,
+   "severity_band": "LOW",
+   "fix_priority": "MONITOR"
+  },
+  {
+   "title": "Regex Injection via sensitiveHeaders",
+   "generation": 1,
+   "discovered_by": "single-prompt baseline",
+   "description": "The sensitiveHeaders list is converted into a RegExp object using join('|'). While escapeRegex is used, complex or unexpected character inputs could theoretically cause issues in older JS engines.",
+   "steps_to_exploit": [
+    "1. Supply a malicious header string in options.sensitiveHeaders.",
+    "2. Hope that the regex compilation logic fails or behaves unexpectedly to bypass filtering."
+   ],
+   "impact": "Bypassing security filters to leak sensitive headers.",
+   "evolved_from": [],
+   "attack_category": "injection",
+   "confidence": 1.0,
+   "exploitability": 0.0,
+   "impact_score": 0.0,
+   "spread": 0.0,
+   "fix_difficulty": 1.0,
+   "verification": "",
+   "evidence": [
+    {
+     "file": "index.js",
+     "line": 118,
+     "quote": "this._headerFilter = new RegExp(\"^(?:\" +"
+    }
+   ],
+   "code_refs": [
+    {
+     "file": "index.js",
+     "line": 118,
+     "quote": "this._headerFilter = new RegExp(\"^(?:\" +"
+    }
+   ],
+   "id": "90e2c6a4",
+   "bss": 0.0,
+   "severity_band": "LOW",
+   "fix_priority": "MONITOR"
+  }
+ ]
+}

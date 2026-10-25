@@ -1,0 +1,80 @@
+{
+ "findings": [
+  {
+   "title": "Improper Validation of Link Protocols",
+   "generation": 1,
+   "discovered_by": "single-prompt baseline",
+   "description": "The `isAnchorLinkAllowed` function in `src/runtime/parser/utils/props.ts` attempts to sanitize URLs by checking for dangerous protocols, but the logic is brittle and can potentially be bypassed by whitespace or encoding tricks.",
+   "steps_to_exploit": [
+    "Submit a markdown link with a protocol such as `javascript:alert(1)` using variations like `  javascript:` or encoded characters.",
+    "If the validation logic incorrectly flags the origin check, it may permit the dangerous link.",
+    "Users clicking the link trigger the JavaScript execution in their browser."
+   ],
+   "impact": "Cross-Site Scripting (XSS) via injected anchor tags.",
+   "evolved_from": [],
+   "attack_category": "injection",
+   "confidence": 1.0,
+   "exploitability": 0.0,
+   "impact_score": 0.0,
+   "spread": 0.0,
+   "fix_difficulty": 1.0,
+   "verification": "",
+   "evidence": [
+    {
+     "file": "src/runtime/parser/utils/props.ts",
+     "line": 33,
+     "quote": "if (unsafeLinkPrefix.some(prefix => url.protocol.toLowerCase().startsWith(prefix))) {"
+    }
+   ],
+   "code_refs": [
+    {
+     "file": "src/runtime/parser/utils/props.ts",
+     "line": 33,
+     "quote": "if (unsafeLinkPrefix.some(prefix => url.protocol.toLowerCase().startsWith(prefix))) {"
+    }
+   ],
+   "id": "279f0913",
+   "bss": 0.0,
+   "severity_band": "LOW",
+   "fix_priority": "MONITOR"
+  },
+  {
+   "title": "Improper Validation of Link Protocols",
+   "generation": 1,
+   "discovered_by": "single-prompt baseline",
+   "description": "The `isAnchorLinkAllowed` function attempts to sanitize URIs but may be bypassed by various encoding tricks or path manipulations, allowing restricted protocols.",
+   "steps_to_exploit": [
+    "Use obfuscated URI schemes or complex URL structures not caught by the `new URL()` constructor.",
+    "Target restricted protocols like `javascript:` or `vbscript:`.",
+    "The link is rendered as an `<a>` tag, allowing XSS upon user click."
+   ],
+   "impact": "Cross-Site Scripting (XSS) when clicking malicious links.",
+   "evolved_from": [],
+   "attack_category": "injection",
+   "confidence": 1.0,
+   "exploitability": 0.0,
+   "impact_score": 0.0,
+   "spread": 0.0,
+   "fix_difficulty": 1.0,
+   "verification": "",
+   "evidence": [
+    {
+     "file": "src/runtime/parser/utils/props.ts",
+     "line": 33,
+     "quote": "if (unsafeLinkPrefix.some(prefix => url.protocol.toLowerCase().startsWith(prefix))) {"
+    }
+   ],
+   "code_refs": [
+    {
+     "file": "src/runtime/parser/utils/props.ts",
+     "line": 33,
+     "quote": "if (unsafeLinkPrefix.some(prefix => url.protocol.toLowerCase().startsWith(prefix))) {"
+    }
+   ],
+   "id": "71908694",
+   "bss": 0.0,
+   "severity_band": "LOW",
+   "fix_priority": "MONITOR"
+  }
+ ]
+}

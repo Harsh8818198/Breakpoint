@@ -1,0 +1,548 @@
+{
+ "findings": [
+  {
+   "title": "Arbitrary Code Execution via dynamic import of user-controlled filename",
+   "generation": 1,
+   "discovered_by": "single-prompt baseline",
+   "description": "The `getHandler` function in `src/entry/utils.ts` performs a dynamic `import(filename)` where `filename` is provided by the main process through inter-thread communication. Since the main thread takes this filename from user-provided input, an attacker can supply an arbitrary path to execute local code.",
+   "steps_to_exploit": [
+    "Call `tinypool.run` with a `filename` pointing to a malicious local script",
+    "The worker thread receives the message and executes `getHandler` with the malicious path",
+    "The `import(filename)` statement triggers the execution of the attacker's code"
+   ],
+   "impact": "Remote code execution within the context of the worker thread process.",
+   "evolved_from": [],
+   "attack_category": "injection",
+   "confidence": 1.0,
+   "exploitability": 0.0,
+   "impact_score": 0.0,
+   "spread": 0.0,
+   "fix_difficulty": 1.0,
+   "verification": "",
+   "evidence": [
+    {
+     "file": "src/entry/utils.ts",
+     "line": 36,
+     "quote": "const handlerModule = await import(filename)"
+    }
+   ],
+   "code_refs": [
+    {
+     "file": "src/entry/utils.ts",
+     "line": 36,
+     "quote": "const handlerModule = await import(filename)"
+    }
+   ],
+   "id": "84757452",
+   "bss": 0.0,
+   "severity_band": "LOW",
+   "fix_priority": "MONITOR"
+  },
+  {
+   "title": "Insecure ESLint configuration disables critical security checks",
+   "generation": 1,
+   "discovered_by": "single-prompt baseline",
+   "description": "The `eslint.config.js` file explicitly disables multiple `typescript-eslint` rules meant to catch unsafe code execution patterns, such as `no-unsafe-assignment` and `no-unsafe-member-access`.",
+   "steps_to_exploit": [
+    "Developer introduces unsafe data into the codebase",
+    "The linter ignores the vulnerability because the rules are set to 'off'",
+    "Unsafe code propagates into the production binary"
+   ],
+   "impact": "Increases the probability of introducing vulnerabilities like prototype pollution or injection in the codebase.",
+   "evolved_from": [],
+   "attack_category": "config",
+   "confidence": 1.0,
+   "exploitability": 0.0,
+   "impact_score": 0.0,
+   "spread": 0.0,
+   "fix_difficulty": 1.0,
+   "verification": "",
+   "evidence": [
+    {
+     "file": "eslint.config.js",
+     "line": 49,
+     "quote": "'@typescript-eslint/no-unsafe-assignment': 'off'"
+    }
+   ],
+   "code_refs": [
+    {
+     "file": "eslint.config.js",
+     "line": 49,
+     "quote": "'@typescript-eslint/no-unsafe-assignment': 'off'"
+    }
+   ],
+   "id": "36489a84",
+   "bss": 0.0,
+   "severity_band": "LOW",
+   "fix_priority": "MONITOR"
+  },
+  {
+   "title": "Use of 'eval'-like constructor for import",
+   "generation": 1,
+   "discovered_by": "single-prompt baseline",
+   "description": "The `getImportESM` function uses `new Function` to return an `import()` call, which is a common technique to bypass transpiler restrictions but effectively acts as an evaluation of string-based code.",
+   "steps_to_exploit": [
+    "Identify an injection point that influences the logic surrounding the dynamic import",
+    "The `new Function` context executes with the authority of the worker process"
+   ],
+   "impact": "Code injection risks that bypass static analysis tools and environment security constraints.",
+   "evolved_from": [],
+   "attack_category": "injection",
+   "confidence": 1.0,
+   "exploitability": 0.0,
+   "impact_score": 0.0,
+   "spread": 0.0,
+   "fix_difficulty": 1.0,
+   "verification": "",
+   "evidence": [
+    {
+     "file": "src/entry/utils.ts",
+     "line": 12,
+     "quote": "importESMCached = new Function( 'specifier', 'return import(specifier)' ) as typeof importESMCached"
+    }
+   ],
+   "code_refs": [
+    {
+     "file": "src/entry/utils.ts",
+     "line": 12,
+     "quote": "importESMCached = new Function( 'specifier', 'return import(specifier)' ) as typeof importESMCached"
+    }
+   ],
+   "id": "ad05de83",
+   "bss": 0.0,
+   "severity_band": "LOW",
+   "fix_priority": "MONITOR"
+  },
+  {
+   "title": "Worker Process Isolation Bypass via `isolateWorkers: false`",
+   "generation": 1,
+   "discovered_by": "single-prompt baseline",
+   "description": "By default, workers may not be strictly isolated, allowing multiple tasks to potentially share state or exploit memory corruption across tasks if they run in the same process.",
+   "steps_to_exploit": [
+    "Execute a malicious task that alters global state",
+    "Execute a subsequent task on the same worker",
+    "The second task interacts with the tainted global state"
+   ],
+   "impact": "Cross-task data leakage or persistent state attacks.",
+   "evolved_from": [],
+   "attack_category": "architecture",
+   "confidence": 1.0,
+   "exploitability": 0.0,
+   "impact_score": 0.0,
+   "spread": 0.0,
+   "fix_difficulty": 1.0,
+   "verification": "",
+   "evidence": [
+    {
+     "file": "src/index.ts",
+     "line": 1058,
+     "quote": "if ( !this.options.isolateWorkers && this.options.maxMemoryLimitBeforeRecycle !== undefined && (taskInfo?.workerInfo?.usedMemory || 0) > this.options.maxMemoryLimitBeforeRecycle ) {"
+    }
+   ],
+   "code_refs": [
+    {
+     "file": "src/index.ts",
+     "line": 1058,
+     "quote": "if ( !this.options.isolateWorkers && this.options.maxMemoryLimitBeforeRecycle !== undefined && (taskInfo?.workerInfo?.usedMemory || 0) > this.options.maxMemoryLimitBeforeRecycle ) {"
+    }
+   ],
+   "id": "7bc8127f",
+   "bss": 0.0,
+   "severity_band": "LOW",
+   "fix_priority": "MONITOR"
+  },
+  {
+   "title": "Lack of Input Sanitization for Task Function Names",
+   "generation": 1,
+   "discovered_by": "single-prompt baseline",
+   "description": "The `getHandler` function expects a `name` parameter to resolve an export. This name is used in a member access chain `(handler as any)[name]`, which is vulnerable to prototype pollution.",
+   "steps_to_exploit": [
+    "Pass `constructor` or `__proto__` as the `name` argument to `runTask`",
+    "The `getHandler` function tries to access `handler['constructor']` or `handler['__proto__']`",
+    "The system behavior is altered due to access of prototype properties"
+   ],
+   "impact": "Prototype pollution resulting in privilege escalation or DoS.",
+   "evolved_from": [],
+   "attack_category": "injection",
+   "confidence": 1.0,
+   "exploitability": 0.0,
+   "impact_score": 0.0,
+   "spread": 0.0,
+   "fix_difficulty": 1.0,
+   "verification": "",
+   "evidence": [
+    {
+     "file": "src/entry/utils.ts",
+     "line": 45,
+     "quote": "handler = await (handler as any)[name]"
+    }
+   ],
+   "code_refs": [
+    {
+     "file": "src/entry/utils.ts",
+     "line": 45,
+     "quote": "handler = await (handler as any)[name]"
+    }
+   ],
+   "id": "e93efa1a",
+   "bss": 0.0,
+   "severity_band": "LOW",
+   "fix_priority": "MONITOR"
+  },
+  {
+   "title": "Exposure of sensitive environment variables to child processes",
+   "generation": 1,
+   "discovered_by": "single-prompt baseline",
+   "description": "The `ProcessWorker` spawns new processes using `fork`, which by default copies the current process's environment variables to the child unless carefully filtered.",
+   "steps_to_exploit": [
+    "The main process has sensitive environment variables (API keys, secrets)",
+    "A child worker is spawned",
+    "The child worker logs or sends these environment variables to an external entity"
+   ],
+   "impact": "Leakage of sensitive secrets to potentially untrusted child-process workers.",
+   "evolved_from": [],
+   "attack_category": "data_privacy",
+   "confidence": 1.0,
+   "exploitability": 0.0,
+   "impact_score": 0.0,
+   "spread": 0.0,
+   "fix_difficulty": 1.0,
+   "verification": "",
+   "evidence": [
+    {
+     "file": "src/runtime/process-worker.ts",
+     "line": 30,
+     "quote": "env: { ...options.env, TINYPOOL_WORKER_ID: options.workerData[0].workerId.toString(), },"
+    }
+   ],
+   "code_refs": [
+    {
+     "file": "src/runtime/process-worker.ts",
+     "line": 30,
+     "quote": "env: { ...options.env, TINYPOOL_WORKER_ID: options.workerData[0].workerId.toString(), },"
+    }
+   ],
+   "id": "939244a7",
+   "bss": 0.0,
+   "severity_band": "LOW",
+   "fix_priority": "MONITOR"
+  },
+  {
+   "title": "Unchecked Error Serialization leading to info disclosure",
+   "generation": 1,
+   "discovered_by": "single-prompt baseline",
+   "description": "The `serializeError` function blindly copies all properties of an `Error` object using `...error`. If a custom Error object contains sensitive internal data, that data is serialized and sent to the parent process.",
+   "steps_to_exploit": [
+    "A task throws an Error object with custom properties containing PII",
+    "The serialized object is sent to the main process via `postMessage`",
+    "The main process logs the object, exposing the PII"
+   ],
+   "impact": "Leakage of sensitive data present in error objects.",
+   "evolved_from": [],
+   "attack_category": "error_handling",
+   "confidence": 1.0,
+   "exploitability": 0.0,
+   "impact_score": 0.0,
+   "spread": 0.0,
+   "fix_difficulty": 1.0,
+   "verification": "",
+   "evidence": [],
+   "code_refs": [],
+   "id": "6eea8d17",
+   "bss": 0.0,
+   "severity_band": "LOW",
+   "fix_priority": "MONITOR"
+  },
+  {
+   "title": "Race condition in `Atomics` state management",
+   "generation": 1,
+   "discovered_by": "single-prompt baseline",
+   "description": "The `atomicsWaitLoop` relies on `Atomics.load` and `Atomics.wait`. If the timing between reading the count and waiting is misaligned, messages could be processed out of order or dropped.",
+   "steps_to_exploit": [
+    "Send multiple high-frequency messages to a worker",
+    "The worker loop enters `Atomics.wait` while a message is already in the pipe",
+    "The worker stalls until the next update to the shared buffer"
+   ],
+   "impact": "Denial of service (task execution stall) or inconsistent state.",
+   "evolved_from": [],
+   "attack_category": "architecture",
+   "confidence": 1.0,
+   "exploitability": 0.0,
+   "impact_score": 0.0,
+   "spread": 0.0,
+   "fix_difficulty": 1.0,
+   "verification": "",
+   "evidence": [
+    {
+     "file": "src/entry/worker.ts",
+     "line": 79,
+     "quote": "Atomics.wait(sharedBuffer, kRequestCountField, lastSeenRequestCount)"
+    }
+   ],
+   "code_refs": [
+    {
+     "file": "src/entry/worker.ts",
+     "line": 79,
+     "quote": "Atomics.wait(sharedBuffer, kRequestCountField, lastSeenRequestCount)"
+    }
+   ],
+   "id": "9ab18186",
+   "bss": 0.0,
+   "severity_band": "LOW",
+   "fix_priority": "MONITOR"
+  },
+  {
+   "title": "Over-privileged File Access in `src/index.ts`",
+   "generation": 1,
+   "discovered_by": "single-prompt baseline",
+   "description": "The main process reads the project's `package.json` to get the version, exposing the internal directory structure and build metadata.",
+   "steps_to_exploit": [
+    "The worker calls `Tinypool.version`",
+    "The code reads `../package.json` relative to the current file path",
+    "This confirms directory traversal and file reading capabilities in the main thread"
+   ],
+   "impact": "Information disclosure of server-side file structure.",
+   "evolved_from": [],
+   "attack_category": "config",
+   "confidence": 1.0,
+   "exploitability": 0.0,
+   "impact_score": 0.0,
+   "spread": 0.0,
+   "fix_difficulty": 1.0,
+   "verification": "",
+   "evidence": [
+    {
+     "file": "src/index.ts",
+     "line": 1244,
+     "quote": "readFileSync(join(__dirname, '../package.json'), 'utf-8')"
+    }
+   ],
+   "code_refs": [
+    {
+     "file": "src/index.ts",
+     "line": 1244,
+     "quote": "readFileSync(join(__dirname, '../package.json'), 'utf-8')"
+    }
+   ],
+   "id": "2fec5ef1",
+   "bss": 0.0,
+   "severity_band": "LOW",
+   "fix_priority": "MONITOR"
+  },
+  {
+   "title": "Insecure default configuration for worker runtime",
+   "generation": 1,
+   "discovered_by": "single-prompt baseline",
+   "description": "The `ThreadWorker` does not enforce strict security policies on the created `Worker` instance, relying on default Node.js behavior which may not be hardened for dynamic task execution.",
+   "steps_to_exploit": [
+    "Initialize a `Tinypool` without explicit security hardening options",
+    "The worker executes tasks in a relatively permissive sandbox"
+   ],
+   "impact": "Reduced security boundary between task code and the host system.",
+   "evolved_from": [],
+   "attack_category": "config",
+   "confidence": 1.0,
+   "exploitability": 0.0,
+   "impact_score": 0.0,
+   "spread": 0.0,
+   "fix_difficulty": 1.0,
+   "verification": "",
+   "evidence": [
+    {
+     "file": "src/runtime/thread-worker.ts",
+     "line": 13,
+     "quote": "this.thread = new Worker( fileURLToPath(import.meta.url + '/../entry/worker.js'), options )"
+    }
+   ],
+   "code_refs": [
+    {
+     "file": "src/runtime/thread-worker.ts",
+     "line": 13,
+     "quote": "this.thread = new Worker( fileURLToPath(import.meta.url + '/../entry/worker.js'), options )"
+    }
+   ],
+   "id": "99aa1145",
+   "bss": 0.0,
+   "severity_band": "LOW",
+   "fix_priority": "MONITOR"
+  },
+  {
+   "title": "Use of `SIGKILL` for forceful termination",
+   "generation": 1,
+   "discovered_by": "single-prompt baseline",
+   "description": "When a worker fails to terminate gracefully within the timeout, `SIGKILL` is sent, which is non-catchable and can leave resources in an inconsistent state.",
+   "steps_to_exploit": [
+    "Trigger a task that requires cleanup (e.g. file lock)",
+    "Initiate termination of the worker",
+    "The worker is killed via `SIGKILL` before cleaning up its resources"
+   ],
+   "impact": "Inconsistent system state, potential file system corruption, or orphaned handles.",
+   "evolved_from": [],
+   "attack_category": "architecture",
+   "confidence": 1.0,
+   "exploitability": 0.0,
+   "impact_score": 0.0,
+   "spread": 0.0,
+   "fix_difficulty": 1.0,
+   "verification": "",
+   "evidence": [
+    {
+     "file": "src/runtime/process-worker.ts",
+     "line": 57,
+     "quote": "() => this.process.kill('SIGKILL'),"
+    }
+   ],
+   "code_refs": [
+    {
+     "file": "src/runtime/process-worker.ts",
+     "line": 57,
+     "quote": "() => this.process.kill('SIGKILL'),"
+    }
+   ],
+   "id": "e69bca7c",
+   "bss": 0.0,
+   "severity_band": "LOW",
+   "fix_priority": "MONITOR"
+  },
+  {
+   "title": "Unsafe `process.nextTick` usage for error propagation",
+   "generation": 1,
+   "discovered_by": "single-prompt baseline",
+   "description": "When a task fails to initialize, the error is thrown inside `process.nextTick`. This can bypass standard `try-catch` blocks and lead to an unhandled exception that crashes the entire application.",
+   "steps_to_exploit": [
+    "Cause an error during task bootstrap",
+    "The code executes `throwInNextTick`",
+    "The error reaches the top-level process loop, potentially killing the main application"
+   ],
+   "impact": "Denial of service through process crash.",
+   "evolved_from": [],
+   "attack_category": "error_handling",
+   "confidence": 1.0,
+   "exploitability": 0.0,
+   "impact_score": 0.0,
+   "spread": 0.0,
+   "fix_difficulty": 1.0,
+   "verification": "",
+   "evidence": [],
+   "code_refs": [],
+   "id": "844b56fd",
+   "bss": 0.0,
+   "severity_band": "LOW",
+   "fix_priority": "MONITOR"
+  },
+  {
+   "title": "Lack of resource limiting for task queue",
+   "generation": 1,
+   "discovered_by": "single-prompt baseline",
+   "description": "By default, `maxQueue` can be set to `Infinity`, which allows an attacker to flood the pool with tasks and consume memory until the process runs out of heap space.",
+   "steps_to_exploit": [
+    "Set `maxQueue` to `Infinity` in configuration",
+    "Spam the pool with thousands of large tasks",
+    "The memory consumption increases until the event loop blocks or memory limit is hit"
+   ],
+   "impact": "Denial of Service due to memory exhaustion.",
+   "evolved_from": [],
+   "attack_category": "rate_limiting",
+   "confidence": 1.0,
+   "exploitability": 0.0,
+   "impact_score": 0.0,
+   "spread": 0.0,
+   "fix_difficulty": 1.0,
+   "verification": "",
+   "evidence": [
+    {
+     "file": "src/index.ts",
+     "line": 180,
+     "quote": "maxQueue: Infinity,"
+    }
+   ],
+   "code_refs": [
+    {
+     "file": "src/index.ts",
+     "line": 180,
+     "quote": "maxQueue: Infinity,"
+    }
+   ],
+   "id": "a57c2a53",
+   "bss": 0.0,
+   "severity_band": "LOW",
+   "fix_priority": "MONITOR"
+  },
+  {
+   "title": "Global state pollution in `process.__tinypool_state__`",
+   "generation": 1,
+   "discovered_by": "single-prompt baseline",
+   "description": "The pool stores internal flags in the global `process` object. This is a shared namespace and can be modified by any task running in the same process, causing unpredictable pool behavior.",
+   "steps_to_exploit": [
+    "A task modifies `process.__tinypool_state__`",
+    "The internal pool logic reads the corrupted `workerId` or `isTinypoolWorker` flag",
+    "The pool logic fails to handle tasks correctly, leading to logic flaws"
+   ],
+   "impact": "Security bypass or incorrect authorization if pool logic relies on these flags.",
+   "evolved_from": [],
+   "attack_category": "architecture",
+   "confidence": 1.0,
+   "exploitability": 0.0,
+   "impact_score": 0.0,
+   "spread": 0.0,
+   "fix_difficulty": 1.0,
+   "verification": "",
+   "evidence": [
+    {
+     "file": "src/index.ts",
+     "line": 43,
+     "quote": "__tinypool_state__: { isTinypoolWorker: boolean isWorkerThread?: boolean isChildProcess?: boolean workerData: any workerId: number }"
+    }
+   ],
+   "code_refs": [
+    {
+     "file": "src/index.ts",
+     "line": 43,
+     "quote": "__tinypool_state__: { isTinypoolWorker: boolean isWorkerThread?: boolean isChildProcess?: boolean workerData: any workerId: number }"
+    }
+   ],
+   "id": "bf6e5380",
+   "bss": 0.0,
+   "severity_band": "LOW",
+   "fix_priority": "MONITOR"
+  },
+  {
+   "title": "Incomplete sanitization of worker environment",
+   "generation": 1,
+   "discovered_by": "single-prompt baseline",
+   "description": "The `initialize` method for `ProcessWorker` merges user-provided environment variables directly into the child process environment, potentially overriding critical system variables.",
+   "steps_to_exploit": [
+    "Provide malicious environment variables (e.g., `NODE_OPTIONS`, `LD_PRELOAD`) in the `env` config",
+    "The worker is spawned with these variables",
+    "The worker executes code with modified environment behavior"
+   ],
+   "impact": "Environment variable injection into child workers.",
+   "evolved_from": [],
+   "attack_category": "config",
+   "confidence": 1.0,
+   "exploitability": 0.0,
+   "impact_score": 0.0,
+   "spread": 0.0,
+   "fix_difficulty": 1.0,
+   "verification": "",
+   "evidence": [
+    {
+     "file": "src/runtime/process-worker.ts",
+     "line": 30,
+     "quote": "env: { ...options.env,"
+    }
+   ],
+   "code_refs": [
+    {
+     "file": "src/runtime/process-worker.ts",
+     "line": 30,
+     "quote": "env: { ...options.env,"
+    }
+   ],
+   "id": "862d01ce",
+   "bss": 0.0,
+   "severity_band": "LOW",
+   "fix_priority": "MONITOR"
+  }
+ ]
+}

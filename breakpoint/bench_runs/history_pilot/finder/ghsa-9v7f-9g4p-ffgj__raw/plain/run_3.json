@@ -1,0 +1,721 @@
+{
+  "schema": 1,
+  "set": "ghsa-9v7f-9g4p-ffgj",
+  "variant": "raw",
+  "arm": "plain",
+  "run": 3,
+  "commit": "f91ed44dd65baaf457f4b3353ed35e98a753934c",
+  "started_at": "2026-10-24T10:51:57+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": false,
+  "status": "ok",
+  "candidates": 15,
+  "kept": [
+    {
+      "title": "Unauthenticated JWT Algorithm Switching",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `jwt/api_jws.py` logic allows tokens to specify the algorithm in the header. If the signature verification key is not bound to a specific algorithm or if the `algorithms` allow-list is misconfigured, an attacker can downgrade from an asymmetric algorithm (e.g., RS256) to 'none' or a symmetric one (HS256) using the public key as the secret.",
+      "steps_to_exploit": [
+        "Obtain the public key of the server.",
+        "Modify the JWT header to set 'alg' to 'HS256'.",
+        "Sign the token using the public key bytes as the HMAC secret.",
+        "Submit the malicious token."
+      ],
+      "impact": "Full authentication bypass, allowing attackers to forge tokens and impersonate any user.",
+      "evolved_from": [],
+      "attack_category": "auth",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "jwt/api_jws.py",
+          "line": 398,
+          "quote": "alg = header[\"alg\"]"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "jwt/api_jws.py",
+          "line": 398,
+          "quote": "alg = header[\"alg\"]"
+        }
+      ],
+      "id": "da0152ff",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of Weak/null Algorithm by Default",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "In `jwt/api_jws.py`, the `encode` function defaults to `HS256` if no algorithm is provided, and explicitly allows 'none' if `key` is not a `PyJWK` object. This encourages insecure implementation defaults.",
+      "steps_to_exploit": [
+        "Call `jwt.encode` without specifying an `algorithm` parameter.",
+        "Observe the resulting token header uses HS256 or 'none'.",
+        "Forge a token without needing a valid private key."
+      ],
+      "impact": "Token forgery due to weak default security posture.",
+      "evolved_from": [],
+      "attack_category": "crypto",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "jwt/api_jws.py",
+          "line": 140,
+          "quote": "algorithm_ = \"HS256\""
+        },
+        {
+          "file": "jwt/api_jws.py",
+          "line": 145,
+          "quote": "algorithm_ = \"none\""
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "jwt/api_jws.py",
+          "line": 140,
+          "quote": "algorithm_ = \"HS256\""
+        },
+        {
+          "file": "jwt/api_jws.py",
+          "line": 145,
+          "quote": "algorithm_ = \"none\""
+        }
+      ],
+      "id": "53b3c7ec",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Implicit Trust in Unverified Header Claims",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The library provides a method `get_unverified_header` that encourages developers to inspect the JWT header before signature verification is performed, often leading to trust in fields like 'kid' or 'alg' before they are validated.",
+      "steps_to_exploit": [
+        "Attacker creates a JWT with a malicious 'kid' header pointing to a different key.",
+        "Application calls `get_unverified_header` and proceeds with business logic based on unvalidated data.",
+        "Application is tricked into using an incorrect key to verify or process the token."
+      ],
+      "impact": "Logic flaws and potential secondary vulnerabilities like Key Injection.",
+      "evolved_from": [],
+      "attack_category": "auth",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "jwt/api_jws.py",
+          "line": 315,
+          "quote": "def get_unverified_header(self, jwt: str | bytes) -> dict[str, Any]:"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "jwt/api_jws.py",
+          "line": 315,
+          "quote": "def get_unverified_header(self, jwt: str | bytes) -> dict[str, Any]:"
+        }
+      ],
+      "id": "5908c58b",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "JWKS URI Scheme Confusion",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "While `PyJWKClient` filters schemes, it relies on standard `urllib` which may process unintended schemes if the validation is bypassed or if internal redirects within the library's dependencies occur.",
+      "steps_to_exploit": [
+        "Supply a file-based or secondary URI to `PyJWKClient` if the URL parsing can be circumvented via variations.",
+        "Trigger the library to perform a 'fetch' on a local system resource.",
+        "Expose sensitive local files via the JWK endpoint response."
+      ],
+      "impact": "Local File Disclosure or SSRF via configuration.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "jwt/jwks_client.py",
+          "line": 78,
+          "quote": "if scheme not in (\"http\", \"https\"):"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "jwt/jwks_client.py",
+          "line": 78,
+          "quote": "if scheme not in (\"http\", \"https\"):"
+        }
+      ],
+      "id": "682da9db",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Deprecation of 'verify' Argument Confusing Security Policies",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `decode` method accepts a deprecated `verify` argument which does nothing. Users may pass `verify=false` expecting to disable signature verification, which remains active, leading to a false sense of security or configuration errors.",
+      "steps_to_exploit": [
+        "User calls `jwt.decode(..., verify=false)` expecting to bypass verification.",
+        "The library ignores this setting and performs signature verification.",
+        "System operation fails or behaves unexpectedly due to incorrect security assumptions."
+      ],
+      "impact": "Configuration errors leading to failed authentication logic or denial of service.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [],
+      "code_refs": [],
+      "id": "8d1cb736",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potential Hash Collision with HMAC SHA-256",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "HMAC-SHA256 implementations are generally secure, but the library allows `HS256` with potentially weak user-provided secrets. The library warns but does not force high-entropy keys.",
+      "steps_to_exploit": [
+        "An organization uses a weak, human-readable passphrase as the HMAC secret.",
+        "Attacker performs an offline brute-force attack to recover the key.",
+        "Forge JWTs."
+      ],
+      "impact": "Key compromise leading to unauthorized access.",
+      "evolved_from": [],
+      "attack_category": "crypto",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [],
+      "code_refs": [],
+      "id": "efd50822",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unsafe JSON Loading in Header and Payload",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The library uses `json.loads` to decode headers and payloads. While typical for JWTs, this can lead to memory exhaustion (DoS) via deeply nested objects or massive strings in malicious tokens before signature verification is completed.",
+      "steps_to_exploit": [
+        "Craft a JWT with a massive, deeply nested JSON structure in the header.",
+        "Send the token to the server.",
+        "The server consumes large amounts of CPU and memory while parsing, causing a DoS."
+      ],
+      "impact": "Denial of Service.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "jwt/api_jws.py",
+          "line": 359,
+          "quote": "header: dict[str, Any] = json.loads(header_data)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "jwt/api_jws.py",
+          "line": 359,
+          "quote": "header: dict[str, Any] = json.loads(header_data)"
+        }
+      ],
+      "id": "eede65b3",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "JWT 'crit' Extension Bypassing",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "If a token specifies a 'crit' (critical) header, and the library doesn't recognize or enforce it, the receiver might ignore security-critical features. `PyJWS` strictly validates this, but any failure to properly extend this logic in custom implementations leads to bypasses.",
+      "steps_to_exploit": [
+        "Inject a custom critical header.",
+        "Send the token to an endpoint that doesn't check the `crit` claim list strictly.",
+        "The system ignores the security requirement defined by the critical header."
+      ],
+      "impact": "Security policy bypass (e.g., ignoring encryption or mandatory signatures).",
+      "evolved_from": [],
+      "attack_category": "auth",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "jwt/api_jws.py",
+          "line": 457,
+          "quote": "if ext not in self._supported_crit:"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "jwt/api_jws.py",
+          "line": 457,
+          "quote": "if ext not in self._supported_crit:"
+        }
+      ],
+      "id": "ffa8dea4",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Timing via time.monotonic()",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The cache expiration logic uses `time.monotonic()`. If the system clock shifts significantly, it may affect long-running processes, but more importantly, cache lifetimes are global and do not respect individual token expiry.",
+      "steps_to_exploit": [
+        "Cache the JWKS.",
+        "Attempt to revoke a key via the JWKS endpoint.",
+        "The server continues to accept the old, revoked key for the remainder of the 300s lifespan."
+      ],
+      "impact": "Key revocation delays allowing attackers to use revoked credentials.",
+      "evolved_from": [],
+      "attack_category": "auth",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "jwt/jwk_set_cache.py",
+          "line": 29,
+          "quote": "time.monotonic()"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "jwt/jwk_set_cache.py",
+          "line": 29,
+          "quote": "time.monotonic()"
+        }
+      ],
+      "id": "d8570213",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Permissive Audience Validation (strict_aud=false)",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Default validation allows `aud` to be a list, which can lead to confusion if the server expects a single specific audience. `strict_aud=false` makes it prone to cross-service confusion.",
+      "steps_to_exploit": [
+        "Obtain a valid token intended for 'Service A'.",
+        "Submit the same token to 'Service B'.",
+        "If the validation logic doesn't require strict string matching, 'Service B' may incorrectly accept the token."
+      ],
+      "impact": "Cross-service token reuse.",
+      "evolved_from": [],
+      "attack_category": "auth",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [],
+      "code_refs": [],
+      "id": "c54b28fe",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Default Key Length Enforcement",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "By default, the library only issues a warning for weak keys rather than raising an error, making systems vulnerable to weak RSA key generation.",
+      "steps_to_exploit": [
+        "Configure a server to use 1024-bit RSA keys.",
+        "The library continues to accept these keys without erroring out by default.",
+        "The key is brute-forced by an attacker."
+      ],
+      "impact": "Use of cryptographically weak keys.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [],
+      "code_refs": [],
+      "id": "6e855eab",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "JWKS Response Cache Poisoning",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The caching logic `jwk_set_cache` does not validate the structure or origin of the JWKS beyond basic existence. If the server fetching the JWKS is configured with a user-controlled URL, an attacker can supply malicious JWKS data.",
+      "steps_to_exploit": [
+        "Direct the `PyJWKClient` to an attacker-controlled endpoint.",
+        "Serve a malicious JWK Set with a public key controlled by the attacker.",
+        "The library caches this key, allowing the attacker to spoof tokens for the duration of the cache lifespan."
+      ],
+      "impact": "Authentication bypass via cache-injected keys.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "jwt/jwks_client.py",
+          "line": 134,
+          "quote": "self.jwk_set_cache.put(jwk_set)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "jwt/jwks_client.py",
+          "line": 134,
+          "quote": "self.jwk_set_cache.put(jwk_set)"
+        }
+      ],
+      "id": "c14e1e68",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Possible Information Leakage via Error Messages",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Exceptions like `InvalidKeyError` provide granular feedback about why a key failed to parse. This can be used for oracle attacks to determine if a specific key format or curve is supported.",
+      "steps_to_exploit": [
+        "Submit malformed keys with different formats/curves.",
+        "Observe the error messages returned to the API.",
+        "Map the capabilities and supported algorithms of the target server."
+      ],
+      "impact": "Information disclosure facilitating targeted attacks.",
+      "evolved_from": [],
+      "attack_category": "error_handling",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [],
+      "code_refs": [],
+      "id": "8f15c396",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Reliance on Global State for JWKS Client",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The library defines global objects, making it difficult to isolate instances of `PyJWS` or `PyJWT` if a library user wants different security configurations in different parts of the same process.",
+      "steps_to_exploit": [
+        "Identify two parts of a system that share the global `_jws_global_obj`.",
+        "Modify the registration of algorithms in one part, affecting the global state.",
+        "Bypass the intended security restrictions in the other part."
+      ],
+      "impact": "Configuration pollution and bypass of security controls.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "jwt/api_jws.py",
+          "line": 465,
+          "quote": "_jws_global_obj = PyJWS()"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "jwt/api_jws.py",
+          "line": 465,
+          "quote": "_jws_global_obj = PyJWS()"
+        }
+      ],
+      "id": "d192f78c",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unbounded Memory Usage by LRU Cache",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The per-key LRU cache in `PyJWKClient` is limited by `max_cached_keys`, but there is no protection against a malicious JWKS source providing an infinite number of unique key IDs to exhaust memory if the cache logic were incorrectly overridden.",
+      "steps_to_exploit": [
+        "Configure `PyJWKClient` to use the LRU cache.",
+        "Supply an endpoint that dynamically generates a new `kid` for every request.",
+        "Force the cache to constantly evict and store new objects, leading to high memory pressure."
+      ],
+      "impact": "Resource exhaustion and performance degradation.",
+      "evolved_from": [],
+      "attack_category": "scalability",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "jwt/jwks_client.py",
+          "line": 102,
+          "quote": "get_signing_key = lru_cache(maxsize=max_cached_keys)(self.get_signing_key)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "jwt/jwks_client.py",
+          "line": 102,
+          "quote": "get_signing_key = lru_cache(maxsize=max_cached_keys)(self.get_signing_key)"
+        }
+      ],
+      "id": "13ca7284",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "proposed": [
+    {
+      "title": "Unauthenticated JWT Algorithm Switching",
+      "code_refs": [
+        {
+          "file": "jwt/api_jws.py",
+          "line": 398,
+          "quote": "alg = header[\"alg\"]"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of Weak/null Algorithm by Default",
+      "code_refs": [
+        {
+          "file": "jwt/api_jws.py",
+          "line": 140,
+          "quote": "algorithm_ = \"HS256\""
+        },
+        {
+          "file": "jwt/api_jws.py",
+          "line": 145,
+          "quote": "algorithm_ = \"none\""
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Implicit Trust in Unverified Header Claims",
+      "code_refs": [
+        {
+          "file": "jwt/api_jws.py",
+          "line": 315,
+          "quote": "def get_unverified_header(self, jwt: str | bytes) -> dict[str, Any]:"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "JWKS URI Scheme Confusion",
+      "code_refs": [
+        {
+          "file": "jwt/jwks_client.py",
+          "line": 78,
+          "quote": "if scheme not in (\"http\", \"https\"):"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Deprecation of 'verify' Argument Confusing Security Policies",
+      "code_refs": [],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potential Hash Collision with HMAC SHA-256",
+      "code_refs": [],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unsafe JSON Loading in Header and Payload",
+      "code_refs": [
+        {
+          "file": "jwt/api_jws.py",
+          "line": 359,
+          "quote": "header: dict[str, Any] = json.loads(header_data)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "JWT 'crit' Extension Bypassing",
+      "code_refs": [
+        {
+          "file": "jwt/api_jws.py",
+          "line": 457,
+          "quote": "if ext not in self._supported_crit:"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure Timing via time.monotonic()",
+      "code_refs": [
+        {
+          "file": "jwt/jwk_set_cache.py",
+          "line": 29,
+          "quote": "time.monotonic()"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Permissive Audience Validation (strict_aud=false)",
+      "code_refs": [],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure Default Key Length Enforcement",
+      "code_refs": [],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "JWKS Response Cache Poisoning",
+      "code_refs": [
+        {
+          "file": "jwt/jwks_client.py",
+          "line": 134,
+          "quote": "self.jwk_set_cache.put(jwk_set)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Possible Information Leakage via Error Messages",
+      "code_refs": [],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Reliance on Global State for JWKS Client",
+      "code_refs": [
+        {
+          "file": "jwt/api_jws.py",
+          "line": 465,
+          "quote": "_jws_global_obj = PyJWS()"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unbounded Memory Usage by LRU Cache",
+      "code_refs": [
+        {
+          "file": "jwt/jwks_client.py",
+          "line": 102,
+          "quote": "get_signing_key = lru_cache(maxsize=max_cached_keys)(self.get_signing_key)"
+        }
+      ],
+      "outcome": "unchecked"
+    }
+  ],
+  "rejected": [],
+  "verification": null,
+  "arm_meta": {
+    "baseline": {
+      "model": "gemini/gemini-3.1-flash-lite",
+      "context": "code",
+      "requested": 15,
+      "returned": 15,
+      "files_shown": 27,
+      "chars_shown": 150551,
+      "files_that_did_not_fit": []
+    }
+  },
+  "seconds": {
+    "arm": 11.1,
+    "check": 0.0,
+    "total": 11.1
+  },
+  "usage": {
+    "arm": {
+      "calls": 1,
+      "failed": 0,
+      "est_tokens": 41069,
+      "seconds_in_calls": 10.9,
+      "by_task": {
+        "baseline": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 151637,
+          "completion_chars": 12640,
+          "seconds": 10.868750400026329,
+          "est_tokens": 41069
+        }
+      }
+    },
+    "check": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    }
+  }
+}

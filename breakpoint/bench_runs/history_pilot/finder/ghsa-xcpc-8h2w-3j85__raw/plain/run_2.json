@@ -1,0 +1,795 @@
+{
+  "schema": 1,
+  "set": "ghsa-xcpc-8h2w-3j85",
+  "variant": "raw",
+  "arm": "plain",
+  "run": 2,
+  "commit": "8592b1574e7e6e72d06e1afee5d7f0588d541950",
+  "started_at": "2026-10-24T11:01:27+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": false,
+  "status": "ok",
+  "candidates": 15,
+  "kept": [
+    {
+      "title": "Zip Slip Vulnerability in extraction",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The library does not sufficiently sanitize file paths when extracting files, potentially allowing an attacker to overwrite arbitrary files on the system outside the target directory (Zip Slip).",
+      "steps_to_exploit": [
+        "Craft a malicious ZIP archive where a filename contains '../' sequences.",
+        "Extract the archive using adm-zip's extraction methods.",
+        "The library's path resolution does not block traversal to unintended locations."
+      ],
+      "impact": "Remote Code Execution or file system corruption via arbitrary file write.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "adm-zip.js",
+          "line": 810,
+          "quote": "const getPath = (entry) => sanitize(targetPath, pth.normalize(canonical(entry.entryName)));"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "adm-zip.js",
+          "line": 810,
+          "quote": "const getPath = (entry) => sanitize(targetPath, pth.normalize(canonical(entry.entryName)));"
+        }
+      ],
+      "id": "71eea9de",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of Weak/Broken ZipCrypto",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The library uses legacy ZipCrypto which is cryptographically broken and vulnerable to plaintext attacks.",
+      "steps_to_exploit": [
+        "Capture an encrypted file from a ZIP archive.",
+        "Obtain even a small amount of plaintext data for a file in the archive.",
+        "Use public tools like 'bkcrack' to recover the internal keys and decrypt the files."
+      ],
+      "impact": "Complete loss of confidentiality for protected files.",
+      "evolved_from": [],
+      "attack_category": "crypto",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "methods/zipcrypto.js",
+          "line": 87,
+          "quote": "result[pos++] = keys.updateKeys(c ^ keys.next()); // update keys with decoded byte"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "methods/zipcrypto.js",
+          "line": 87,
+          "quote": "result[pos++] = keys.updateKeys(c ^ keys.next()); // update keys with decoded byte"
+        }
+      ],
+      "id": "b0d1d350",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Integer Overflow in ZIP64 offset calculation",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The logic to handle ZIP64 offsets and sizes is prone to overflow issues when converting 64-bit values to JS Numbers if inputs are maliciously crafted.",
+      "steps_to_exploit": [
+        "Create a ZIP archive with a specifically crafted ZIP64 header.",
+        "Set field values to numbers that cause truncation or precision loss during parsing.",
+        "Trigger unexpected behavior in the central directory indexing."
+      ],
+      "impact": "Denial of service or incorrect file access via corrupted indexing.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "util/utils.js",
+          "line": 321,
+          "quote": "return hi * 0x100000000 + lo;"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "util/utils.js",
+          "line": 321,
+          "quote": "return hi * 0x100000000 + lo;"
+        }
+      ],
+      "id": "43027f17",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure permissions set on extracted files",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Files extracted from the ZIP are written with default permissions that may be overly permissive or inherited incorrectly.",
+      "steps_to_exploit": [
+        "Extract a file from an archive containing sensitive data.",
+        "The library applies 0o666 or inconsistent chmod logic.",
+        "The file is readable/writable by unauthorized local users."
+      ],
+      "impact": "Unauthorized access to sensitive extracted data on shared file systems.",
+      "evolved_from": [],
+      "attack_category": "authz",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "util/utils.js",
+          "line": 94,
+          "quote": "self.fs.chmodSync(path, attr || 0o666);"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "util/utils.js",
+          "line": 94,
+          "quote": "self.fs.chmodSync(path, attr || 0o666);"
+        }
+      ],
+      "id": "e9a24ada",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potential prototype pollution via Object.assign",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The library uses Object.assign on user-provided inputs to initialize configuration, which could lead to prototype pollution.",
+      "steps_to_exploit": [
+        "Pass a malicious JSON object containing '__proto__' or 'constructor' properties to the constructor.",
+        "The library merges these into the configuration object.",
+        "This affects subsequent logic reliant on these configuration properties."
+      ],
+      "impact": "Global application instability or altered logic flow.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "adm-zip.js",
+          "line": 31,
+          "quote": "Object.assign(opts, input);"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "adm-zip.js",
+          "line": 31,
+          "quote": "Object.assign(opts, input);"
+        }
+      ],
+      "id": "9a00209a",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Directory Traversal in addLocalFile",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `addLocalFile` function does not fully sanitize the `zipPath` argument, allowing files to be placed in unexpected relative paths within the archive.",
+      "steps_to_exploit": [
+        "Invoke `addLocalFile` with a `zipPath` containing '../../'.",
+        "The library adds the file to an arbitrary location in the zip structure.",
+        "This can lead to overwriting files if the zip is later extracted improperly."
+      ],
+      "impact": "Malicious modification of archive structure.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "adm-zip.js",
+          "line": 318,
+          "quote": "this.addFile(zipPath, data, comment, _attr);"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "adm-zip.js",
+          "line": 318,
+          "quote": "this.addFile(zipPath, data, comment, _attr);"
+        }
+      ],
+      "id": "75bcfe67",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Denial of Service via decompression loop",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "There is no limit on the size of uncompressed data relative to the compressed input, allowing 'zip bombs' to exhaust memory.",
+      "steps_to_exploit": [
+        "Create a highly compressed ZIP file (zip bomb).",
+        "Call an extraction method on the file.",
+        "The `inflate` logic will attempt to allocate memory for the full size, crashing the process."
+      ],
+      "impact": "Denial of Service via resource exhaustion.",
+      "evolved_from": [],
+      "attack_category": "scalability",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "methods/inflater.js",
+          "line": 9,
+          "quote": "return zlib.inflateRawSync(inbuf, option);"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "methods/inflater.js",
+          "line": 9,
+          "quote": "return zlib.inflateRawSync(inbuf, option);"
+        }
+      ],
+      "id": "ef863e98",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unsafe random number generator for salt",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `genSalt.node` fallback uses `Math.random()`, which is not cryptographically secure.",
+      "steps_to_exploit": [
+        "Force the system to use the `genSalt.node` fallback (if `crypto` is not available or mocked).",
+        "Predict salt generation for encrypted archives.",
+        "Lower the effort required for password cracking attacks."
+      ],
+      "impact": "Weakened security for encrypted ZIP files.",
+      "evolved_from": [],
+      "attack_category": "crypto",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "methods/zipcrypto.js",
+          "line": 42,
+          "quote": "for (let i = 0; i < len; i++) salt[i] = (Math.random() * 256) & 0xff;"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "methods/zipcrypto.js",
+          "line": 42,
+          "quote": "for (let i = 0; i < len; i++) salt[i] = (Math.random() * 256) & 0xff;"
+        }
+      ],
+      "id": "88972a93",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Lack of input validation on header length fields",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The library reads length fields from the ZIP header and uses them for buffer slicing without verifying if they exceed the remaining buffer size.",
+      "steps_to_exploit": [
+        "Provide a ZIP file where a `fileNameLength` or `extraFieldLength` is extremely large.",
+        "The code slices past the end of the buffer or throws an unhandled error.",
+        "This can crash the event loop."
+      ],
+      "impact": "Denial of Service.",
+      "evolved_from": [],
+      "attack_category": "error_handling",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "zipEntry.js",
+          "line": 27,
+          "quote": "_extralocal = _centralHeader.loadLocalHeaderFromBinary(input);"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "zipEntry.js",
+          "line": 27,
+          "quote": "_extralocal = _centralHeader.loadLocalHeaderFromBinary(input);"
+        }
+      ],
+      "id": "5315c652",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure use of `console.warn` for critical error",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Path validation failures are logged to the console but the execution continues, potentially using invalid or empty states.",
+      "steps_to_exploit": [
+        "Trigger the invalid path branch in `fattr.js`.",
+        "The object is returned in a partially initialized, invalid state.",
+        "Subsequent logic performs operations on this uninitialized object."
+      ],
+      "impact": "Unexpected application state leading to potential bugs.",
+      "evolved_from": [],
+      "attack_category": "error_handling",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "util/fattr.js",
+          "line": 28,
+          "quote": "console.warn(\"Invalid path: \" + _path);"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "util/fattr.js",
+          "line": 28,
+          "quote": "console.warn(\"Invalid path: \" + _path);"
+        }
+      ],
+      "id": "410ff329",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Weak validation of ZIP signature",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The library performs a 'quick check' for the character 'P' before validating the signature, which might be bypassed by malicious files.",
+      "steps_to_exploit": [
+        "Create a file with a fake signature that starts with 'P' but is not a valid ZIP.",
+        "The library may attempt to parse it incorrectly.",
+        "This leads to incorrect processing of malicious files."
+      ],
+      "impact": "Potential logic bypass or crashes during parsing.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "zipFile.js",
+          "line": 98,
+          "quote": "if (inBuffer[i] !== 0x50) continue; // quick check that the byte is 'P'"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "zipFile.js",
+          "line": 98,
+          "quote": "if (inBuffer[i] !== 0x50) continue; // quick check that the byte is 'P'"
+        }
+      ],
+      "id": "f265f243",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insufficient error handling in async chains",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Errors in recursive async callbacks are not always propagated correctly, potentially leaving the application in a hung state.",
+      "steps_to_exploit": [
+        "Trigger an I/O error mid-way through `addLocalFolderAsync2`.",
+        "The reduction chain fails to clean up or pass the error to the final callback.",
+        "The process may stop without notifying the user."
+      ],
+      "impact": "Application hangs or silent failures.",
+      "evolved_from": [],
+      "attack_category": "error_handling",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "adm-zip.js",
+          "line": 535,
+          "quote": "return function (err, done) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "adm-zip.js",
+          "line": 535,
+          "quote": "return function (err, done) {"
+        }
+      ],
+      "id": "3340c21e",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potential for filename injection via non-normalized input",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Filename inputs passed to `addFile` are not checked for dangerous characters that might interfere with file system operations (e.g., control characters).",
+      "steps_to_exploit": [
+        "Inject a filename with null bytes or shell metacharacters.",
+        "The file is created with an unexpected name.",
+        "This can be used to trick other system tools that read the archive."
+      ],
+      "impact": "File system confusion and potential secondary vulnerability in tools parsing these archives.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "adm-zip.js",
+          "line": 583,
+          "quote": "entryName = zipnamefix(entryName);"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "adm-zip.js",
+          "line": 583,
+          "quote": "entryName = zipnamefix(entryName);"
+        }
+      ],
+      "id": "03d71ab5",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Global configuration vulnerability in ZipCrypto",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `_salter` function allows a user to redefine the global `genSalt` function, which affects all instances of the library.",
+      "steps_to_exploit": [
+        "Call `_salter` to modify the global salt generation.",
+        "Subsequent encryption in other parts of the application uses the weakened salt.",
+        "This effectively disables randomization for all users."
+      ],
+      "impact": "Total loss of entropy in encryption across the process.",
+      "evolved_from": [],
+      "attack_category": "crypto",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "methods/zipcrypto.js",
+          "line": 139,
+          "quote": "config.genSalt = function () {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "methods/zipcrypto.js",
+          "line": 139,
+          "quote": "config.genSalt = function () {"
+        }
+      ],
+      "id": "05afd9b9",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Excessive reliance on synchronous I/O in constructors",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The library reads entire files into memory synchronously during initialization, which can block the event loop and lead to DoS.",
+      "steps_to_exploit": [
+        "Pass a large file path to the library constructor.",
+        "The library calls `readFileSync`.",
+        "The main event loop becomes unresponsive until the entire file is loaded."
+      ],
+      "impact": "Event loop block, leading to Denial of Service in server environments.",
+      "evolved_from": [],
+      "attack_category": "scalability",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "adm-zip.js",
+          "line": 60,
+          "quote": "inBuffer = filetools.fs.readFileSync(input);"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "adm-zip.js",
+          "line": 60,
+          "quote": "inBuffer = filetools.fs.readFileSync(input);"
+        }
+      ],
+      "id": "a917d1e1",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "proposed": [
+    {
+      "title": "Zip Slip Vulnerability in extraction",
+      "code_refs": [
+        {
+          "file": "adm-zip.js",
+          "line": 810,
+          "quote": "const getPath = (entry) => sanitize(targetPath, pth.normalize(canonical(entry.entryName)));"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of Weak/Broken ZipCrypto",
+      "code_refs": [
+        {
+          "file": "methods/zipcrypto.js",
+          "line": 87,
+          "quote": "result[pos++] = keys.updateKeys(c ^ keys.next()); // update keys with decoded byte"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Integer Overflow in ZIP64 offset calculation",
+      "code_refs": [
+        {
+          "file": "util/utils.js",
+          "line": 321,
+          "quote": "return hi * 0x100000000 + lo;"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure permissions set on extracted files",
+      "code_refs": [
+        {
+          "file": "util/utils.js",
+          "line": 94,
+          "quote": "self.fs.chmodSync(path, attr || 0o666);"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potential prototype pollution via Object.assign",
+      "code_refs": [
+        {
+          "file": "adm-zip.js",
+          "line": 31,
+          "quote": "Object.assign(opts, input);"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Directory Traversal in addLocalFile",
+      "code_refs": [
+        {
+          "file": "adm-zip.js",
+          "line": 318,
+          "quote": "this.addFile(zipPath, data, comment, _attr);"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Denial of Service via decompression loop",
+      "code_refs": [
+        {
+          "file": "methods/inflater.js",
+          "line": 9,
+          "quote": "return zlib.inflateRawSync(inbuf, option);"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unsafe random number generator for salt",
+      "code_refs": [
+        {
+          "file": "methods/zipcrypto.js",
+          "line": 42,
+          "quote": "for (let i = 0; i < len; i++) salt[i] = (Math.random() * 256) & 0xff;"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Lack of input validation on header length fields",
+      "code_refs": [
+        {
+          "file": "zipEntry.js",
+          "line": 27,
+          "quote": "_extralocal = _centralHeader.loadLocalHeaderFromBinary(input);"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure use of `console.warn` for critical error",
+      "code_refs": [
+        {
+          "file": "util/fattr.js",
+          "line": 28,
+          "quote": "console.warn(\"Invalid path: \" + _path);"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Weak validation of ZIP signature",
+      "code_refs": [
+        {
+          "file": "zipFile.js",
+          "line": 98,
+          "quote": "if (inBuffer[i] !== 0x50) continue; // quick check that the byte is 'P'"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insufficient error handling in async chains",
+      "code_refs": [
+        {
+          "file": "adm-zip.js",
+          "line": 535,
+          "quote": "return function (err, done) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potential for filename injection via non-normalized input",
+      "code_refs": [
+        {
+          "file": "adm-zip.js",
+          "line": 583,
+          "quote": "entryName = zipnamefix(entryName);"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Global configuration vulnerability in ZipCrypto",
+      "code_refs": [
+        {
+          "file": "methods/zipcrypto.js",
+          "line": 139,
+          "quote": "config.genSalt = function () {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Excessive reliance on synchronous I/O in constructors",
+      "code_refs": [
+        {
+          "file": "adm-zip.js",
+          "line": 60,
+          "quote": "inBuffer = filetools.fs.readFileSync(input);"
+        }
+      ],
+      "outcome": "unchecked"
+    }
+  ],
+  "rejected": [],
+  "verification": null,
+  "arm_meta": {
+    "baseline": {
+      "model": "gemini/gemini-3.1-flash-lite",
+      "context": "code",
+      "requested": 15,
+      "returned": 15,
+      "files_shown": 26,
+      "chars_shown": 154024,
+      "files_that_did_not_fit": []
+    }
+  },
+  "seconds": {
+    "arm": 9.6,
+    "check": 0.0,
+    "total": 9.6
+  },
+  "usage": {
+    "arm": {
+      "calls": 1,
+      "failed": 0,
+      "est_tokens": 41582,
+      "seconds_in_calls": 9.6,
+      "by_task": {
+        "baseline": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 155108,
+          "completion_chars": 11220,
+          "seconds": 9.597017899970524,
+          "est_tokens": 41582
+        }
+      }
+    },
+    "check": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    }
+  }
+}

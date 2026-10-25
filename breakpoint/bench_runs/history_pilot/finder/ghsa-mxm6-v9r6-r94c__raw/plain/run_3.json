@@ -1,0 +1,807 @@
+{
+  "schema": 1,
+  "set": "ghsa-mxm6-v9r6-r94c",
+  "variant": "raw",
+  "arm": "plain",
+  "run": 3,
+  "commit": "d6e5fc6001085f2d34b905ba0407a2f7392de388",
+  "started_at": "2026-10-24T10:57:31+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": false,
+  "status": "ok",
+  "candidates": 15,
+  "kept": [
+    {
+      "title": "Remote Code Execution via Dynamic Import Injection",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `mdcConfigs` template dynamically constructs and executes `import()` statements using user-supplied options. If the `options.configs` array is controlled by a user, it can lead to arbitrary code execution by loading malicious modules.",
+      "steps_to_exploit": [
+        "Find an entry point where module configuration options are exposed to user input.",
+        "Submit a configuration payload containing a path to an arbitrary local or malicious remote script.",
+        "The server dynamically imports the script, executing its code."
+      ],
+      "impact": "Full server-side code execution.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/templates/mdc-configs.ts",
+          "line": 7,
+          "quote": "...options.configs.map((item: string) => ` import('${item}').then(m => m.default),`)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/templates/mdc-configs.ts",
+          "line": 7,
+          "quote": "...options.configs.map((item: string) => ` import('${item}').then(m => m.default),`)"
+        }
+      ],
+      "id": "35b378ba",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unsafe Deserialization of User-Supplied JSON",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `eventHandler` in `src/runtime/highlighter/event-handler.ts` parses `themeString` and `optionsStr` directly from request queries using `JSON.parse` without schema validation, allowing for prototype pollution or unexpected object injection.",
+      "steps_to_exploit": [
+        "Send a crafted HTTP request with query parameters containing malicious JSON objects.",
+        "The server parses these into internal objects.",
+        "Use prototype pollution to modify global application state or alter the behavior of the highlighter."
+      ],
+      "impact": "Denial of service, privilege escalation, or cross-site scripting via object manipulation.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/runtime/highlighter/event-handler.ts",
+          "line": 5,
+          "quote": "const theme = JSON.parse(themeString as string)"
+        },
+        {
+          "file": "src/runtime/highlighter/event-handler.ts",
+          "line": 6,
+          "quote": "const options = optionsStr ? JSON.parse(optionsStr as string) : {}"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/runtime/highlighter/event-handler.ts",
+          "line": 5,
+          "quote": "const theme = JSON.parse(themeString as string)"
+        },
+        {
+          "file": "src/runtime/highlighter/event-handler.ts",
+          "line": 6,
+          "quote": "const options = optionsStr ? JSON.parse(optionsStr as string) : {}"
+        }
+      ],
+      "id": "da323f1a",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Arbitrary File Import via Vite-Ignore Injection",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The parser uses `import('#mdc-imports' /* @vite-ignore */)` which permits importing arbitrary modules. If a user can influence the underlying environment or if the module resolution is subverted, this enables loading unintended code.",
+      "steps_to_exploit": [
+        "Identify the mechanism by which the module resolves to a file.",
+        "Attempt to influence the environment or configuration to point the import to an unintended or malicious file.",
+        "The application imports and executes the code from the redirected file."
+      ],
+      "impact": "Execution of arbitrary code on the server.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/runtime/parser/index.ts",
+          "line": 19,
+          "quote": "moduleOptions = await import('#mdc-imports' /* @vite-ignore */).catch(() => ({}))"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/runtime/parser/index.ts",
+          "line": 19,
+          "quote": "moduleOptions = await import('#mdc-imports' /* @vite-ignore */).catch(() => ({}))"
+        }
+      ],
+      "id": "f8eecddc",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Cross-Site Scripting (XSS) via Unsafe Markdown Rendering",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The module allows dangerous HTML, and despite some sanitization, the `rehype-raw` plugin is configured to pass through elements, potentially leading to XSS if malicious HTML is embedded in markdown content.",
+      "steps_to_exploit": [
+        "Construct a markdown document with malicious HTML tags or attributes (e.g., `<img onerror=alert(1) src=x>`).",
+        "Process the markdown through the parser.",
+        "The rendered output includes the malicious script which executes in the victim's browser."
+      ],
+      "impact": "Execution of arbitrary JavaScript in the victim's browser, potentially stealing cookies or tokens.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/runtime/parser/options.ts",
+          "line": 24,
+          "quote": "allowDangerousHtml: true,"
+        },
+        {
+          "file": "src/runtime/parser/options.ts",
+          "line": 36,
+          "quote": "'rehype-raw': {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/runtime/parser/options.ts",
+          "line": 24,
+          "quote": "allowDangerousHtml: true,"
+        },
+        {
+          "file": "src/runtime/parser/options.ts",
+          "line": 36,
+          "quote": "'rehype-raw': {"
+        }
+      ],
+      "id": "e81c196f",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Path Traversal / Unauthorized File Access",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `addWasmSupport` function enables inline WASM loading, and the parser uses a base current directory path (`/tmp` if not defined) for `VFile`. Insecure file access patterns could expose local system files.",
+      "steps_to_exploit": [
+        "Pass malicious paths through input that influences file read operations.",
+        "Use directory traversal characters (e.g., ../) to escape intended base directories.",
+        "The application reads and potentially exposes the content of unauthorized system files."
+      ],
+      "impact": "Access to sensitive system files.",
+      "evolved_from": [],
+      "attack_category": "data_privacy",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/runtime/parser/index.ts",
+          "line": 109,
+          "quote": "const cwd = typeof process !== 'undefined' && typeof process.cwd === 'function' ? process.cwd() : '/tmp'"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/runtime/parser/index.ts",
+          "line": 109,
+          "quote": "const cwd = typeof process !== 'undefined' && typeof process.cwd === 'function' ? process.cwd() : '/tmp'"
+        }
+      ],
+      "id": "ebaac346",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Component Execution (Potential Script Injection)",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `MDCRenderer` resolves components dynamically. While it has some guardrails, an attacker might be able to reference built-in or global components in unexpected contexts, bypassing intended constraints.",
+      "steps_to_exploit": [
+        "Identify a component that performs sensitive actions or has unintended side effects.",
+        "Craft a markdown snippet that references this component via the MDC syntax.",
+        "The renderer resolves and executes the component with user-provided props."
+      ],
+      "impact": "Unintended component rendering and potential script execution.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [],
+      "code_refs": [],
+      "id": "110767d7",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Vulnerable Dependencies (Supply Chain Risk)",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `package.json` includes older versions of packages (e.g., `unified`, `remark-parse`) which have known security vulnerabilities, increasing the attack surface.",
+      "steps_to_exploit": [
+        "Review the dependency tree for known CVEs in the included libraries.",
+        "Use automated scanners or manual analysis to confirm susceptibility to specific exploits (e.g., prototype pollution).",
+        "Develop a payload targeting the specific vulnerability in the outdated library."
+      ],
+      "impact": "Exploitation of known vulnerabilities in third-party code.",
+      "evolved_from": [],
+      "attack_category": "supply_chain",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "package.json",
+          "line": 70,
+          "quote": "\"dependencies\": {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "package.json",
+          "line": 70,
+          "quote": "\"dependencies\": {"
+        }
+      ],
+      "id": "a5ad39c5",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Prototype Pollution in `get` Utility",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `get` function splits keys by '.' and reduces them on an object. If the input `key` is crafted as `__proto__.polluted`, it can cause prototype pollution.",
+      "steps_to_exploit": [
+        "Identify an entry point that calls `get` with user-supplied keys.",
+        "Provide a payload like `__proto__.polluted` as the key.",
+        "The global `Object.prototype` is modified, affecting all objects in the application."
+      ],
+      "impact": "Wide-reaching application instability or privilege escalation.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/runtime/utils/index.ts",
+          "line": 18,
+          "quote": "return key.split('.').reduce((acc, k) => acc && acc[k], obj)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/runtime/utils/index.ts",
+          "line": 18,
+          "quote": "return key.split('.').reduce((acc, k) => acc && acc[k], obj)"
+        }
+      ],
+      "id": "c876c19b",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure `evalInContext` Execution",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `evalInContext` function attempts to access values from an object using a dot-notation string. While it doesn't use `eval()`, the logic allows for property access that could be leveraged to access sensitive objects.",
+      "steps_to_exploit": [
+        "Craft a key string that navigates through sensitive nested object structures.",
+        "Submit the payload to a feature that uses `evalInContext`.",
+        "Retrieve sensitive data contained within the application scope."
+      ],
+      "impact": "Information disclosure.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/runtime/components/MDCRenderer.vue",
+          "line": 436,
+          "quote": "function evalInContext(code: string, context: any) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/runtime/components/MDCRenderer.vue",
+          "line": 436,
+          "quote": "function evalInContext(code: string, context: any) {"
+        }
+      ],
+      "id": "cef42be2",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potential Server-Side Request Forgery (SSRF) in Image Component",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `ProseImg` component uses user-provided `src` strings. While there is basic URL normalization, it does not prevent the referencing of internal endpoints or arbitrary URLs that might be fetched by the server.",
+      "steps_to_exploit": [
+        "Provide a URL pointing to an internal metadata service or private infrastructure resource.",
+        "The server performs a request to this URL (e.g., for resizing or processing).",
+        "The server returns data from the internal resource, disclosing sensitive information."
+      ],
+      "impact": "Access to internal networks or services.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/runtime/components/prose/ProseImg.vue",
+          "line": 4,
+          "quote": ":src=\"refinedSrc\""
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/runtime/components/prose/ProseImg.vue",
+          "line": 4,
+          "quote": ":src=\"refinedSrc\""
+        }
+      ],
+      "id": "650dae11",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Configuration Handling",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The build configuration explicitly allows module overriding of internal code via the `rollup:done` hook to write a custom cjs file. This pattern is fragile and prone to being subverted.",
+      "steps_to_exploit": [
+        "Gain write access to the build process or build-time environment.",
+        "Modify the output file writing logic to inject malicious code into the final distribution.",
+        "The deployed code includes the injected logic."
+      ],
+      "impact": "Code tampering and persistent server-side compromise.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "build.config.ts",
+          "line": 10,
+          "quote": "fs.writeFileSync('dist/config.cjs', 'module.exports = {}; module.exports.defineConfig = configs => configs', 'utf-8')"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "build.config.ts",
+          "line": 10,
+          "quote": "fs.writeFileSync('dist/config.cjs', 'module.exports = {}; module.exports.defineConfig = configs => configs', 'utf-8')"
+        }
+      ],
+      "id": "221f544b",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Use of `@vite-ignore` in Plugins",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Plugin loading uses dynamic imports with `@vite-ignore`. This bypasses Vite's static analysis, potentially allowing attackers to load unauthorized plugins if inputs are not strictly controlled.",
+      "steps_to_exploit": [
+        "Manipulate the `plugins` map input.",
+        "Point a plugin key to an arbitrary local script.",
+        "The system imports and executes the script as a processor plugin."
+      ],
+      "impact": "Execution of arbitrary code during the parsing phase.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/runtime/parser/utils/plugins.ts",
+          "line": 12,
+          "quote": "const instance = plugin[1].instance || await import(/* @vite-ignore */ plugin[0]).then(m => m.default || m)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/runtime/parser/utils/plugins.ts",
+          "line": 12,
+          "quote": "const instance = plugin[1].instance || await import(/* @vite-ignore */ plugin[0]).then(m => m.default || m)"
+        }
+      ],
+      "id": "e300dc22",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Deserialization of AST via JSON.parse",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The stringify processor uses `JSON.parse` on input strings. While meant for markdown AST, sending large or maliciously nested JSON can cause stack overflow or DoS.",
+      "steps_to_exploit": [
+        "Send a deeply nested JSON structure.",
+        "The parser processes the structure until it crashes the process.",
+        "The application becomes unresponsive."
+      ],
+      "impact": "Denial of Service.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/runtime/stringify/index.ts",
+          "line": 13,
+          "quote": "return JSON.parse(root)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/runtime/stringify/index.ts",
+          "line": 13,
+          "quote": "return JSON.parse(root)"
+        }
+      ],
+      "id": "1c6c63fe",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Missing Authorization on Markdown Endpoint",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The sample API endpoint for markdown processing does not implement any authentication or authorization, allowing anyone to trigger expensive parsing operations.",
+      "steps_to_exploit": [
+        "Continuously request the endpoint with complex markdown payloads.",
+        "The server consumes significant CPU and memory to parse the markdown.",
+        "The application experiences degraded performance for legitimate users."
+      ],
+      "impact": "Resource exhaustion and Denial of Service.",
+      "evolved_from": [],
+      "attack_category": "authz",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "playground/server/api/markdown.ts",
+          "line": 3,
+          "quote": "export default defineEventHandler(async (event) => {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "playground/server/api/markdown.ts",
+          "line": 3,
+          "quote": "export default defineEventHandler(async (event) => {"
+        }
+      ],
+      "id": "acb93948",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Regex Denial of Service (ReDoS) in Tag Parsing",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The regular expression used to extract tag names (`TAG_NAME_REGEXP`) is vulnerable to ReDoS when presented with complex, non-matching input strings.",
+      "steps_to_exploit": [
+        "Send a crafted string designed to cause catastrophic backtracking in the regular expression engine.",
+        "The event loop blocks while processing the regex.",
+        "The server ceases to respond to other requests."
+      ],
+      "impact": "Denial of Service.",
+      "evolved_from": [],
+      "attack_category": "scalability",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/runtime/parser/handlers/utils.ts",
+          "line": 56,
+          "quote": "const TAG_NAME_REGEXP = /^<\\/?([\\w-]+)(\\s[^>]*?)?\\/?>/"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/runtime/parser/handlers/utils.ts",
+          "line": 56,
+          "quote": "const TAG_NAME_REGEXP = /^<\\/?([\\w-]+)(\\s[^>]*?)?\\/?>/"
+        }
+      ],
+      "id": "e765ff01",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "proposed": [
+    {
+      "title": "Remote Code Execution via Dynamic Import Injection",
+      "code_refs": [
+        {
+          "file": "src/templates/mdc-configs.ts",
+          "line": 7,
+          "quote": "...options.configs.map((item: string) => ` import('${item}').then(m => m.default),`)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unsafe Deserialization of User-Supplied JSON",
+      "code_refs": [
+        {
+          "file": "src/runtime/highlighter/event-handler.ts",
+          "line": 5,
+          "quote": "const theme = JSON.parse(themeString as string)"
+        },
+        {
+          "file": "src/runtime/highlighter/event-handler.ts",
+          "line": 6,
+          "quote": "const options = optionsStr ? JSON.parse(optionsStr as string) : {}"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Arbitrary File Import via Vite-Ignore Injection",
+      "code_refs": [
+        {
+          "file": "src/runtime/parser/index.ts",
+          "line": 19,
+          "quote": "moduleOptions = await import('#mdc-imports' /* @vite-ignore */).catch(() => ({}))"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Cross-Site Scripting (XSS) via Unsafe Markdown Rendering",
+      "code_refs": [
+        {
+          "file": "src/runtime/parser/options.ts",
+          "line": 24,
+          "quote": "allowDangerousHtml: true,"
+        },
+        {
+          "file": "src/runtime/parser/options.ts",
+          "line": 36,
+          "quote": "'rehype-raw': {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Path Traversal / Unauthorized File Access",
+      "code_refs": [
+        {
+          "file": "src/runtime/parser/index.ts",
+          "line": 109,
+          "quote": "const cwd = typeof process !== 'undefined' && typeof process.cwd === 'function' ? process.cwd() : '/tmp'"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure Component Execution (Potential Script Injection)",
+      "code_refs": [],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Vulnerable Dependencies (Supply Chain Risk)",
+      "code_refs": [
+        {
+          "file": "package.json",
+          "line": 70,
+          "quote": "\"dependencies\": {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Prototype Pollution in `get` Utility",
+      "code_refs": [
+        {
+          "file": "src/runtime/utils/index.ts",
+          "line": 18,
+          "quote": "return key.split('.').reduce((acc, k) => acc && acc[k], obj)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure `evalInContext` Execution",
+      "code_refs": [
+        {
+          "file": "src/runtime/components/MDCRenderer.vue",
+          "line": 436,
+          "quote": "function evalInContext(code: string, context: any) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potential Server-Side Request Forgery (SSRF) in Image Component",
+      "code_refs": [
+        {
+          "file": "src/runtime/components/prose/ProseImg.vue",
+          "line": 4,
+          "quote": ":src=\"refinedSrc\""
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure Configuration Handling",
+      "code_refs": [
+        {
+          "file": "build.config.ts",
+          "line": 10,
+          "quote": "fs.writeFileSync('dist/config.cjs', 'module.exports = {}; module.exports.defineConfig = configs => configs', 'utf-8')"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure Use of `@vite-ignore` in Plugins",
+      "code_refs": [
+        {
+          "file": "src/runtime/parser/utils/plugins.ts",
+          "line": 12,
+          "quote": "const instance = plugin[1].instance || await import(/* @vite-ignore */ plugin[0]).then(m => m.default || m)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure Deserialization of AST via JSON.parse",
+      "code_refs": [
+        {
+          "file": "src/runtime/stringify/index.ts",
+          "line": 13,
+          "quote": "return JSON.parse(root)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Missing Authorization on Markdown Endpoint",
+      "code_refs": [
+        {
+          "file": "playground/server/api/markdown.ts",
+          "line": 3,
+          "quote": "export default defineEventHandler(async (event) => {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Regex Denial of Service (ReDoS) in Tag Parsing",
+      "code_refs": [
+        {
+          "file": "src/runtime/parser/handlers/utils.ts",
+          "line": 56,
+          "quote": "const TAG_NAME_REGEXP = /^<\\/?([\\w-]+)(\\s[^>]*?)?\\/?>/"
+        }
+      ],
+      "outcome": "unchecked"
+    }
+  ],
+  "rejected": [],
+  "verification": null,
+  "arm_meta": {
+    "baseline": {
+      "model": "gemini/gemini-3.1-flash-lite",
+      "context": "code",
+      "requested": 15,
+      "returned": 15,
+      "files_shown": 114,
+      "chars_shown": 210848,
+      "files_that_did_not_fit": []
+    }
+  },
+  "seconds": {
+    "arm": 11.6,
+    "check": 0.0,
+    "total": 11.6
+  },
+  "usage": {
+    "arm": {
+      "calls": 1,
+      "failed": 0,
+      "est_tokens": 56352,
+      "seconds_in_calls": 11.5,
+      "by_task": {
+        "baseline": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 212108,
+          "completion_chars": 13301,
+          "seconds": 11.462650200002827,
+          "est_tokens": 56352
+        }
+      }
+    },
+    "check": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    }
+  }
+}

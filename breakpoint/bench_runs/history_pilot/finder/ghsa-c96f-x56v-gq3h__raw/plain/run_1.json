@@ -1,0 +1,772 @@
+{
+  "schema": 1,
+  "set": "ghsa-c96f-x56v-gq3h",
+  "variant": "raw",
+  "arm": "plain",
+  "run": 1,
+  "commit": "a21e332f69c82684cdd130b79164236ef7c15684",
+  "started_at": "2026-10-24T11:04:33+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": false,
+  "status": "ok",
+  "candidates": 15,
+  "kept": [
+    {
+      "title": "Unsafe Dynamic Function Compilation via User-Provided Input",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `_compileCreateParamsObject` method in `lib/handler-storage.js` uses `new Function` to construct a function body from user-provided parameter keys. If an attacker can control parameter names (e.g., through specially crafted routing paths), they can escape the function context and execute arbitrary code.",
+      "steps_to_exploit": [
+        "Find a way to inject a string into the route parameter definitions.",
+        "Craft a payload that closes the function context (e.g., `'); process.exit(); //`).",
+        "Trigger the router registration for this payload.",
+        "Observe code execution when the router compiles the parametric handler."
+      ],
+      "impact": "Remote Code Execution (RCE) on the server process.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/handler-storage.js",
+          "line": 78,
+          "quote": "return new Function('NullObject', fnBody.join('\\n'))(NullObject) // eslint-disable-line"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/handler-storage.js",
+          "line": 78,
+          "quote": "return new Function('NullObject', fnBody.join('\\n'))(NullObject) // eslint-disable-line"
+        }
+      ],
+      "id": "b5e54a39",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Arbitrary Code Injection in Compiled Router Logic",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `_compileGetHandlerMatchingConstraints` method in `lib/handler-storage.js` uses `new Function` to generate runtime logic based on constraint names and derived values. If constraint names can be influenced by input, it allows arbitrary JS injection.",
+      "steps_to_exploit": [
+        "Register a custom constraint strategy with a malicious key name.",
+        "Inject a payload into the name of the constraint.",
+        "Trigger router lookup to compile the dynamic function.",
+        "Observe malicious code execution."
+      ],
+      "impact": "Remote Code Execution (RCE) within the application context.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/handler-storage.js",
+          "line": 171,
+          "quote": "this._getHandlerMatchingConstraints = new Function('derivedConstraints', lines.join('\\n')) // eslint-disable-line"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/handler-storage.js",
+          "line": 171,
+          "quote": "this._getHandlerMatchingConstraints = new Function('derivedConstraints', lines.join('\\n')) // eslint-disable-line"
+        }
+      ],
+      "id": "9027cac5",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Denial of Service via Regex Redos",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The router allows users to define custom regex patterns for parameters. If `allowUnsafeRegex` is enabled, the `isRegexSafe` check is skipped, allowing catastrophic backtracking patterns.",
+      "steps_to_exploit": [
+        "Configure the router with `allowUnsafeRegex: true`.",
+        "Register a route with a malicious regex (e.g., `/:p((a+)+b)`).",
+        "Request a URL path that matches the regex path but triggers exponential backtracking.",
+        "Observe the event loop blocking."
+      ],
+      "impact": "Complete service unavailability (Denial of Service) due to CPU exhaustion.",
+      "evolved_from": [],
+      "attack_category": "scalability",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 375,
+          "quote": "if (!this.allowUnsafeRegex) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 375,
+          "quote": "if (!this.allowUnsafeRegex) {"
+        }
+      ],
+      "id": "9c30dd43",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potential Prototype Pollution in Path Sanitization",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The use of `new NullObject()` and custom object property assignments in `_compileCreateParamsObject` attempts to prevent pollution, but the manual property assignment using template literals might still be susceptible depending on the input.",
+      "steps_to_exploit": [
+        "Pass a parameter name such as `__proto__` or `constructor`.",
+        "Observe if the resulting params object maps these sensitive keys.",
+        "Use this to influence application logic downstream."
+      ],
+      "impact": "Prototype pollution allowing bypass of security checks or modification of application state.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/handler-storage.js",
+          "line": 71,
+          "quote": "fnBody.push(`params['${params[i]}'] = paramsArray[${i}]`)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/handler-storage.js",
+          "line": 71,
+          "quote": "fnBody.push(`params['${params[i]}'] = paramsArray[${i}]`)"
+        }
+      ],
+      "id": "1437887c",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Uncontrolled Resource Consumption in `PrettyPrint`",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `prettyPrint` function recursively traverses the entire routing tree. An attacker triggering this functionality (if exposed in an admin endpoint) could exhaust memory by creating deeply nested or extremely broad trees.",
+      "steps_to_exploit": [
+        "Register a massive number of routes or deeply nested parameterized paths.",
+        "Call the `prettyPrint` function on the router instance.",
+        "Observe memory spike and potential crash."
+      ],
+      "impact": "Memory exhaustion and potential service crash.",
+      "evolved_from": [],
+      "attack_category": "rate_limiting",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/pretty-print.js",
+          "line": 165,
+          "quote": "return printObjectTree(objectTree)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/pretty-print.js",
+          "line": 165,
+          "quote": "return printObjectTree(objectTree)"
+        }
+      ],
+      "id": "4080d4ad",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Missing Authorization for `addConstraintStrategy`",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `addConstraintStrategy` method is publicly exposed on the router instance. If this instance is shared or managed, an unauthorized party could register a malicious strategy to intercept traffic.",
+      "steps_to_exploit": [
+        "Gain access to the router instance (e.g., if exported by a plugin).",
+        "Call `addConstraintStrategy` with a malicious implementation.",
+        "Redirect or log sensitive request data."
+      ],
+      "impact": "Confidentiality and integrity compromise of request routing.",
+      "evolved_from": [],
+      "attack_category": "authz",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 464,
+          "quote": "Router.prototype.addConstraintStrategy = function (constraints) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 464,
+          "quote": "Router.prototype.addConstraintStrategy = function (constraints) {"
+        }
+      ],
+      "id": "132a5cd1",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Predictable Route Collision Handling",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The code allows routes to be overwritten or added without strict enforcement of non-collision policies, potentially allowing route hijacking.",
+      "steps_to_exploit": [
+        "Register a route that overlaps with an existing internal or sensitive path.",
+        "Observe the order-based resolution overriding the intended handler."
+      ],
+      "impact": "Bypassing intended security handlers by hijacking paths.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 295,
+          "quote": "for (const existRoute of this.routes) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 295,
+          "quote": "for (const existRoute of this.routes) {"
+        }
+      ],
+      "id": "ffb76b6b",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insufficient Input Sanitization in Host Constraint",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The host constraint strategy uses `req.headers.host`, which can be spoofed in many environments. It lacks validation against untrusted input when used to route or categorize requests.",
+      "steps_to_exploit": [
+        "Send a request with a manipulated `Host` header.",
+        "Observe the router routing the request to a handler based on the spoofed host."
+      ],
+      "impact": "Information disclosure or bypass of host-based access controls.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [],
+      "code_refs": [],
+      "id": "92b6edbe",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure `new Function` for prefix matching",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `StaticNode` class compiles prefix matching functions dynamically using user-defined prefixes, which could lead to injection if the prefix is not controlled.",
+      "steps_to_exploit": [
+        "Pass a maliciously crafted string as a path prefix.",
+        "Trigger the compilation of the match function.",
+        "Inject arbitrary code into the logic."
+      ],
+      "impact": "Remote Code Execution.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/node.js",
+          "line": 197,
+          "quote": "this.matchPrefix = new Function('path', 'i', `return ${lines.join(' && ')}`) // eslint-disable-line"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/node.js",
+          "line": 197,
+          "quote": "this.matchPrefix = new Function('path', 'i', `return ${lines.join(' && ')}`) // eslint-disable-line"
+        }
+      ],
+      "id": "0b61810b",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Information Disclosure via `prettyPrint`",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `prettyPrint` function serializes internal route metadata, including handler function names, which might expose internal class structures or sensitive business logic to an attacker.",
+      "steps_to_exploit": [
+        "Trigger an endpoint that calls `router.prettyPrint({ includeMeta: true })`.",
+        "Examine the serialized tree to map internal structures."
+      ],
+      "impact": "Information gathering (reconnaissance) for further exploitation.",
+      "evolved_from": [],
+      "attack_category": "data_privacy",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/pretty-print.js",
+          "line": 61,
+          "quote": "const serializedValue = JSON.stringify(parseMeta(metaValue))"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/pretty-print.js",
+          "line": 61,
+          "quote": "const serializedValue = JSON.stringify(parseMeta(metaValue))"
+        }
+      ],
+      "id": "f7207251",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Weak Validation of Constraint Strategies",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "While there is some validation, the strategies themselves are passed as objects that are then executed. A malicious object prototype could be used to cause unexpected behavior.",
+      "steps_to_exploit": [
+        "Create a strategy object with malicious getters or properties.",
+        "Pass it to `addConstraintStrategy`."
+      ],
+      "impact": "Unexpected logic execution, potentially leading to privilege escalation.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/constrainer.js",
+          "line": 40,
+          "quote": "assert(typeof strategy.name === 'string' && strategy.name !== '', 'strategy.name is required.')"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/constrainer.js",
+          "line": 40,
+          "quote": "assert(typeof strategy.name === 'string' && strategy.name !== '', 'strategy.name is required.')"
+        }
+      ],
+      "id": "5401a685",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Default Error Handler",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The router, by default, might expose implementation details or cause side effects when an error occurs during route matching (e.g., in `_onBadUrl`).",
+      "steps_to_exploit": [
+        "Cause a 404 or bad URL scenario.",
+        "Analyze the response for internal path or logic leaks."
+      ],
+      "impact": "Information disclosure of server paths or internal state.",
+      "evolved_from": [],
+      "attack_category": "error_handling",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 759,
+          "quote": "res.statusCode = 404"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 759,
+          "quote": "res.statusCode = 404"
+        }
+      ],
+      "id": "1aedc2d6",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potential Parameter Length Bypass",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The check `param.length > maxParamLength` occurs after some potential decoding steps, but may be bypassed if complex encoding or unicode normalization is involved.",
+      "steps_to_exploit": [
+        "Craft a URI encoded parameter that expands into a larger string after decoding.",
+        "Observe if the length check happens before or after expansion."
+      ],
+      "impact": "Bypass of input validation, potential buffer or state overflow.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 720,
+          "quote": "if (param.length > maxParamLength) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 720,
+          "quote": "if (param.length > maxParamLength) {"
+        }
+      ],
+      "id": "95f1b7ba",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Dependency Risk: Unsafe Regexp Usage",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `safe-regex2` library is used to validate regular expressions. If there is a bypass in this library, it would allow the ReDoS issue (CVE category).",
+      "steps_to_exploit": [
+        "Identify a regex that passes `safe-regex2` but still exhibits catastrophic backtracking.",
+        "Register the route and trigger the matching process."
+      ],
+      "impact": "Denial of Service.",
+      "evolved_from": [],
+      "attack_category": "supply_chain",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 376,
+          "quote": "assert(isRegexSafe(new RegExp(regexString)), `The regex '${regexString}' is not safe!`)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 376,
+          "quote": "assert(isRegexSafe(new RegExp(regexString)), `The regex '${regexString}' is not safe!`)"
+        }
+      ],
+      "id": "42520ea5",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of `eval`-like behavior in `new Function` for derivations",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `Constrainer` builds a custom derivation function using `new Function` with user-supplied header keys, which could be abused if headers are not strictly controlled.",
+      "steps_to_exploit": [
+        "Manipulate headers or context input.",
+        "Observe code execution in the `deriveSyncConstraints` path."
+      ],
+      "impact": "Remote Code Execution.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/constrainer.js",
+          "line": 168,
+          "quote": "this.deriveSyncConstraints = new Function('req', 'ctx', lines.join('\\n')).bind(this) // eslint-disable-line"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/constrainer.js",
+          "line": 168,
+          "quote": "this.deriveSyncConstraints = new Function('req', 'ctx', lines.join('\\n')).bind(this) // eslint-disable-line"
+        }
+      ],
+      "id": "7aa3b1e4",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "proposed": [
+    {
+      "title": "Unsafe Dynamic Function Compilation via User-Provided Input",
+      "code_refs": [
+        {
+          "file": "lib/handler-storage.js",
+          "line": 78,
+          "quote": "return new Function('NullObject', fnBody.join('\\n'))(NullObject) // eslint-disable-line"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Arbitrary Code Injection in Compiled Router Logic",
+      "code_refs": [
+        {
+          "file": "lib/handler-storage.js",
+          "line": 171,
+          "quote": "this._getHandlerMatchingConstraints = new Function('derivedConstraints', lines.join('\\n')) // eslint-disable-line"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Denial of Service via Regex Redos",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 375,
+          "quote": "if (!this.allowUnsafeRegex) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potential Prototype Pollution in Path Sanitization",
+      "code_refs": [
+        {
+          "file": "lib/handler-storage.js",
+          "line": 71,
+          "quote": "fnBody.push(`params['${params[i]}'] = paramsArray[${i}]`)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Uncontrolled Resource Consumption in `PrettyPrint`",
+      "code_refs": [
+        {
+          "file": "lib/pretty-print.js",
+          "line": 165,
+          "quote": "return printObjectTree(objectTree)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Missing Authorization for `addConstraintStrategy`",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 464,
+          "quote": "Router.prototype.addConstraintStrategy = function (constraints) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Predictable Route Collision Handling",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 295,
+          "quote": "for (const existRoute of this.routes) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insufficient Input Sanitization in Host Constraint",
+      "code_refs": [],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure `new Function` for prefix matching",
+      "code_refs": [
+        {
+          "file": "lib/node.js",
+          "line": 197,
+          "quote": "this.matchPrefix = new Function('path', 'i', `return ${lines.join(' && ')}`) // eslint-disable-line"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Information Disclosure via `prettyPrint`",
+      "code_refs": [
+        {
+          "file": "lib/pretty-print.js",
+          "line": 61,
+          "quote": "const serializedValue = JSON.stringify(parseMeta(metaValue))"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Weak Validation of Constraint Strategies",
+      "code_refs": [
+        {
+          "file": "lib/constrainer.js",
+          "line": 40,
+          "quote": "assert(typeof strategy.name === 'string' && strategy.name !== '', 'strategy.name is required.')"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure Default Error Handler",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 759,
+          "quote": "res.statusCode = 404"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potential Parameter Length Bypass",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 720,
+          "quote": "if (param.length > maxParamLength) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Dependency Risk: Unsafe Regexp Usage",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 376,
+          "quote": "assert(isRegexSafe(new RegExp(regexString)), `The regex '${regexString}' is not safe!`)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of `eval`-like behavior in `new Function` for derivations",
+      "code_refs": [
+        {
+          "file": "lib/constrainer.js",
+          "line": 168,
+          "quote": "this.deriveSyncConstraints = new Function('req', 'ctx', lines.join('\\n')).bind(this) // eslint-disable-line"
+        }
+      ],
+      "outcome": "unchecked"
+    }
+  ],
+  "rejected": [],
+  "verification": null,
+  "arm_meta": {
+    "baseline": {
+      "model": "gemini/gemini-3.1-flash-lite",
+      "context": "code",
+      "requested": 15,
+      "returned": 15,
+      "files_shown": 21,
+      "chars_shown": 101393,
+      "files_that_did_not_fit": []
+    }
+  },
+  "seconds": {
+    "arm": 15.1,
+    "check": 0.0,
+    "total": 15.1
+  },
+  "usage": {
+    "arm": {
+      "calls": 1,
+      "failed": 0,
+      "est_tokens": 28426,
+      "seconds_in_calls": 15.0,
+      "by_task": {
+        "baseline": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 102467,
+          "completion_chars": 11239,
+          "seconds": 15.022652000072412,
+          "est_tokens": 28426
+        }
+      }
+    },
+    "check": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    }
+  }
+}

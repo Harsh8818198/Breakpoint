@@ -1,0 +1,788 @@
+{
+  "schema": 1,
+  "set": "ghsa-83w8-p2f5-377r",
+  "variant": "raw",
+  "arm": "plain",
+  "run": 3,
+  "commit": "c68224e3067e18ee4c676cc9db66aae6b30ffb02",
+  "started_at": "2026-10-24T10:49:34+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": false,
+  "status": "ok",
+  "candidates": 15,
+  "kept": [
+    {
+      "title": "Directory Traversal via unsanitized filename",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The file system access in `index.js` using `pumpSendToReply` relies on user-provided path inputs. While there are some checks, the lack of robust input validation in the route handlers allows potential path traversal to files outside the intended `root` directory.",
+      "steps_to_exploit": [
+        "Identify an endpoint configured with `wildcard: true`",
+        "Craft a request URL containing relative path sequences such as `/..%2f..%2fetc/passwd`",
+        "Observe the server attempting to resolve and serve the file outside the defined root"
+      ],
+      "impact": "An attacker can read sensitive system files or source code from the server, leading to full compromise.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 142,
+          "quote": "const pathname = getPathnameForSend(req.raw.url, matchRoutePrefix)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 142,
+          "quote": "const pathname = getPathnameForSend(req.raw.url, matchRoutePrefix)"
+        }
+      ],
+      "id": "4a3520df",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Uncontrolled Resource Consumption (DoS) via Directory Listing",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `getExtendedInfo` function in `lib/dirList.js` performs a recursive search of file systems to calculate directory statistics. An attacker triggering this on a large or nested directory structure can exhaust CPU and memory resources.",
+      "steps_to_exploit": [
+        "Access a directory endpoint configured with `list: { extendedFolderInfo: true }`",
+        "Target a deep or massive directory tree",
+        "Observe the high server load and latency as recursive `fs.readdir` and `fs.stat` calls execute"
+      ],
+      "impact": "Denial of Service; the server becomes unresponsive due to thread pool exhaustion and CPU spikes.",
+      "evolved_from": [],
+      "attack_category": "scalability",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/dirList.js",
+          "line": 41,
+          "quote": "await dirList._getExtendedInfo(filePath, info)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/dirList.js",
+          "line": 41,
+          "quote": "await dirList._getExtendedInfo(filePath, info)"
+        }
+      ],
+      "id": "5bc55e73",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potentially Dangerous Content-Disposition Header Injection",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `contentDisposition` function uses `basename` on the provided filename, but the subsequent header injection in `index.js` (lines 119) can be manipulated if `fileName` inputs are not correctly sanitized, potentially allowing CRLF injection.",
+      "steps_to_exploit": [
+        "Call the `download` method with a crafted malicious string in the filename parameter",
+        "Attempt to inject CRLF characters to influence HTTP response headers",
+        "Observe if the server reflects the malicious input in the headers"
+      ],
+      "impact": "Could facilitate HTTP Response Splitting attacks, allowing attackers to manipulate headers of subsequent requests.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 119,
+          "quote": "this.header('content-disposition', contentDisposition(fileName))"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 119,
+          "quote": "this.header('content-disposition', contentDisposition(fileName))"
+        }
+      ],
+      "id": "24350cfb",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of glob module with follow: true",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "In `index.js`, the glob pattern matching is configured with `follow: true`. This follows symbolic links, which can allow an attacker to bypass file restrictions and access files outside the intended root directory if they can create symlinks.",
+      "steps_to_exploit": [
+        "Identify a writable directory served by the application",
+        "Create a symbolic link pointing to a sensitive system file (e.g., `/etc/shadow`) inside the served directory",
+        "Request the path corresponding to the symlink"
+      ],
+      "impact": "Arbitrary file reading; bypass of directory-based access controls.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 164,
+          "quote": "const files = await glob('**/**', { cwd: rootPath, absolute: false, follow: true, nodir: true, dot: opts.serveDotFiles, ignore: opts.globIgnore })"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 164,
+          "quote": "const files = await glob('**/**', { cwd: rootPath, absolute: false, follow: true, nodir: true, dot: opts.serveDotFiles, ignore: opts.globIgnore })"
+        }
+      ],
+      "id": "5ca1ba8f",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Improper Validation of Redirect URL",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `getRedirectUrl` function uses `new URL()` and performs custom string slicing. This manual manipulation can lead to open redirects if the input is not strictly validated against an allow-list.",
+      "steps_to_exploit": [
+        "Provide a URL parameter that forces a redirection to an external malicious domain",
+        "Observe the 301 redirect response to the attacker-controlled site"
+      ],
+      "impact": "Phishing or malicious content redirection, damaging the reputation of the site and misleading users.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 762,
+          "quote": "const parsed = new URL(url, 'http://localhost.com/')"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 762,
+          "quote": "const parsed = new URL(url, 'http://localhost.com/')"
+        }
+      ],
+      "id": "1e7e345a",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potential Server-Side Request Forgery via URL inputs",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The plugin accepts `URL` objects for the `root` option. If the application environment allows external control over configuration via environment variables or dynamic input, this could lead to loading resources from unintended paths.",
+      "steps_to_exploit": [
+        "Supply a `file://` URI pointed to sensitive local paths if the configuration mechanism is vulnerable to injection",
+        "Trigger the server to serve content from that location"
+      ],
+      "impact": "Unauthorized access to local files if configuration inputs are tainted.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 461,
+          "quote": "if (root instanceof URL && root.protocol === 'file:') {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 461,
+          "quote": "if (root instanceof URL && root.protocol === 'file:') {"
+        }
+      ],
+      "id": "8b8d5924",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Race Condition in recursive DirList stats",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The logic in `_getExtendedInfo` for tracking `lastModified` and counting items is non-atomic across asynchronous calls, potentially leading to incorrect directory listing reporting.",
+      "steps_to_exploit": [
+        "Populate a directory with a large number of rapidly changing files",
+        "Repeatedly trigger the list endpoint",
+        "Observe inconsistent metadata reporting"
+      ],
+      "impact": "Data integrity issues in information reporting, potential for exploiting partial file state information.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/dirList.js",
+          "line": 46,
+          "quote": "info.lastModified = Math.max(info.lastModified, stats.mtimeMs)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/dirList.js",
+          "line": 46,
+          "quote": "info.lastModified = Math.max(info.lastModified, stats.mtimeMs)"
+        }
+      ],
+      "id": "7386167a",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "MIME type inference vulnerability",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `getContentType` function uses `send.mime.getType` to infer types based on paths. This can be abused for MIME sniffing if files are uploaded or created by users, potentially causing browsers to execute files as scripts (e.g., HTML/JS content).",
+      "steps_to_exploit": [
+        "Upload a file with a misleading extension (e.g., .txt containing malicious JS)",
+        "Request the file and observe the `Content-Type` header",
+        "Check if the browser executes the content due to lack of `X-Content-Type-Options: nosniff`"
+      ],
+      "impact": "Cross-Site Scripting (XSS) via content-type confusion.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 548,
+          "quote": "const type = send.mime.getType(path) || send.mime.default_type"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 548,
+          "quote": "const type = send.mime.getType(path) || send.mime.default_type"
+        }
+      ],
+      "id": "77efd8cd",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Missing Authorization Check in DirList",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Directory listing features rely on the `allowedPath` hook, but if this is not configured properly by the user, the plugin defaults to serving everything under the root, which may expose sensitive internal folders.",
+      "steps_to_exploit": [
+        "Access a directory listing endpoint",
+        "Navigate to private sub-directories that were not intended to be exposed but exist under the `root`",
+        "Observe that contents are listed"
+      ],
+      "impact": "Information disclosure of file structure and sensitive data.",
+      "evolved_from": [],
+      "attack_category": "authz",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 199,
+          "quote": "const allowedPath = opts.allowedPath"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 199,
+          "quote": "const allowedPath = opts.allowedPath"
+        }
+      ],
+      "id": "23e0481b",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unsafe consumption of `req.raw.url`",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The plugin frequently accesses `req.raw.url` without consistent normalization before path resolution. This can lead to bypasses where different web servers or proxies interpret encoded URLs differently than the application.",
+      "steps_to_exploit": [
+        "Craft a URL with unusual encoding or path separators (e.g., `//`),",
+        "Verify if the `pumpSendToReply` logic processes it differently than the upstream proxy"
+      ],
+      "impact": "Security control bypass; access to unintended resources.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 142,
+          "quote": "const pathname = getPathnameForSend(req.raw.url, matchRoutePrefix)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 142,
+          "quote": "const pathname = getPathnameForSend(req.raw.url, matchRoutePrefix)"
+        }
+      ],
+      "id": "3b274e6a",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Error Handling Leaks in DirList",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `dirList.send` function catches all errors from `dirList.list` and calls `reply.callNotFound()`. This hides detailed errors but may mask severe server-side issues, hindering debugging and monitoring.",
+      "steps_to_exploit": [
+        "Force an error during directory read (e.g., permission denied)",
+        "Observe that the server returns a 404 rather than an appropriate 500 status",
+        "Note the lack of logging for the underlying cause"
+      ],
+      "impact": "Operational blindness to potential security incidents or filesystem permission issues.",
+      "evolved_from": [],
+      "attack_category": "error_handling",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/dirList.js",
+          "line": 133,
+          "quote": "return reply.callNotFound()"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/dirList.js",
+          "line": 133,
+          "quote": "return reply.callNotFound()"
+        }
+      ],
+      "id": "3fecdebf",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure default directory permissions (Dotfiles)",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The plugin defaults to `dotfiles: 'allow'`. This may unintentionally expose sensitive configuration files like `.env`, `.git`, or `.ssh` if they are placed inside the static serving root.",
+      "steps_to_exploit": [
+        "Place a sensitive file (e.g., `.env`) in the root directory",
+        "Attempt to browse to the path directly using the URL"
+      ],
+      "impact": "Sensitive configuration leakage.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 54,
+          "quote": "opts.dotfiles ??= 'allow'"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 54,
+          "quote": "opts.dotfiles ??= 'allow'"
+        }
+      ],
+      "id": "0f9b822e",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potential prototype pollution via `Object.assign`",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Using `Object.assign({}, sendOptions, pumpOptions)` to merge options is generally safe in modern environments, but if `pumpOptions` originates from un-sanitized user input, it might allow prototype pollution.",
+      "steps_to_exploit": [
+        "Inject `__proto__` properties into the request context if the Fastify application allows it",
+        "Observe if the `send` options are modified"
+      ],
+      "impact": "Potential for application-wide behavior modification or DoS.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 243,
+          "quote": "const options = Object.assign({}, sendOptions, pumpOptions)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 243,
+          "quote": "const options = Object.assign({}, sendOptions, pumpOptions)"
+        }
+      ],
+      "id": "9e46ba23",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Missing CSRF protection on Directory List operations",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `dirList.send` function accepts query parameters like `format=html`. If this endpoint is not behind authentication or CSRF protection, an attacker could potentially force a user to load a large rendered directory listing.",
+      "steps_to_exploit": [
+        "Embed a link to the application's directory listing endpoint with `?format=html` into a malicious webpage",
+        "Induce the user to visit the page"
+      ],
+      "impact": "Resource consumption on the server and potentially sensitive information leak if the user context is used.",
+      "evolved_from": [],
+      "attack_category": "auth",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/dirList.js",
+          "line": 125,
+          "quote": "if (reply.request.query.format === 'html' && typeof options.render !== 'function') {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/dirList.js",
+          "line": 125,
+          "quote": "if (reply.request.query.format === 'html' && typeof options.render !== 'function') {"
+        }
+      ],
+      "id": "0d1683a6",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Lack of rate limiting on static serving",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The plugin does not implement any built-in rate limiting for file downloads or directory listings, making it vulnerable to scrapers and automated mass-download attempts.",
+      "steps_to_exploit": [
+        "Use a script to repeatedly request large files or all files in a directory",
+        "Observe the high bandwidth usage and request volume on the application"
+      ],
+      "impact": "Bandwidth exhaustion and potential DoS on server resources.",
+      "evolved_from": [],
+      "attack_category": "rate_limiting",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 428,
+          "quote": "await reply.send(stream)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 428,
+          "quote": "await reply.send(stream)"
+        }
+      ],
+      "id": "68570bb1",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "proposed": [
+    {
+      "title": "Directory Traversal via unsanitized filename",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 142,
+          "quote": "const pathname = getPathnameForSend(req.raw.url, matchRoutePrefix)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Uncontrolled Resource Consumption (DoS) via Directory Listing",
+      "code_refs": [
+        {
+          "file": "lib/dirList.js",
+          "line": 41,
+          "quote": "await dirList._getExtendedInfo(filePath, info)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potentially Dangerous Content-Disposition Header Injection",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 119,
+          "quote": "this.header('content-disposition', contentDisposition(fileName))"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of glob module with follow: true",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 164,
+          "quote": "const files = await glob('**/**', { cwd: rootPath, absolute: false, follow: true, nodir: true, dot: opts.serveDotFiles, ignore: opts.globIgnore })"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Improper Validation of Redirect URL",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 762,
+          "quote": "const parsed = new URL(url, 'http://localhost.com/')"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potential Server-Side Request Forgery via URL inputs",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 461,
+          "quote": "if (root instanceof URL && root.protocol === 'file:') {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Race Condition in recursive DirList stats",
+      "code_refs": [
+        {
+          "file": "lib/dirList.js",
+          "line": 46,
+          "quote": "info.lastModified = Math.max(info.lastModified, stats.mtimeMs)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "MIME type inference vulnerability",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 548,
+          "quote": "const type = send.mime.getType(path) || send.mime.default_type"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Missing Authorization Check in DirList",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 199,
+          "quote": "const allowedPath = opts.allowedPath"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unsafe consumption of `req.raw.url`",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 142,
+          "quote": "const pathname = getPathnameForSend(req.raw.url, matchRoutePrefix)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Error Handling Leaks in DirList",
+      "code_refs": [
+        {
+          "file": "lib/dirList.js",
+          "line": 133,
+          "quote": "return reply.callNotFound()"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure default directory permissions (Dotfiles)",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 54,
+          "quote": "opts.dotfiles ??= 'allow'"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potential prototype pollution via `Object.assign`",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 243,
+          "quote": "const options = Object.assign({}, sendOptions, pumpOptions)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Missing CSRF protection on Directory List operations",
+      "code_refs": [
+        {
+          "file": "lib/dirList.js",
+          "line": 125,
+          "quote": "if (reply.request.query.format === 'html' && typeof options.render !== 'function') {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Lack of rate limiting on static serving",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 428,
+          "quote": "await reply.send(stream)"
+        }
+      ],
+      "outcome": "unchecked"
+    }
+  ],
+  "rejected": [],
+  "verification": null,
+  "arm_meta": {
+    "baseline": {
+      "model": "gemini/gemini-3.1-flash-lite",
+      "context": "code",
+      "requested": 15,
+      "returned": 15,
+      "files_shown": 12,
+      "chars_shown": 60484,
+      "files_that_did_not_fit": []
+    }
+  },
+  "seconds": {
+    "arm": 10.8,
+    "check": 0.0,
+    "total": 10.8
+  },
+  "usage": {
+    "arm": {
+      "calls": 1,
+      "failed": 0,
+      "est_tokens": 18539,
+      "seconds_in_calls": 10.7,
+      "by_task": {
+        "baseline": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 61540,
+          "completion_chars": 12617,
+          "seconds": 10.747527200030163,
+          "est_tokens": 18539
+        }
+      }
+    },
+    "check": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    }
+  }
+}

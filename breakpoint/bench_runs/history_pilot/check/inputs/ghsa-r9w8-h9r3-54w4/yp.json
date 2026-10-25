@@ -1,0 +1,78 @@
+{
+ "findings": [
+  {
+   "title": "Missing validation on `fromViewInfo` input",
+   "generation": 1,
+   "discovered_by": "single-prompt baseline",
+   "description": "The `parse` function uses `value[1]` as a buffer index without strictly checking that `value[1]` is a valid reference within the `values` array.",
+   "steps_to_exploit": [
+    "Craft a malicious JSON payload where `value[1]` points to an index outside of `values` or points to an incompatible type.",
+    "The `fromViewInfo` operation will attempt to construct a view using a non-buffer type."
+   ],
+   "impact": "Unexpected runtime errors or type confusion in the target runtime.",
+   "evolved_from": [],
+   "attack_category": "code_quality",
+   "confidence": 1.0,
+   "exploitability": 0.0,
+   "impact_score": 0.0,
+   "spread": 0.0,
+   "fix_difficulty": 1.0,
+   "verification": "",
+   "evidence": [
+    {
+     "file": "src/parse.js",
+     "line": 196,
+     "quote": "hydrated[index] = ops.fromViewInfo(type, buffer, value[2], value[3]);"
+    }
+   ],
+   "code_refs": [
+    {
+     "file": "src/parse.js",
+     "line": 196,
+     "quote": "hydrated[index] = ops.fromViewInfo(type, buffer, value[2], value[3]);"
+    }
+   ],
+   "id": "a56df421",
+   "bss": 0.0,
+   "severity_band": "LOW",
+   "fix_priority": "MONITOR"
+  },
+  {
+   "title": "Missing validation of `byteOffset` and `length` in View creation",
+   "generation": 1,
+   "discovered_by": "single-prompt baseline",
+   "description": "The `fromViewInfo` method trusts the `byteOffset` and `length` values provided by the serialized input when calling the TypedArray constructor.",
+   "steps_to_exploit": [
+    "Construct a malformed payload where the `byteOffset` plus `length` exceeds the size of the underlying buffer.",
+    "The TypedArray constructor will throw a range error, which might be caught or handled improperly in the parent routine."
+   ],
+   "impact": "Denial of Service through unhandled exceptions.",
+   "evolved_from": [],
+   "attack_category": "code_quality",
+   "confidence": 1.0,
+   "exploitability": 0.0,
+   "impact_score": 0.0,
+   "spread": 0.0,
+   "fix_difficulty": 1.0,
+   "verification": "",
+   "evidence": [
+    {
+     "file": "src/operations.js",
+     "line": 146,
+     "quote": "new Constructor(buffer, byteOffset, length)"
+    }
+   ],
+   "code_refs": [
+    {
+     "file": "src/operations.js",
+     "line": 146,
+     "quote": "new Constructor(buffer, byteOffset, length)"
+    }
+   ],
+   "id": "12466790",
+   "bss": 0.0,
+   "severity_band": "LOW",
+   "fix_priority": "MONITOR"
+  }
+ ]
+}

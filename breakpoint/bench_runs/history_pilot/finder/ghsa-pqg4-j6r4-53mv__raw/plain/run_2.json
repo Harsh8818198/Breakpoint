@@ -1,0 +1,761 @@
+{
+  "schema": 1,
+  "set": "ghsa-pqg4-j6r4-53mv",
+  "variant": "raw",
+  "arm": "plain",
+  "run": 2,
+  "commit": "36f23944db50dd3f0df4da9c7cba0bb63df05f64",
+  "started_at": "2026-10-24T10:59:39+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": false,
+  "status": "ok",
+  "candidates": 15,
+  "kept": [
+    {
+      "title": "Command Injection via Unsafe Parsing of Environment Variables",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `parse` function allows environment variable lookup functions to return arbitrary objects. The downstream `parse` logic uses `JSON.parse` on these objects when injected into tokens, leading to potential prototype pollution or unexpected object injection if `env` is untrusted.",
+      "steps_to_exploit": [
+        "Define a malicious environment lookup function that returns an object containing a property like 'toString' or other method keys.",
+        "Pass this function to `parse()` with a shell string containing a variable reference.",
+        "The parser calls `JSON.parse` on the serialized object, allowing object property injection into the resulting token stream.",
+        "An attacker can potentially manipulate the logic of subsequent processing that expects string tokens."
+      ],
+      "impact": "Code execution or logic manipulation depending on how the parsed output is used by the consuming application.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "parse.js",
+          "line": 324,
+          "quote": "JSON.parse(x.split(TOKEN)[1])"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "parse.js",
+          "line": 324,
+          "quote": "JSON.parse(x.split(TOKEN)[1])"
+        }
+      ],
+      "id": "c0a91820",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unsafe Deserialization via JSON.parse",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `parse` function uses `JSON.parse` on data extracted from the `env` argument (if it is a function). If an attacker can control the returned value of the environment lookup, they can inject arbitrary JS objects.",
+      "steps_to_exploit": [
+        "Find an application using `shell-quote` where the environment lookup function is dynamic.",
+        "Inject a payload that is serialized into the `TOKEN` delimiter format.",
+        "The code calls `JSON.parse` on the resulting string.",
+        "Maliciously crafted JSON allows the creation of arbitrary objects in the memory space."
+      ],
+      "impact": "Remote Code Execution (RCE) or state manipulation via prototype pollution.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "parse.js",
+          "line": 324,
+          "quote": "JSON.parse(x.split(TOKEN)[1])"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "parse.js",
+          "line": 324,
+          "quote": "JSON.parse(x.split(TOKEN)[1])"
+        }
+      ],
+      "id": "b3244e45",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Disabling TLS Validation in CI",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The CI pipeline explicitly disables strict SSL validation (`NPM_CONFIG_STRICT_SSL: false`) for multiple Windows-based build steps.",
+      "steps_to_exploit": [
+        "Perform a Man-in-the-Middle (MitM) attack against the network segment used by GitHub Actions runners.",
+        "Intercept the npm request for dependencies.",
+        "Inject malicious versions of dependencies.",
+        "The build completes with compromised code due to the disabled security check."
+      ],
+      "impact": "Supply chain compromise via malicious package injection.",
+      "evolved_from": [],
+      "attack_category": "supply_chain",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": ".github/workflows/nodejs.yml",
+          "line": 71,
+          "quote": "NPM_CONFIG_STRICT_SSL: false"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": ".github/workflows/nodejs.yml",
+          "line": 71,
+          "quote": "NPM_CONFIG_STRICT_SSL: false"
+        }
+      ],
+      "id": "cd5b30c1",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Improper Input Validation of Environment Variables",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `getVar` function creates string outputs by concatenating raw keys and values without sufficient sanitization against the `TOKEN` delimiter, which could break the parsing logic.",
+      "steps_to_exploit": [
+        "Provide an environment key or value that contains the `TOKEN` string sequence.",
+        "The parser uses this value to reconstruct strings via `split(TOKEN)`.",
+        "The parser logic can be subverted by injected delimiters to confuse the tokenization process."
+      ],
+      "impact": "Parsing logic bypass or arbitrary token injection.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "parse.js",
+          "line": 78,
+          "quote": "return pre + TOKEN + JSON.stringify(r) + TOKEN;"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "parse.js",
+          "line": 78,
+          "quote": "return pre + TOKEN + JSON.stringify(r) + TOKEN;"
+        }
+      ],
+      "id": "e0a89582",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of Weak Random Number Generator for Security Tokens",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `TOKEN` used for identifying injected environment variables is generated using `Math.random()`, which is cryptographically insecure and predictable.",
+      "steps_to_exploit": [
+        "Monitor the output of the application to guess the sequence of `TOKEN` values based on predictable `Math.random()` patterns.",
+        "Once the `TOKEN` is predicted, inject matching strings into the `env` lookup results.",
+        "The internal parser logic treats the malicious string as a legitimate internal token."
+      ],
+      "impact": "Security tokens can be spoofed, leading to unauthorized data injection.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "parse.js",
+          "line": 38,
+          "quote": "TOKEN += (mult * Math.random()).toString(16);"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "parse.js",
+          "line": 38,
+          "quote": "TOKEN += (mult * Math.random()).toString(16);"
+        }
+      ],
+      "id": "4a529b59",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Execution of Arbitrary Commands via Shell Parsing Logic",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The library is designed to parse shell commands. If an application incorrectly trusts the output of `parse()` to build a command string for `child_process.exec`, it is vulnerable to command injection.",
+      "steps_to_exploit": [
+        "Provide a complex shell string to `parse()`.",
+        "The application takes the resulting array and joins it to form a command for `exec()`.",
+        "The parser permits control operators like `&`, `;`, and `|` which execute system commands."
+      ],
+      "impact": "Full system command execution.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [],
+      "code_refs": [],
+      "id": "cc2dbda8",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of Regex-based Parser for Complex Shell Logic",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The use of complex regexes to parse shell syntax is prone to ReDoS (Regular Expression Denial of Service) and edge-case bypasses.",
+      "steps_to_exploit": [
+        "Craft a deeply nested or highly ambiguous shell string.",
+        "The regex engine consumes excessive CPU time attempting to match the pattern.",
+        "The application process hangs, leading to a DoS."
+      ],
+      "impact": "Denial of Service.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "parse.js",
+          "line": 97,
+          "quote": "var chunker = new RegExp(["
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "parse.js",
+          "line": 97,
+          "quote": "var chunker = new RegExp(["
+        }
+      ],
+      "id": "b7d582a2",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure `evalmd` usage in prelint script",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `prelint` script uses `evalmd`, which executes code found in the README, creating a potential vector for local code execution during development if the README is malicious.",
+      "steps_to_exploit": [
+        "Modify the README file to contain malicious code blocks.",
+        "Run `npm run prelint`.",
+        "The malicious code is executed on the developer's machine."
+      ],
+      "impact": "Developer machine compromise.",
+      "evolved_from": [],
+      "attack_category": "supply_chain",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "package.json",
+          "line": 32,
+          "quote": "\"prelint\": \"evalmd README.md\","
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "package.json",
+          "line": 32,
+          "quote": "\"prelint\": \"evalmd README.md\","
+        }
+      ],
+      "id": "d72ad8b1",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "GitHub Actions Token exposure in rebase.yml",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `rebase.yml` workflow uses `secrets.GITHUB_TOKEN` which has 'write' permissions on contents, which can be dangerous in pull_request_target contexts.",
+      "steps_to_exploit": [
+        "Submit a pull request to the target repository.",
+        "The rebase action runs and uses the provided token to force-push commits.",
+        "An attacker could influence this process if the underlying action is compromised or misconfigured."
+      ],
+      "impact": "Unauthorized code modification in the repository.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": ".github/workflows/rebase.yml",
+          "line": 13,
+          "quote": "token: ${{ secrets.GITHUB_TOKEN }}"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": ".github/workflows/rebase.yml",
+          "line": 13,
+          "quote": "token: ${{ secrets.GITHUB_TOKEN }}"
+        }
+      ],
+      "id": "43bfb0e8",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure use of `eval` in linting scripts",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Linting infrastructure is complex and runs in CI/CD, potentially allowing execution of arbitrary scripts.",
+      "steps_to_exploit": [
+        "Compromise a dev dependency or a CI configuration file.",
+        "Ensure the script runs during the `npm run lint` phase."
+      ],
+      "impact": "Execution of unauthorized code in the build environment.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "package.json",
+          "line": 33,
+          "quote": "\"lint\": \"eslint --ext=js,mjs .\","
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "package.json",
+          "line": 33,
+          "quote": "\"lint\": \"eslint --ext=js,mjs .\","
+        }
+      ],
+      "id": "874f52d6",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potential for Glob Injection",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `quote` function treats certain object types as 'glob' and returns patterns without sufficient verification, potentially leading to directory traversal if used in file system APIs.",
+      "steps_to_exploit": [
+        "Construct a 'glob' object with a pattern like `../../etc/passwd`.",
+        "The quote function escapes some characters but allows the glob pattern to be used.",
+        "If the consumer performs file operations using this glob, it may access files outside the intended scope."
+      ],
+      "impact": "Information disclosure or arbitrary file access.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "quote.js",
+          "line": 34,
+          "quote": "if ('op' in s && s.op === 'glob') {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "quote.js",
+          "line": 34,
+          "quote": "if ('op' in s && s.op === 'glob') {"
+        }
+      ],
+      "id": "dfdf6d65",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Loose Security Policy in CI",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Multiple CI workflows are triggered on both `push` and `pull_request`, increasing the surface area for malicious PRs to execute code in the repository environment.",
+      "steps_to_exploit": [
+        "Submit a pull request.",
+        "The CI runs workflows with read permissions, but potentially sensitive build artifacts or environment variables could be exposed.",
+        "Exploit misconfigured job dependencies."
+      ],
+      "impact": "Information leakage or unauthorized pipeline execution.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": ".github/workflows/node-pretest.yml",
+          "line": 3,
+          "quote": "on: [pull_request, push]"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": ".github/workflows/node-pretest.yml",
+          "line": 3,
+          "quote": "on: [pull_request, push]"
+        }
+      ],
+      "id": "ad69a3df",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Regex backtracking in parseInternal",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The chunking regex used in `parseInternal` can be prone to catastrophic backtracking if the shell string input is specifically crafted.",
+      "steps_to_exploit": [
+        "Provide a very long string containing a repeating pattern that partially matches the `BAREWORD` definition.",
+        "The regex engine takes exponential time to resolve the match.",
+        "The CPU usage spikes to 100%."
+      ],
+      "impact": "Denial of Service.",
+      "evolved_from": [],
+      "attack_category": "error_handling",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "parse.js",
+          "line": 97,
+          "quote": "var chunker = new RegExp(["
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "parse.js",
+          "line": 97,
+          "quote": "var chunker = new RegExp(["
+        }
+      ],
+      "id": "c66fdbd4",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Exposure of sensitive environment information",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `getVar` function performs lookups on the environment object provided by the user. If this environment object is the global `process.env`, it exposes sensitive secrets to the parsing logic.",
+      "steps_to_exploit": [
+        "Call `parse` with `process.env` as the second argument.",
+        "Include a variable name that refers to a sensitive environment variable (e.g., `API_KEY`).",
+        "The parser expands this sensitive value into the resulting token stream, potentially logging or exposing it."
+      ],
+      "impact": "Exposure of sensitive credentials.",
+      "evolved_from": [],
+      "attack_category": "data_privacy",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "parse.js",
+          "line": 70,
+          "quote": "var r = typeof env === 'function' ? env(key) : env[key];"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "parse.js",
+          "line": 70,
+          "quote": "var r = typeof env === 'function' ? env(key) : env[key];"
+        }
+      ],
+      "id": "7e2a1ff6",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure temporary files usage",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The library environment suggests various npm-related processes that often utilize insecure temp directories (e.g., `/tmp`), which can be hijacked on shared systems.",
+      "steps_to_exploit": [
+        "Identify a system where multiple users use the same `/tmp` directory.",
+        "Predict or watch for temporary files created during the npm install process.",
+        "Replace the file contents before the installer process reads them."
+      ],
+      "impact": "Local Privilege Escalation or remote code injection during build time.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [],
+      "code_refs": [],
+      "id": "392f9b3c",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "proposed": [
+    {
+      "title": "Command Injection via Unsafe Parsing of Environment Variables",
+      "code_refs": [
+        {
+          "file": "parse.js",
+          "line": 324,
+          "quote": "JSON.parse(x.split(TOKEN)[1])"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unsafe Deserialization via JSON.parse",
+      "code_refs": [
+        {
+          "file": "parse.js",
+          "line": 324,
+          "quote": "JSON.parse(x.split(TOKEN)[1])"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Disabling TLS Validation in CI",
+      "code_refs": [
+        {
+          "file": ".github/workflows/nodejs.yml",
+          "line": 71,
+          "quote": "NPM_CONFIG_STRICT_SSL: false"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Improper Input Validation of Environment Variables",
+      "code_refs": [
+        {
+          "file": "parse.js",
+          "line": 78,
+          "quote": "return pre + TOKEN + JSON.stringify(r) + TOKEN;"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of Weak Random Number Generator for Security Tokens",
+      "code_refs": [
+        {
+          "file": "parse.js",
+          "line": 38,
+          "quote": "TOKEN += (mult * Math.random()).toString(16);"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Execution of Arbitrary Commands via Shell Parsing Logic",
+      "code_refs": [],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of Regex-based Parser for Complex Shell Logic",
+      "code_refs": [
+        {
+          "file": "parse.js",
+          "line": 97,
+          "quote": "var chunker = new RegExp(["
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure `evalmd` usage in prelint script",
+      "code_refs": [
+        {
+          "file": "package.json",
+          "line": 32,
+          "quote": "\"prelint\": \"evalmd README.md\","
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "GitHub Actions Token exposure in rebase.yml",
+      "code_refs": [
+        {
+          "file": ".github/workflows/rebase.yml",
+          "line": 13,
+          "quote": "token: ${{ secrets.GITHUB_TOKEN }}"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure use of `eval` in linting scripts",
+      "code_refs": [
+        {
+          "file": "package.json",
+          "line": 33,
+          "quote": "\"lint\": \"eslint --ext=js,mjs .\","
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potential for Glob Injection",
+      "code_refs": [
+        {
+          "file": "quote.js",
+          "line": 34,
+          "quote": "if ('op' in s && s.op === 'glob') {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Loose Security Policy in CI",
+      "code_refs": [
+        {
+          "file": ".github/workflows/node-pretest.yml",
+          "line": 3,
+          "quote": "on: [pull_request, push]"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Regex backtracking in parseInternal",
+      "code_refs": [
+        {
+          "file": "parse.js",
+          "line": 97,
+          "quote": "var chunker = new RegExp(["
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Exposure of sensitive environment information",
+      "code_refs": [
+        {
+          "file": "parse.js",
+          "line": 70,
+          "quote": "var r = typeof env === 'function' ? env(key) : env[key];"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure temporary files usage",
+      "code_refs": [],
+      "outcome": "unchecked"
+    }
+  ],
+  "rejected": [],
+  "verification": null,
+  "arm_meta": {
+    "baseline": {
+      "model": "gemini/gemini-3.1-flash-lite",
+      "context": "code",
+      "requested": 15,
+      "returned": 15,
+      "files_shown": 19,
+      "chars_shown": 30340,
+      "files_that_did_not_fit": []
+    }
+  },
+  "seconds": {
+    "arm": 13.0,
+    "check": 0.0,
+    "total": 13.0
+  },
+  "usage": {
+    "arm": {
+      "calls": 1,
+      "failed": 0,
+      "est_tokens": 10889,
+      "seconds_in_calls": 13.0,
+      "by_task": {
+        "baseline": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 31410,
+          "completion_chars": 12146,
+          "seconds": 12.983258199994452,
+          "est_tokens": 10889
+        }
+      }
+    },
+    "check": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    }
+  }
+}

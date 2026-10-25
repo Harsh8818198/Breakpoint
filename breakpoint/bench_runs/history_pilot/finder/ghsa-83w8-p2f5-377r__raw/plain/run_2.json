@@ -1,0 +1,826 @@
+{
+  "schema": 1,
+  "set": "ghsa-83w8-p2f5-377r",
+  "variant": "raw",
+  "arm": "plain",
+  "run": 2,
+  "commit": "c68224e3067e18ee4c676cc9db66aae6b30ffb02",
+  "started_at": "2026-10-24T10:49:24+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": false,
+  "status": "ok",
+  "candidates": 15,
+  "kept": [
+    {
+      "title": "Unrestricted Path Traversal via Filename Parameter",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `sendFile` and `download` methods accept user-controlled strings for filenames without sufficient validation, allowing attackers to read arbitrary files from the filesystem.",
+      "steps_to_exploit": [
+        "Identify an endpoint using `reply.sendFile` or `reply.download`.",
+        "Craft a payload using path traversal sequences (e.g., ../../../etc/passwd).",
+        "Inject the payload into the request parameter mapping to the filename argument.",
+        "Access the contents of sensitive system files."
+      ],
+      "impact": "Full read access to arbitrary files on the server hosting the application, leading to credential theft or sensitive data exposure.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 97,
+          "quote": "fastify.decorateReply('sendFile', function (filePath, rootPath, options) {"
+        },
+        {
+          "file": "index.js",
+          "line": 121,
+          "quote": "pumpSendToReply(this.request, this, filePath, root, 0, opts)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 97,
+          "quote": "fastify.decorateReply('sendFile', function (filePath, rootPath, options) {"
+        },
+        {
+          "file": "index.js",
+          "line": 121,
+          "quote": "pumpSendToReply(this.request, this, filePath, root, 0, opts)"
+        }
+      ],
+      "id": "e3c91e8e",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Directory Traversal via Manipulated Redirect URL",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `getRedirectUrl` function processes user-supplied URL segments insecurely, potentially allowing attackers to redirect users to unauthorized or malicious domains/paths.",
+      "steps_to_exploit": [
+        "Access a directory path managed by the plugin.",
+        "Append complex path segments or query parameters.",
+        "Trigger the redirect logic by accessing a directory without a trailing slash.",
+        "Observe redirect behavior to external or unintended internal paths."
+      ],
+      "impact": "Open redirect vulnerability potentially used in phishing attacks or for bypassing security filters.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 753,
+          "quote": "function getRedirectUrl (url) {"
+        },
+        {
+          "file": "index.js",
+          "line": 762,
+          "quote": "const parsed = new URL(url, 'http://localhost.com/')"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 753,
+          "quote": "function getRedirectUrl (url) {"
+        },
+        {
+          "file": "index.js",
+          "line": 762,
+          "quote": "const parsed = new URL(url, 'http://localhost.com/')"
+        }
+      ],
+      "id": "6230609c",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potential Arbitrary Code Execution in List Render",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `render` option in the `list` configuration is executed as a function to format output. If user input can influence the `options` object, it could lead to code execution.",
+      "steps_to_exploit": [
+        "Check if the application allows user-defined configuration for the list render function.",
+        "Pass a crafted function string or payload.",
+        "The application executes the payload within the context of the server process."
+      ],
+      "impact": "Remote Code Execution (RCE) on the server process.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/dirList.js",
+          "line": 150,
+          "quote": "const html = options.render("
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/dirList.js",
+          "line": 150,
+          "quote": "const html = options.render("
+        }
+      ],
+      "id": "0157ce07",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure `statSync` path validation",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Using `statSync` inside `checkPath` can block the event loop if many root paths or invalid path requests are submitted, leading to Denial of Service.",
+      "steps_to_exploit": [
+        "Initiate a large number of requests with malicious or deep root path configurations.",
+        "Force synchronous I/O operations.",
+        "Monitor event loop latency."
+      ],
+      "impact": "Denial of Service (DoS) due to event loop starvation.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 528,
+          "quote": "pathStat = statSync(rootPath)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 528,
+          "quote": "pathStat = statSync(rootPath)"
+        }
+      ],
+      "id": "54cd3581",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Default `dotfiles` setting",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The default `dotfiles` policy is set to 'allow', which exposes hidden system files (like .env or .git) if the root directory is incorrectly configured.",
+      "steps_to_exploit": [
+        "Find an instance where the 'root' directory is set to the application root.",
+        "Request hidden files such as '/.env' or '/.git/config'.",
+        "Retrieve sensitive configuration data."
+      ],
+      "impact": "Exposure of sensitive environment configuration and project metadata.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 54,
+          "quote": "opts.dotfiles ??= 'allow'"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 54,
+          "quote": "opts.dotfiles ??= 'allow'"
+        }
+      ],
+      "id": "1ddf4eeb",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Improper Input Sanitization in `getPathnameForSend`",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Decoding URI components in `getPathnameForSend` after path prefix matching might allow traversal if the decoding results in '..' sequences.",
+      "steps_to_exploit": [
+        "Encode path traversal sequences (e.g., %2e%2e%2f).",
+        "Send request to the server.",
+        "The server decodes the sequence, bypassing filters, and accesses the file."
+      ],
+      "impact": "Bypassing path restrictions to read unauthorized files.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 743,
+          "quote": "return decodeURI(pathname)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 743,
+          "quote": "return decodeURI(pathname)"
+        }
+      ],
+      "id": "904e9255",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Excessive Error Reporting",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Error handling inside `pumpSendToReply` may pass raw errors to the client, leaking internal filesystem structures.",
+      "steps_to_exploit": [
+        "Request files that don't exist or files with incorrect permissions.",
+        "Analyze the error message returned in the HTTP response.",
+        "Identify internal path locations based on the error output."
+      ],
+      "impact": "Information disclosure of server-side directory structures.",
+      "evolved_from": [],
+      "attack_category": "data_privacy",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 405,
+          "quote": "await reply.send(metadata.error)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 405,
+          "quote": "await reply.send(metadata.error)"
+        }
+      ],
+      "id": "4d3c00dd",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Resource Exhaustion via `readdir`",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `dirList.list` function reads entire directory contents into memory, which can crash the process on very large directories.",
+      "steps_to_exploit": [
+        "Target a directory with a massive number of files.",
+        "Send requests to trigger directory listing.",
+        "Memory usage spikes, causing the process to crash (DoS)."
+      ],
+      "impact": "Denial of Service through memory exhaustion.",
+      "evolved_from": [],
+      "attack_category": "scalability",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/dirList.js",
+          "line": 82,
+          "quote": "let files = await fs.readdir(dir)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/dirList.js",
+          "line": 82,
+          "quote": "let files = await fs.readdir(dir)"
+        }
+      ],
+      "id": "666d0870",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of `decodeURI` without proper validation",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "`decodeURI` on untrusted paths can lead to unexpected behavior when dealing with characters like control characters or null bytes.",
+      "steps_to_exploit": [
+        "Craft a URI containing null bytes or special encoded characters.",
+        "Send the request.",
+        "Observe if the file system treats the path differently than intended."
+      ],
+      "impact": "Potential file system bypass or path normalization errors.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 743,
+          "quote": "return decodeURI(pathname)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 743,
+          "quote": "return decodeURI(pathname)"
+        }
+      ],
+      "id": "211f04be",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Missing Authorization Check on `sendFile`",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `sendFile` decorator allows serving files without verifying if the user has authorization to access the requested resource.",
+      "steps_to_exploit": [
+        "Bypass front-end authentication or access the static route directly.",
+        "Request sensitive static files.",
+        "Verify access."
+      ],
+      "impact": "Broken access control, leading to unauthorized data access.",
+      "evolved_from": [],
+      "attack_category": "authz",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 97,
+          "quote": "fastify.decorateReply('sendFile', function (filePath, rootPath, options) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 97,
+          "quote": "fastify.decorateReply('sendFile', function (filePath, rootPath, options) {"
+        }
+      ],
+      "id": "0f68aa93",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unsafe `glob` usage",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The glob pattern implementation used in index generation might allow for unexpected file inclusion if not constrained properly.",
+      "steps_to_exploit": [
+        "Place sensitive files in non-intended directories.",
+        "Configure the plugin to scan a parent directory.",
+        "Confirm sensitive files are reachable via the static route."
+      ],
+      "impact": "Unintentional exposure of sensitive files within the configured static root.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 164,
+          "quote": "const files = await glob('**/**', {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 164,
+          "quote": "const files = await glob('**/**', {"
+        }
+      ],
+      "id": "e1ee140e",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Vary Header Injection potential",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `addVaryAcceptEncoding` function parses strings manually, which might be susceptible to malformed input causing unintended Vary headers.",
+      "steps_to_exploit": [
+        "Send a request with a specially crafted 'Vary' or 'Accept-Encoding' header.",
+        "Manipulate the response header formatting.",
+        "Observe cache pollution or incorrect cache behavior."
+      ],
+      "impact": "Cache poisoning leading to users receiving incorrect content.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 624,
+          "quote": "reply.header('vary', value + ', accept-encoding')"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 624,
+          "quote": "reply.header('vary', value + ', accept-encoding')"
+        }
+      ],
+      "id": "01a4d108",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure `content-disposition` filename",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The filename passed to `contentDisposition` uses the basename, but potential sanitization issues in the library could lead to unexpected behavior.",
+      "steps_to_exploit": [
+        "Inject characters into the filename.",
+        "Observe if the header handling is compliant with RFCs or vulnerable to injection."
+      ],
+      "impact": "Potential client-side processing issues or header injection.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 33,
+          "quote": "return create(basename(filename))"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 33,
+          "quote": "return create(basename(filename))"
+        }
+      ],
+      "id": "57867c1c",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Race condition in `fs.stat` usage",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Asynchronous `fs.stat` followed by actions on that file path is prone to Time-of-Check to Time-of-Use (TOCTOU) issues.",
+      "steps_to_exploit": [
+        "Identify a file being served.",
+        "Race the server process by swapping the file between the stat call and the response send.",
+        "Observe potential access to unintended resources."
+      ],
+      "impact": "Potential for unauthorized file access or security policy bypass.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/dirList.js",
+          "line": 93,
+          "quote": "stats = await fs.stat(path.join(dir, filename))"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/dirList.js",
+          "line": 93,
+          "quote": "stats = await fs.stat(path.join(dir, filename))"
+        }
+      ],
+      "id": "4c8ecf6f",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Uncaught Exceptions in `pumpSendToReply`",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Several code paths do not adequately handle promise rejections, potentially leading to unhandled exceptions and process termination.",
+      "steps_to_exploit": [
+        "Trigger specific file errors during the `send` lifecycle.",
+        "Cause an unhandled promise rejection.",
+        "Observe if the server crashes."
+      ],
+      "impact": "Denial of Service through process instability.",
+      "evolved_from": [],
+      "attack_category": "error_handling",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 291,
+          "quote": "} = await send(request.raw, encodeURI(pathnameForSend), options)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 291,
+          "quote": "} = await send(request.raw, encodeURI(pathnameForSend), options)"
+        }
+      ],
+      "id": "a231ad1a",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "proposed": [
+    {
+      "title": "Unrestricted Path Traversal via Filename Parameter",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 97,
+          "quote": "fastify.decorateReply('sendFile', function (filePath, rootPath, options) {"
+        },
+        {
+          "file": "index.js",
+          "line": 121,
+          "quote": "pumpSendToReply(this.request, this, filePath, root, 0, opts)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Directory Traversal via Manipulated Redirect URL",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 753,
+          "quote": "function getRedirectUrl (url) {"
+        },
+        {
+          "file": "index.js",
+          "line": 762,
+          "quote": "const parsed = new URL(url, 'http://localhost.com/')"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potential Arbitrary Code Execution in List Render",
+      "code_refs": [
+        {
+          "file": "lib/dirList.js",
+          "line": 150,
+          "quote": "const html = options.render("
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure `statSync` path validation",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 528,
+          "quote": "pathStat = statSync(rootPath)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure Default `dotfiles` setting",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 54,
+          "quote": "opts.dotfiles ??= 'allow'"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Improper Input Sanitization in `getPathnameForSend`",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 743,
+          "quote": "return decodeURI(pathname)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Excessive Error Reporting",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 405,
+          "quote": "await reply.send(metadata.error)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Resource Exhaustion via `readdir`",
+      "code_refs": [
+        {
+          "file": "lib/dirList.js",
+          "line": 82,
+          "quote": "let files = await fs.readdir(dir)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of `decodeURI` without proper validation",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 743,
+          "quote": "return decodeURI(pathname)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Missing Authorization Check on `sendFile`",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 97,
+          "quote": "fastify.decorateReply('sendFile', function (filePath, rootPath, options) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unsafe `glob` usage",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 164,
+          "quote": "const files = await glob('**/**', {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Vary Header Injection potential",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 624,
+          "quote": "reply.header('vary', value + ', accept-encoding')"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure `content-disposition` filename",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 33,
+          "quote": "return create(basename(filename))"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Race condition in `fs.stat` usage",
+      "code_refs": [
+        {
+          "file": "lib/dirList.js",
+          "line": 93,
+          "quote": "stats = await fs.stat(path.join(dir, filename))"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Uncaught Exceptions in `pumpSendToReply`",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 291,
+          "quote": "} = await send(request.raw, encodeURI(pathnameForSend), options)"
+        }
+      ],
+      "outcome": "unchecked"
+    }
+  ],
+  "rejected": [],
+  "verification": null,
+  "arm_meta": {
+    "baseline": {
+      "model": "gemini/gemini-3.1-flash-lite",
+      "context": "code",
+      "requested": 15,
+      "returned": 15,
+      "files_shown": 12,
+      "chars_shown": 60484,
+      "files_that_did_not_fit": []
+    }
+  },
+  "seconds": {
+    "arm": 9.9,
+    "check": 0.0,
+    "total": 9.9
+  },
+  "usage": {
+    "arm": {
+      "calls": 1,
+      "failed": 0,
+      "est_tokens": 18193,
+      "seconds_in_calls": 9.8,
+      "by_task": {
+        "baseline": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 61540,
+          "completion_chars": 11232,
+          "seconds": 9.833182399976067,
+          "est_tokens": 18193
+        }
+      }
+    },
+    "check": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    }
+  }
+}

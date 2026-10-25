@@ -1,0 +1,56 @@
+{
+  "id": "ghsa-8r9p-f939-6h3c",
+  "title": "follow-redirects: follow-redirects sensitiveHeaders regex escaping can expose credential headers",
+  "role": "heldout",
+  "repo": {
+    "url": "https://github.com/follow-redirects/follow-redirects",
+    "commit": "0c23a223067201c368035e82954c11eb2578a33b",
+    "partial": true
+  },
+  "language": "javascript",
+  "framework": "",
+  "provenance": "Labels come from the maintainers' fix commit, not from a model: the lines it changed or removed in its parent commit (advisory GHSA-8r9p-f939-6h3c). Whether the patch really addresses the advisory is recorded in history.label_review.",
+  "contamination": "Advisory published 2026-10-20 and fix committed 2026-10-01, both on or after 2026-03-10, after the 2026-03-03 release of gemini-3.1-flash-lite (knowledge cutoff January 2025): that model cannot have trained on this fix. A model with a later cutoff might have. The code may still resemble earlier public fixes of similar bugs in the same project.",
+  "bugs": [
+    {
+      "id": "ghsa-8r9p-f939-6h3c",
+      "title": "follow-redirects sensitiveHeaders regex escaping can expose credential headers",
+      "class": "disclosure",
+      "cwe": "CWE-200",
+      "locations": [
+        {
+          "file": "index.js",
+          "lines": [
+            704,
+            704
+          ]
+        }
+      ],
+      "notes": "Judge a finding against the advisory text in `history`, not only against the lines."
+    }
+  ],
+  "variants": {},
+  "history": {
+    "advisory": "GHSA-8r9p-f939-6h3c",
+    "advisory_url": "https://github.com/advisories/GHSA-8r9p-f939-6h3c",
+    "severity": "high",
+    "published": "2026-10-20",
+    "package": "follow-redirects",
+    "ecosystem": "npm",
+    "vulnerable_versions": ">= 1.16.0, < 1.16.1",
+    "patched": "1.16.1",
+    "fix_commit": "080a76d0e125b37bf81717368a61d5dc37aa56c8",
+    "fix_url": "https://github.com/follow-redirects/follow-redirects/commit/080a76d0e125b37bf81717368a61d5dc37aa56c8",
+    "fix_date": "2026-10-01T13:38:37Z",
+    "changed_lines": 2,
+    "source_files_changed": [
+      "index.js"
+    ],
+    "other_files_changed": 1,
+    "addition_only": false,
+    "source_bytes": 30732,
+    "fits_in_one_prompt": true,
+    "description": "### Summary\nfollow-redirects 1.16.0 introduced the `sensitiveHeaders` option (the fix for CVE-2026-40895 / GHSA-r4q5-vmmm-2653), which lets an application declare extra header names that must be removed when a redirect crosses to a different host or downgrades protocol. The filter is a single case-insensitive regular expression built by concatenating the declared header names into an alternation after passing each through `escapeRegex`. `escapeRegex` escapes only a partial set of metacharacters and leaves `^`, `|`, `[`, `{`, and `}` unescaped. Header names may legitimately contain `^` and `|` (both are valid RFC 9110 token characters that Node accepts and sends), and for a declared name containing either, the generated pattern can never match the intended header. As a result, an application that adopts this option to protect a custom credential header, then follows an attacker-controlled cross-origin redirect, forwards that credential to the attacker with no error or warning, while believing it is protected. The failure is silent: the protection simply does not exist for the affected names. The built-in list (Authorization, Proxy-Authorization, Cookie) contains no metacharacters and is not affected by this defect.\n\n### Details\nThe filter is constructed once, in the `RedirectableRequest` constructor at `index.js:118-120`:\n\n```js\nthis._headerFilter = new RegExp(\"^(?:\" +\n    sensitiveHeaders.concat(options.sensitiveHeaders).map(escapeRegex).join(\"|\") +\n  \")$\", \"i\");\n```\n\n`escapeRegex` at `index.js:703-705`:\n\n```js\nfunction escapeRegex(regex) {\n  return regex.replace(/[\\]\\\\/()*+?.$]/g, \"\\\\$&\");   // escapes ] \\ / ( ) * + ? . $  -- NOT ^ | [ { }\n}\n```\n\nThe character class escapes `]`, `\\`, `/`, `(`, `)`, `*`, `+`, `?`, `.`, and `$`. It omits `^`, `|`, `[`, `{`, and `}`. Of these, Node's `http.ClientRequest` accepts `^` and `|` in header names (they are valid `tchar` values under RFC 9110) and rejects `[`, `{`, `}` with `ERR_INVALID_HTTP_TOKEN`, so `^` and `|` are the reachable vectors for a silent credential leak. Separately, although `[`, `{`, `}` cannot appear as live header names, declaring a `sensitiveHeaders` entry that contains one of them injects an unbalanced token into the alternation (for example an unterminated character class), so the filter `RegExp` throws a `SyntaxError` in the `RedirectableRequest` constructor and the request fails to start. That case is a loud request-time crash from the same incomplete-escaping root cause rather than a silent bypass, and the canonical escaper below fixes it as well.\n\nFor a declared sensitive header name containing an unescaped metacharacter, the alternation is broken in a fail-open way:\n\n- A name containing `^`, for example `X-Api^Key`, yields the alternative `X-Api^Key` inside the pattern. The `^` becomes a mid-pattern start-of-string anchor, so the alternative can never match any real header name. `test(\"X-Api^Key\")` returns `false`, and the header is not stripped.\n- A name containing `|`, for example `X-Token|Secret`, is split into two separate alternatives `X-Token` and `Secret`. The real header `X-Token|Secret` is never matched (not stripped), while unrelated headers literally named `X-Token` or `Secret` would be stripped instead.\n\nThe generated filter source, reproduced from the exact library logic, is:\n```\n^(?:Authorization|Proxy-Authorization|Cookie|X-Api^Key|X-Token|Secret|X-Control-Key)$\n```\nDirect matching results against this filter: `X-Api^Key` -> false, `X-Token|Secret` -> false, `X-Control-Key` (normal name) -> true, and the split-off `X-Token` -> true and `Secret` -> true (collateral wrong-stripping). The built-ins Authorization, Proxy-Authorization, Cookie all -> true.\n\nSecondary, related weakness (filter snapshot not refreshed after `beforeRedirect`): the filter is built once at construction and applied at `index.js:490`, which runs before the `beforeRedirect(this._options, ...)` hook and the subsequent `_sanitizeOptions` at `index.js:494-506`. Because the strip h",
+    "label_review": "Claude read the fix patch against the advisory text on 2026-10-24 and found they match (one reader, not independently reviewed)."
+  }
+}

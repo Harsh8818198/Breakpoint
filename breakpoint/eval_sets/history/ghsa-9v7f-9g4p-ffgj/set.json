@@ -1,0 +1,63 @@
+{
+  "id": "ghsa-9v7f-9g4p-ffgj",
+  "title": "PyJWT: PyJWT: PyJWKClient follows redirects when fetching JWKS",
+  "role": "heldout",
+  "repo": {
+    "url": "https://github.com/jpadilla/pyjwt",
+    "commit": "f91ed44dd65baaf457f4b3353ed35e98a753934c",
+    "partial": true
+  },
+  "language": "python",
+  "framework": "",
+  "provenance": "Labels come from the maintainers' fix commit, not from a model: the lines it changed or removed in its parent commit (advisory GHSA-9v7f-9g4p-ffgj). Whether the patch really addresses the advisory is recorded in history.label_review.",
+  "contamination": "Advisory published 2026-09-29 and fix committed 2026-09-10, both on or after 2026-03-10, after the 2026-03-03 release of gemini-3.1-flash-lite (knowledge cutoff January 2025): that model cannot have trained on this fix. A model with a later cutoff might have. The code may still resemble earlier public fixes of similar bugs in the same project.",
+  "bugs": [
+    {
+      "id": "ghsa-9v7f-9g4p-ffgj",
+      "title": "PyJWT: PyJWKClient follows redirects when fetching JWKS",
+      "class": "disclosure",
+      "cwe": "CWE-200",
+      "locations": [
+        {
+          "file": "jwt/jwks_client.py",
+          "lines": [
+            16,
+            16
+          ]
+        },
+        {
+          "file": "jwt/jwks_client.py",
+          "lines": [
+            118,
+            120
+          ]
+        }
+      ],
+      "notes": "Judge a finding against the advisory text in `history`, not only against the lines."
+    }
+  ],
+  "variants": {},
+  "history": {
+    "advisory": "GHSA-9v7f-9g4p-ffgj",
+    "advisory_url": "https://github.com/advisories/GHSA-9v7f-9g4p-ffgj",
+    "severity": "high",
+    "published": "2026-09-29",
+    "package": "PyJWT",
+    "ecosystem": "pip",
+    "vulnerable_versions": "<= 2.13.0",
+    "patched": "2.14.0",
+    "fix_commit": "0a795b8e1f6ef08f634aa7086fc41cc6d5ce3e56",
+    "fix_url": "https://github.com/jpadilla/pyjwt/commit/0a795b8e1f6ef08f634aa7086fc41cc6d5ce3e56",
+    "fix_date": "2026-09-10T00:20:46Z",
+    "changed_lines": 21,
+    "source_files_changed": [
+      "jwt/jwks_client.py"
+    ],
+    "other_files_changed": 1,
+    "addition_only": false,
+    "source_bytes": 123324,
+    "fits_in_one_prompt": true,
+    "description": "### Summary\n\nPyJWT 2.13.0 `PyJWKClient` followed HTTP redirects while fetching a JWKS,\nwithout validating the redirect destination. A configured trusted endpoint\ncould therefore redirect the client to a different host.\n\n### Impact\n\nWhen an application uses `PyJWKClient` with caller-supplied request headers and\nan attacker can influence the configured endpoint's response, the redirected\nrequest could expose those headers and the redirected response could be used as\nauthoritative key material. This could cause JWKS trust poisoning and, in\naffected mixed-configuration applications, forged JWT acceptance. The issue\nrequires an attacker-influenced redirect from the configured JWKS endpoint; it\nis not triggered by a token `kid` alone.\n\n### Affected versions\n\nPyJWT `<= 2.13.0`.\n\n### Fix\n\nThe issue is fixed on `master` in commit\n[`0a795b8e1f6ef08f634aa7086fc41cc6d5ce3e56`](https://github.com/jpadilla/pyjwt/commit/0a795b8e1f6ef08f634aa7086fc41cc6d5ce3e56).\n`PyJWKClient` now disables automatic redirects for JWKS fetches. Regression\ntests verify that a redirect is rejected without contacting its destination,\nwhile normal fetches, headers, caching, errors, timeouts, and SSL context remain\ncovered.\n\nThe fix is present in the unreleased development branch. The patched version\nwill be recorded after a released PyJWT 2.x version containing the fix is\nconfirmed.\n\n### Credit\n\nCredit: the original reporter of GHSA-9v7f-9g4p-ffgj. Additional redirect\nheader-leak and cache-poisoning evidence from the newer duplicate report\nGHSA-43g3-98cx-x446 is preserved in the duplicate record and informed this\ncanonical advisory update.\n\n## Maintainer update \u2014 2026-09-11\n\nThe verified fix for this advisory is included in PyJWT 2.14.0, released on 2026-09-11 and available on PyPI. PyJWT 2.14.0 is the first release containing the fix. This advisory is now published with 2.14.0 recorded as the patched version.",
+    "label_review": "Claude read the fix patch against the advisory text on 2026-10-24 and found they match (one reader, not independently reviewed)."
+  }
+}

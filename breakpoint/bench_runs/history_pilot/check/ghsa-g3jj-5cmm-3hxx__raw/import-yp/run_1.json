@@ -1,0 +1,96 @@
+{
+  "schema": 1,
+  "set": "ghsa-g3jj-5cmm-3hxx",
+  "variant": "raw",
+  "arm": "import-yp",
+  "run": 1,
+  "commit": "0c7813ead3e6dfc8e9cd83d78dca6948a004f9b9",
+  "started_at": "2026-10-24T11:21:06+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": true,
+  "status": "ok",
+  "candidates": 1,
+  "kept": [],
+  "proposed": [
+    {
+      "title": "Potential Key Confusion in Verification",
+      "code_refs": [
+        {
+          "file": "src/crypto.js",
+          "line": 255,
+          "quote": "function detectPublicKeyAlgorithms(key, providedAlgorithms) {"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    }
+  ],
+  "rejected": [
+    {
+      "title": "Potential Key Confusion in Verification",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    }
+  ],
+  "verification": {
+    "mode": "source-code",
+    "files_indexed": 41,
+    "checked": 1,
+    "confirmed": 0,
+    "refuted": 1,
+    "unverified": 0,
+    "errors": 0,
+    "defender_pass": true,
+    "appeal_pass": true
+  },
+  "arm_meta": {
+    "imported_from": "eval_runs_check/inputs/ghsa-g3jj-5cmm-3hxx/yp.json",
+    "note": "produced elsewhere; not repeatable by this harness"
+  },
+  "seconds": {
+    "arm": 0.0,
+    "check": 11.0,
+    "total": 11.0
+  },
+  "usage": {
+    "arm": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    },
+    "check": {
+      "calls": 3,
+      "failed": 0,
+      "est_tokens": 33341,
+      "seconds_in_calls": 10.9,
+      "by_task": {
+        "verify_appeal": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 82955,
+          "completion_chars": 636,
+          "seconds": 2.2233831000048667,
+          "est_tokens": 20898
+        },
+        "verify_judge": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 45503,
+          "completion_chars": 1472,
+          "seconds": 6.983555100043304,
+          "est_tokens": 11744
+        },
+        "verify_locate": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 2496,
+          "completion_chars": 302,
+          "seconds": 1.7175805000588298,
+          "est_tokens": 700
+        }
+      }
+    }
+  }
+}

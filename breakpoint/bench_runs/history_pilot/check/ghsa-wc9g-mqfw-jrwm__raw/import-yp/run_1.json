@@ -1,0 +1,164 @@
+{
+  "schema": 1,
+  "set": "ghsa-wc9g-mqfw-jrwm",
+  "variant": "raw",
+  "arm": "import-yp",
+  "run": 1,
+  "commit": "ab6aeae650328cf31799dcfa4c3e116ba8faaacc",
+  "started_at": "2026-10-24T11:27:48+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": true,
+  "status": "ok",
+  "candidates": 5,
+  "kept": [],
+  "proposed": [
+    {
+      "title": "Prototype Pollution via append-field",
+      "code_refs": [
+        {
+          "file": "lib/make-middleware.js",
+          "line": 230,
+          "quote": "appendField(req.body, fieldname, value)"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    },
+    {
+      "title": "Unbounded Array Index Expansion",
+      "code_refs": [
+        {
+          "file": "lib/make-middleware.js",
+          "line": 27,
+          "quote": "if (Number(match[1]) > limit) return true"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    },
+    {
+      "title": "Prototype Pollution via append-field",
+      "code_refs": [
+        {
+          "file": "lib/make-middleware.js",
+          "line": 230,
+          "quote": "appendField(req.body, fieldname, value)"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    },
+    {
+      "title": "Unbounded Array Indexing Vulnerability",
+      "code_refs": [
+        {
+          "file": "lib/make-middleware.js",
+          "line": 225,
+          "quote": "if (exceedsArrayIndexLimit(fieldname, limits.fieldArrayIndexLimit)) {"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    },
+    {
+      "title": "Potential Prototype Pollution in Field Handling",
+      "code_refs": [
+        {
+          "file": "lib/make-middleware.js",
+          "line": 230,
+          "quote": "appendField(req.body, fieldname, value)"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    }
+  ],
+  "rejected": [
+    {
+      "title": "Prototype Pollution via append-field",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    },
+    {
+      "title": "Unbounded Array Index Expansion",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    },
+    {
+      "title": "Prototype Pollution via append-field",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    },
+    {
+      "title": "Unbounded Array Indexing Vulnerability",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    },
+    {
+      "title": "Potential Prototype Pollution in Field Handling",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    }
+  ],
+  "verification": {
+    "mode": "source-code",
+    "files_indexed": 66,
+    "checked": 5,
+    "confirmed": 0,
+    "refuted": 5,
+    "unverified": 0,
+    "errors": 0,
+    "defender_pass": true,
+    "appeal_pass": true
+  },
+  "arm_meta": {
+    "imported_from": "eval_runs_check/inputs/ghsa-wc9g-mqfw-jrwm/yp.json",
+    "note": "produced elsewhere; not repeatable by this harness"
+  },
+  "seconds": {
+    "arm": 0.0,
+    "check": 66.5,
+    "total": 66.5
+  },
+  "usage": {
+    "arm": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    },
+    "check": {
+      "calls": 15,
+      "failed": 0,
+      "est_tokens": 152044,
+      "seconds_in_calls": 66.2,
+      "by_task": {
+        "verify_appeal": {
+          "calls": 5,
+          "failed": 0,
+          "prompt_chars": 378588,
+          "completion_chars": 2742,
+          "seconds": 22.79989169992041,
+          "est_tokens": 95332
+        },
+        "verify_judge": {
+          "calls": 5,
+          "failed": 0,
+          "prompt_chars": 203892,
+          "completion_chars": 5294,
+          "seconds": 26.6921631002333,
+          "est_tokens": 52296
+        },
+        "verify_locate": {
+          "calls": 5,
+          "failed": 0,
+          "prompt_chars": 16292,
+          "completion_chars": 1367,
+          "seconds": 16.71536450018175,
+          "est_tokens": 4415
+        }
+      }
+    }
+  }
+}

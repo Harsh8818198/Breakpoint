@@ -1,0 +1,121 @@
+{
+  "schema": 1,
+  "set": "ghsa-mxm6-v9r6-r94c",
+  "variant": "raw",
+  "arm": "import-yp",
+  "run": 1,
+  "commit": "d6e5fc6001085f2d34b905ba0407a2f7392de388",
+  "started_at": "2026-10-24T11:21:17+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": true,
+  "status": "ok",
+  "candidates": 2,
+  "kept": [],
+  "proposed": [
+    {
+      "title": "Improper Validation of Link Protocols",
+      "code_refs": [
+        {
+          "file": "src/runtime/parser/utils/props.ts",
+          "line": 33,
+          "quote": "if (unsafeLinkPrefix.some(prefix => url.protocol.toLowerCase().startsWith(prefix))) {"
+        }
+      ],
+      "outcome": "REFUTED:defence_found"
+    },
+    {
+      "title": "Improper Validation of Link Protocols",
+      "code_refs": [
+        {
+          "file": "src/runtime/parser/utils/props.ts",
+          "line": 33,
+          "quote": "if (unsafeLinkPrefix.some(prefix => url.protocol.toLowerCase().startsWith(prefix))) {"
+        }
+      ],
+      "outcome": "REFUTED:defence_found"
+    }
+  ],
+  "rejected": [
+    {
+      "title": "Improper Validation of Link Protocols",
+      "status": "REFUTED",
+      "code": "defence_found",
+      "why": "a protection enforced in the code defeats the claim"
+    },
+    {
+      "title": "Improper Validation of Link Protocols",
+      "status": "REFUTED",
+      "code": "defence_found",
+      "why": "a protection enforced in the code defeats the claim"
+    }
+  ],
+  "verification": {
+    "mode": "source-code",
+    "files_indexed": 151,
+    "checked": 2,
+    "confirmed": 0,
+    "refuted": 2,
+    "unverified": 0,
+    "errors": 0,
+    "defender_pass": true,
+    "appeal_pass": true
+  },
+  "arm_meta": {
+    "imported_from": "eval_runs_check/inputs/ghsa-mxm6-v9r6-r94c/yp.json",
+    "note": "produced elsewhere; not repeatable by this harness"
+  },
+  "seconds": {
+    "arm": 0.0,
+    "check": 189.6,
+    "total": 189.6
+  },
+  "usage": {
+    "arm": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    },
+    "check": {
+      "calls": 8,
+      "failed": 0,
+      "est_tokens": 105227,
+      "seconds_in_calls": 189.5,
+      "by_task": {
+        "verify_appeal": {
+          "calls": 2,
+          "failed": 0,
+          "prompt_chars": 164125,
+          "completion_chars": 2337,
+          "seconds": 98.8851220998913,
+          "est_tokens": 41616
+        },
+        "verify_defend": {
+          "calls": 2,
+          "failed": 0,
+          "prompt_chars": 155930,
+          "completion_chars": 1688,
+          "seconds": 47.76401469996199,
+          "est_tokens": 39404
+        },
+        "verify_judge": {
+          "calls": 2,
+          "failed": 0,
+          "prompt_chars": 77696,
+          "completion_chars": 2800,
+          "seconds": 34.94334019999951,
+          "est_tokens": 20124
+        },
+        "verify_locate": {
+          "calls": 2,
+          "failed": 0,
+          "prompt_chars": 15694,
+          "completion_chars": 637,
+          "seconds": 7.919339000014588,
+          "est_tokens": 4083
+        }
+      }
+    }
+  }
+}

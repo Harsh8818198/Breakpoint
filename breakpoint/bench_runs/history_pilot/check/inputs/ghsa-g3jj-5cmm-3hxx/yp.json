@@ -1,0 +1,42 @@
+{
+ "findings": [
+  {
+   "title": "Potential Key Confusion in Verification",
+   "generation": 1,
+   "discovered_by": "single-prompt baseline",
+   "description": "The verifier automatically attempts to detect key types from the provided PEM string. If a malicious input is provided, the library might misinterpret a public key as an HMAC secret or vice versa, bypassing algorithm-specific security checks.",
+   "steps_to_exploit": [
+    "Provide an HMAC-based JWT.",
+    "Pass a specially crafted public key string that the library's detection logic misclassifies.",
+    "Trick the verifier into checking HMAC against the provided public key, potentially leading to signature confusion."
+   ],
+   "impact": "Signature verification bypass or authentication bypass.",
+   "evolved_from": [],
+   "attack_category": "crypto",
+   "confidence": 1.0,
+   "exploitability": 0.0,
+   "impact_score": 0.0,
+   "spread": 0.0,
+   "fix_difficulty": 1.0,
+   "verification": "",
+   "evidence": [
+    {
+     "file": "src/crypto.js",
+     "line": 255,
+     "quote": "function detectPublicKeyAlgorithms(key, providedAlgorithms) {"
+    }
+   ],
+   "code_refs": [
+    {
+     "file": "src/crypto.js",
+     "line": 255,
+     "quote": "function detectPublicKeyAlgorithms(key, providedAlgorithms) {"
+    }
+   ],
+   "id": "28f05ad2",
+   "bss": 0.0,
+   "severity_band": "LOW",
+   "fix_priority": "MONITOR"
+  }
+ ]
+}

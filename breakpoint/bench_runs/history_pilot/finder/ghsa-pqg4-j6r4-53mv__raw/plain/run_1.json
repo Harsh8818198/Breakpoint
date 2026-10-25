@@ -1,0 +1,778 @@
+{
+  "schema": 1,
+  "set": "ghsa-pqg4-j6r4-53mv",
+  "variant": "raw",
+  "arm": "plain",
+  "run": 1,
+  "commit": "36f23944db50dd3f0df4da9c7cba0bb63df05f64",
+  "started_at": "2026-10-24T11:08:54+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": false,
+  "status": "ok",
+  "candidates": 15,
+  "kept": [
+    {
+      "title": "Unsafe deserialization of environment lookup results",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The parse function uses JSON.parse on environment variables prefixed with a randomly generated token, potentially leading to arbitrary object injection if an attacker can control environment variable content.",
+      "steps_to_exploit": [
+        "Find a target application using shell-quote with a function-based env lookup",
+        "Inject a payload into the environment environment that mimics the token-prefixed structure",
+        "Trigger the parse function",
+        "Observe arbitrary objects being injected into the output token list"
+      ],
+      "impact": "Code execution or logic bypass in applications consuming the output tokens.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "parse.js",
+          "line": 324,
+          "quote": "JSON.parse(x.split(TOKEN)[1])"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "parse.js",
+          "line": 324,
+          "quote": "JSON.parse(x.split(TOKEN)[1])"
+        }
+      ],
+      "id": "ef3546ab",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of unsafe regex for tokenization",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The chunker RegExp in parse.js is built from user-controlled configuration (opts.escape) and constants, which can cause ReDoS (Regular Expression Denial of Service) if specifically crafted inputs are provided.",
+      "steps_to_exploit": [
+        "Craft a long input string with repeating characters that match the BAREWORD pattern",
+        "Provide an input that forces backtracking within the regex engine",
+        "Observe the event loop blocking during parsing"
+      ],
+      "impact": "Denial of service via resource exhaustion.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "parse.js",
+          "line": 97,
+          "quote": "var chunker = new RegExp(["
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "parse.js",
+          "line": 97,
+          "quote": "var chunker = new RegExp(["
+        }
+      ],
+      "id": "3a15d463",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Disabled SSL verification in CI/CD pipelines",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Several workflows explicitly set NPM_CONFIG_STRICT_SSL: false, which disables TLS verification for npm package downloads.",
+      "steps_to_exploit": [
+        "Perform a Man-in-the-Middle attack on the runner network",
+        "Intercept npm traffic during the 'install' steps",
+        "Inject malicious code into the dependencies being installed"
+      ],
+      "impact": "Compromise of build environment and potential inclusion of malicious code in the product.",
+      "evolved_from": [],
+      "attack_category": "supply_chain",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": ".github/workflows/nodejs.yml",
+          "line": 71,
+          "quote": "NPM_CONFIG_STRICT_SSL: false"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": ".github/workflows/nodejs.yml",
+          "line": 71,
+          "quote": "NPM_CONFIG_STRICT_SSL: false"
+        }
+      ],
+      "id": "8cdadc23",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potential Command Injection via Unsanitized Input",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The quote function uses a blacklist-based approach for quoting special characters. If new shell metacharacters are added to environments without updating this regex, command injection is possible.",
+      "steps_to_exploit": [
+        "Pass input that contains shell metacharacters not covered by GLOB_SHELL_SPECIAL",
+        "Have the output evaluated by a shell",
+        "Observe unexpected command execution"
+      ],
+      "impact": "Remote code execution if the quoted string is passed to a shell.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "quote.js",
+          "line": 25,
+          "quote": "var GLOB_SHELL_SPECIAL = /[\\s#!\"$&'():;<=>@\\\\^`|~]/g;"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "quote.js",
+          "line": 25,
+          "quote": "var GLOB_SHELL_SPECIAL = /[\\s#!\"$&'():;<=>@\\\\^`|~]/g;"
+        }
+      ],
+      "id": "06f88d62",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Excessive privileges for automatic rebase workflow",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The rebase.yml workflow grants write access to 'contents', which is excessive and could lead to unauthorized code modifications via PR manipulation.",
+      "steps_to_exploit": [
+        "Create a malicious PR against the target repository",
+        "Exploit the rebase action to push code into the branch",
+        "Use the gained write access to modify project files"
+      ],
+      "impact": "Unauthorized repository modification.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": ".github/workflows/rebase.yml",
+          "line": 6,
+          "quote": "contents: write # for ljharb/rebase to push code to rebase"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": ".github/workflows/rebase.yml",
+          "line": 6,
+          "quote": "contents: write # for ljharb/rebase to push code to rebase"
+        }
+      ],
+      "id": "3b1ff16a",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure environment configuration in workflows",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The CI pipeline installs npm packages with ignore-scripts, but then performs manual modifications to package.json via string manipulation in shell.",
+      "steps_to_exploit": [
+        "Manipulate the CI build environment",
+        "Observe that the package.json modification logic is fragile and could be subverted",
+        "Inject malicious dependencies into the modified package.json"
+      ],
+      "impact": "Dependency confusion or malicious package injection.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": ".github/workflows/nodejs.yml",
+          "line": 89,
+          "quote": "node -e \"var fs=require('fs'); var p=JSON.parse(fs.readFileSync('package.json','utf8')); delete p.devDependencies.eslint; delete p.devDependencies['@ljharb/eslint-config']; delete p.devDependencies.jiti; fs.writeFileSync('package.json',JSON"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": ".github/workflows/nodejs.yml",
+          "line": 89,
+          "quote": "node -e \"var fs=require('fs'); var p=JSON.parse(fs.readFileSync('package.json','utf8')); delete p.devDependencies.eslint; delete p.devDependencies['@ljharb/eslint-config']; delete p.devDependencies.jiti; fs.writeFileSync('package.json',JSON"
+        }
+      ],
+      "id": "1216935f",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure handling of line terminators in quotes",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The quote function throws on line terminators for glob patterns but uses inconsistent regex-based sanitization for other inputs.",
+      "steps_to_exploit": [
+        "Pass a token containing line terminators outside the glob context",
+        "Observe the output string breaking the shell command context",
+        "Attempt to execute injected commands across line breaks"
+      ],
+      "impact": "Command injection via shell escape.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "quote.js",
+          "line": 24,
+          "quote": "var LINE_TERMINATORS = /[\\n\\r\\u2028\\u2029]/;"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "quote.js",
+          "line": 24,
+          "quote": "var LINE_TERMINATORS = /[\\n\\r\\u2028\\u2029]/;"
+        }
+      ],
+      "id": "80b4dd4f",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potential Prototype Pollution via env lookup",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The getVar function accesses properties directly from the env object. If a user-supplied object is passed as env, prototype pollution can occur.",
+      "steps_to_exploit": [
+        "Supply a malicious env object containing properties like '__proto__'",
+        "Trigger the parse function",
+        "Verify that the global object prototype has been modified"
+      ],
+      "impact": "Application-wide state manipulation.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "parse.js",
+          "line": 70,
+          "quote": "var r = typeof env === 'function' ? env(key) : env[key];"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "parse.js",
+          "line": 70,
+          "quote": "var r = typeof env === 'function' ? env(key) : env[key];"
+        }
+      ],
+      "id": "08e3f7ed",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of Math.random for security-sensitive tokens",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The token generator uses Math.random, which is not cryptographically secure and can be predicted, potentially allowing an attacker to guess the token used to prefix env variables.",
+      "steps_to_exploit": [
+        "Monitor output to observe token generation patterns",
+        "Predict future tokens",
+        "Construct malicious environment variable values to match the predicted token"
+      ],
+      "impact": "Bypass of the JSON deserialization security mechanism.",
+      "evolved_from": [],
+      "attack_category": "crypto",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "parse.js",
+          "line": 38,
+          "quote": "TOKEN += (mult * Math.random()).toString(16);"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "parse.js",
+          "line": 38,
+          "quote": "TOKEN += (mult * Math.random()).toString(16);"
+        }
+      ],
+      "id": "3a83dd78",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Lack of rate limiting in CI actions",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The workflows allow for public PRs to trigger multiple complex build steps without restrictive rate limiting on the GitHub runners.",
+      "steps_to_exploit": [
+        "Automate the submission of PRs",
+        "Exhaust repository build minutes",
+        "Force the project to pay for more CI minutes"
+      ],
+      "impact": "Financial loss and denial of service for CI pipelines.",
+      "evolved_from": [],
+      "attack_category": "rate_limiting",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": ".github/workflows/nodejs.yml",
+          "line": 3,
+          "quote": "on: [push, pull_request]"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": ".github/workflows/nodejs.yml",
+          "line": 3,
+          "quote": "on: [push, pull_request]"
+        }
+      ],
+      "id": "fb1a039f",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Dependency risk in build scripts",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The package uses 'safe-publish-latest' and 'auto-changelog', which are dynamic build-time dependencies that can execute code during the build process.",
+      "steps_to_exploit": [
+        "Compromise a minor dependency used by one of the build tools",
+        "Inject malicious code into the build process",
+        "Ensure malicious code is included in the published package"
+      ],
+      "impact": "Supply chain compromise.",
+      "evolved_from": [],
+      "attack_category": "supply_chain",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "package.json",
+          "line": 46,
+          "quote": "\"auto-changelog\": \"^2.6.0\","
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "package.json",
+          "line": 46,
+          "quote": "\"auto-changelog\": \"^2.6.0\","
+        }
+      ],
+      "id": "293d3b06",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Loose Linting Rules",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The eslint config disables many security-relevant rules, such as complexity and max-depth, making it easier for vulnerabilities to hide in complex code.",
+      "steps_to_exploit": [
+        "Analyze the code for complex functions",
+        "Write bugs that are obscured by high cyclomatic complexity",
+        "Bypass code review checks because linters don't flag the complexity"
+      ],
+      "impact": "Increased probability of security flaws.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "eslint.config.mjs",
+          "line": 8,
+          "quote": "complexity: 'off',"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "eslint.config.mjs",
+          "line": 8,
+          "quote": "complexity: 'off',"
+        }
+      ],
+      "id": "d6aba61c",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure reliance on shell behavior for quoting",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The library attempts to mirror shell behavior, which is notoriously inconsistent and complex, leading to mismatches between what the library expects and what the host shell actually does.",
+      "steps_to_exploit": [
+        "Identify a mismatch in shell parsing (e.g., POSIX vs bash)",
+        "Craft inputs that behave differently in the two contexts",
+        "Bypass sanitization layers"
+      ],
+      "impact": "Cross-platform vulnerability or security bypass.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [],
+      "code_refs": [],
+      "id": "381b7f85",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Weak test coverage for edge cases",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Coverage config excludes 'test' and 'example' folders and sets low thresholds, allowing untested code paths that might contain vulnerabilities.",
+      "steps_to_exploit": [
+        "Find functions with low coverage",
+        "Identify corner cases not covered by tests",
+        "Craft inputs to trigger vulnerabilities in those paths"
+      ],
+      "impact": "Hidden vulnerabilities.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": ".nycrc",
+          "line": 5,
+          "quote": "\"lines\": 86,"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": ".nycrc",
+          "line": 5,
+          "quote": "\"lines\": 86,"
+        }
+      ],
+      "id": "a9d9ed06",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potential denial of service via regex index manipulation",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The matchAll function manually adjusts the lastIndex property of a global regex, which can lead to infinite loops if not handled perfectly.",
+      "steps_to_exploit": [
+        "Craft a specific string input that causes regex execution to fail at the expected index",
+        "Observe the infinite loop as the code tries to advance the index",
+        "Denial of service"
+      ],
+      "impact": "Denial of service.",
+      "evolved_from": [],
+      "attack_category": "error_handling",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "parse.js",
+          "line": 55,
+          "quote": "r.lastIndex += 1;"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "parse.js",
+          "line": 55,
+          "quote": "r.lastIndex += 1;"
+        }
+      ],
+      "id": "471b6d16",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "proposed": [
+    {
+      "title": "Unsafe deserialization of environment lookup results",
+      "code_refs": [
+        {
+          "file": "parse.js",
+          "line": 324,
+          "quote": "JSON.parse(x.split(TOKEN)[1])"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of unsafe regex for tokenization",
+      "code_refs": [
+        {
+          "file": "parse.js",
+          "line": 97,
+          "quote": "var chunker = new RegExp(["
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Disabled SSL verification in CI/CD pipelines",
+      "code_refs": [
+        {
+          "file": ".github/workflows/nodejs.yml",
+          "line": 71,
+          "quote": "NPM_CONFIG_STRICT_SSL: false"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potential Command Injection via Unsanitized Input",
+      "code_refs": [
+        {
+          "file": "quote.js",
+          "line": 25,
+          "quote": "var GLOB_SHELL_SPECIAL = /[\\s#!\"$&'():;<=>@\\\\^`|~]/g;"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Excessive privileges for automatic rebase workflow",
+      "code_refs": [
+        {
+          "file": ".github/workflows/rebase.yml",
+          "line": 6,
+          "quote": "contents: write # for ljharb/rebase to push code to rebase"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure environment configuration in workflows",
+      "code_refs": [
+        {
+          "file": ".github/workflows/nodejs.yml",
+          "line": 89,
+          "quote": "node -e \"var fs=require('fs'); var p=JSON.parse(fs.readFileSync('package.json','utf8')); delete p.devDependencies.eslint; delete p.devDependencies['@ljharb/eslint-config']; delete p.devDependencies.jiti; fs.writeFileSync('package.json',JSON"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure handling of line terminators in quotes",
+      "code_refs": [
+        {
+          "file": "quote.js",
+          "line": 24,
+          "quote": "var LINE_TERMINATORS = /[\\n\\r\\u2028\\u2029]/;"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potential Prototype Pollution via env lookup",
+      "code_refs": [
+        {
+          "file": "parse.js",
+          "line": 70,
+          "quote": "var r = typeof env === 'function' ? env(key) : env[key];"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of Math.random for security-sensitive tokens",
+      "code_refs": [
+        {
+          "file": "parse.js",
+          "line": 38,
+          "quote": "TOKEN += (mult * Math.random()).toString(16);"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Lack of rate limiting in CI actions",
+      "code_refs": [
+        {
+          "file": ".github/workflows/nodejs.yml",
+          "line": 3,
+          "quote": "on: [push, pull_request]"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Dependency risk in build scripts",
+      "code_refs": [
+        {
+          "file": "package.json",
+          "line": 46,
+          "quote": "\"auto-changelog\": \"^2.6.0\","
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Loose Linting Rules",
+      "code_refs": [
+        {
+          "file": "eslint.config.mjs",
+          "line": 8,
+          "quote": "complexity: 'off',"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure reliance on shell behavior for quoting",
+      "code_refs": [],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Weak test coverage for edge cases",
+      "code_refs": [
+        {
+          "file": ".nycrc",
+          "line": 5,
+          "quote": "\"lines\": 86,"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potential denial of service via regex index manipulation",
+      "code_refs": [
+        {
+          "file": "parse.js",
+          "line": 55,
+          "quote": "r.lastIndex += 1;"
+        }
+      ],
+      "outcome": "unchecked"
+    }
+  ],
+  "rejected": [],
+  "verification": null,
+  "arm_meta": {
+    "baseline": {
+      "model": "gemini/gemini-3.1-flash-lite",
+      "context": "code",
+      "requested": 15,
+      "returned": 15,
+      "files_shown": 19,
+      "chars_shown": 30340,
+      "files_that_did_not_fit": []
+    }
+  },
+  "seconds": {
+    "arm": 9.7,
+    "check": 0.0,
+    "total": 9.7
+  },
+  "usage": {
+    "arm": {
+      "calls": 1,
+      "failed": 0,
+      "est_tokens": 10478,
+      "seconds_in_calls": 9.6,
+      "by_task": {
+        "baseline": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 31410,
+          "completion_chars": 10504,
+          "seconds": 9.603690700023435,
+          "est_tokens": 10478
+        }
+      }
+    },
+    "check": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    }
+  }
+}

@@ -1,0 +1,783 @@
+{
+  "schema": 1,
+  "set": "ghsa-8r9p-f939-6h3c",
+  "variant": "raw",
+  "arm": "plain",
+  "run": 1,
+  "commit": "0c23a223067201c368035e82954c11eb2578a33b",
+  "started_at": "2026-10-24T10:49:45+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": false,
+  "status": "ok",
+  "candidates": 15,
+  "kept": [
+    {
+      "title": "Insufficient Header Stripping on Cross-Domain Redirects",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The logic in index.js:486-491 attempts to strip sensitive headers when redirecting to a different domain, but the check for `isSubdomain` can be bypassed by crafty host naming, potentially leaking Authorization or Cookie headers to malicious third-party servers.",
+      "steps_to_exploit": [
+        "User initiates a request with Authorization headers to a trusted domain.",
+        "Attacker controls a redirect response pointing to a maliciously named subdomain or a host that suffix-matches.",
+        "The library fails the security check in index.js:489.",
+        "The library forwards the Authorization header to the attacker-controlled server."
+      ],
+      "impact": "Exposure of sensitive authentication tokens and cookies to unauthorized third-party domains.",
+      "evolved_from": [],
+      "attack_category": "data_privacy",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 489,
+          "quote": "!isSubdomain(redirectUrl.host, currentHost)) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 489,
+          "quote": "!isSubdomain(redirectUrl.host, currentHost)) {"
+        }
+      ],
+      "id": "f172f039",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Open Redirection via User-Supplied Input",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The library automatically follows Location headers without restricting the target domain, effectively acting as an open redirector for any URL provided to it.",
+      "steps_to_exploit": [
+        "Attacker provides a malicious URL to the application using this library.",
+        "The server performs a request to a URL controlled by the attacker.",
+        "The attacker's server returns a 302 Redirect to a high-value or phishing target.",
+        "The library automatically redirects the client to the victim's phishing page."
+      ],
+      "impact": "Facilitates phishing attacks and server-side request forgery (SSRF).",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 479,
+          "quote": "var redirectUrl = resolveUrl(location, currentUrl);"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 479,
+          "quote": "var redirectUrl = resolveUrl(location, currentUrl);"
+        }
+      ],
+      "id": "7a6e6e8c",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "SSRF via Unrestricted Protocol Redirection",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The library allows upgrading/changing protocols during redirection (e.g., from HTTP to HTTPS or potentially others), which can be abused to probe internal network services.",
+      "steps_to_exploit": [
+        "Attacker triggers an HTTP request to an internal-only IP address.",
+        "The server responds with a 302 redirecting to a different port or internal loopback address.",
+        "The library follows the redirect to the internal service.",
+        "The response from the internal service might be leaked or used to confirm internal network structure."
+      ],
+      "impact": "Server-Side Request Forgery enabling internal network reconnaissance.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 486,
+          "quote": "if (redirectUrl.protocol !== currentUrlParts.protocol &&"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 486,
+          "quote": "if (redirectUrl.protocol !== currentUrlParts.protocol &&"
+        }
+      ],
+      "id": "54e649c5",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unbounded Redirection Recursion",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `maxRedirects` default is 21, which is high enough to allow resource exhaustion attacks or to cause excessive load on external systems during a redirect loop.",
+      "steps_to_exploit": [
+        "Attacker creates a sequence of 21 redirects.",
+        "The client library processes all 21 requests.",
+        "Attacker repeats this process across multiple parallel connections to consume server socket resources."
+      ],
+      "impact": "Denial of service through resource consumption and potential latency amplification.",
+      "evolved_from": [],
+      "attack_category": "rate_limiting",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 516,
+          "quote": "maxRedirects: 21,"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 516,
+          "quote": "maxRedirects: 21,"
+        }
+      ],
+      "id": "78aac9d2",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Large Body Accumulation in Memory",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The library buffers the entire request body to potentially re-send it on subsequent redirects, capped at 10MB by default, which can lead to memory exhaustion.",
+      "steps_to_exploit": [
+        "Attacker sends a POST request with a large body (close to 10MB).",
+        "Attacker ensures the server returns a redirect.",
+        "The library clones the large body into memory for the next request.",
+        "Simultaneously executing many such requests leads to heap exhaustion."
+      ],
+      "impact": "Memory exhaustion leading to Node.js process crash (Denial of Service).",
+      "evolved_from": [],
+      "attack_category": "scalability",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 517,
+          "quote": "maxBodyLength: 10 * 1024 * 1024,"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 517,
+          "quote": "maxBodyLength: 10 * 1024 * 1024,"
+        }
+      ],
+      "id": "198bd3c9",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Host Header Injection/Confusion",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The library manually manages the Host header and allows it to be modified or re-set during redirects, leading to potential Host header poisoning.",
+      "steps_to_exploit": [
+        "Attacker provides a request with a specific Host header.",
+        "The library's `_sanitizeOptions` modifies the Host logic.",
+        "The redirect process incorrectly carries over headers to the target, allowing the attacker to spoof the Host for virtual-hosting-based applications."
+      ],
+      "impact": "Cache poisoning and bypass of virtual host security constraints.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 470,
+          "quote": "var currentHostHeader = removeMatchingHeaders(/^host$/i, this._options.headers);"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 470,
+          "quote": "var currentHostHeader = removeMatchingHeaders(/^host$/i, this._options.headers);"
+        }
+      ],
+      "id": "26cbbbf3",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure `beforeRedirect` Callback Usage",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `beforeRedirect` hook allows users to mutate `options` and `headers` without providing a safe way to validate or sanitize the target, leading to potential security bypasses in downstream application logic.",
+      "steps_to_exploit": [
+        "Application uses `beforeRedirect` to inject custom headers.",
+        "User-provided input inside the request is used to inform the `beforeRedirect` logic.",
+        "Attacker manipulates input to set arbitrary sensitive headers (e.g., X-Forwarded-For) via the callback."
+      ],
+      "impact": "Security logic bypasses and potential header injection.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 504,
+          "quote": "beforeRedirect(this._options, responseDetails, requestDetails);"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 504,
+          "quote": "beforeRedirect(this._options, responseDetails, requestDetails);"
+        }
+      ],
+      "id": "7525537e",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Missing Validation of Protocol Schemes",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The library relies on `nativeProtocols` map but doesn't strictly validate that the redirected URL protocol matches an allowed set, potentially allowing usage of unintended protocols like `file://` or `gopher://` if the environment supports them.",
+      "steps_to_exploit": [
+        "Attacker provides a redirect Location header with a non-HTTP scheme.",
+        "The internal `_performRequest` checks if the protocol exists in `nativeProtocols`.",
+        "If the environment or runtime monkey-patches `https` with other modules, arbitrary protocol execution is possible."
+      ],
+      "impact": "Arbitrary protocol smuggling.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 340,
+          "quote": "throw new TypeError(\"Unsupported protocol \" + protocol);"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 340,
+          "quote": "throw new TypeError(\"Unsupported protocol \" + protocol);"
+        }
+      ],
+      "id": "08a9eab8",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Regex Injection in Header Filter",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `sensitiveHeaders` filter is constructed using `new RegExp`, and while there is an `escapeRegex` function, any misconfiguration or future changes to `sensitiveHeaders` could lead to regex injection.",
+      "steps_to_exploit": [
+        "An attacker influences the contents of `sensitiveHeaders` if exposed through configuration.",
+        "The library constructs a regex from user-controlled strings.",
+        "The regex logic fails to safely block headers."
+      ],
+      "impact": "Incomplete sanitization of sensitive headers.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 118,
+          "quote": "this._headerFilter = new RegExp(\"^(?:\" +"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 118,
+          "quote": "this._headerFilter = new RegExp(\"^(?:\" +"
+        }
+      ],
+      "id": "72bf5180",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Possible Integer Overflow in Body Length Calculation",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `_requestBodyLength` calculation is a simple arithmetic addition. While unlikely in JS due to IEEE 754, in specific custom implementations, this could lead to logic bypasses if `maxBodyLength` is manipulated to be very large.",
+      "steps_to_exploit": [
+        "Application allows setting an extremely high `maxBodyLength`.",
+        "Attacker sends fragmented data to cause integer wrapping during cumulative additions.",
+        "The limit check is bypassed."
+      ],
+      "impact": "Bypass of body size limits leading to DoS.",
+      "evolved_from": [],
+      "attack_category": "scalability",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 164,
+          "quote": "if (this._requestBodyLength + data.length <= this._options.maxBodyLength) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 164,
+          "quote": "if (this._requestBodyLength + data.length <= this._options.maxBodyLength) {"
+        }
+      ],
+      "id": "a6bead65",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of `Object.create(null)` for Event Handlers",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "While generally safe, if the library were to allow event handler modification via user input, this could lead to prototype pollution in other areas of the application.",
+      "steps_to_exploit": [
+        "Attacker finds a way to pass objects into the initialization of `RedirectableRequest`.",
+        "The library uses `Object.create(null)` for event handlers, but other parts of the code use plain objects.",
+        "Prototype pollution occurs through object merging."
+      ],
+      "impact": "Application instability and potential security control bypasses.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 53,
+          "quote": "var eventHandlers = Object.create(null);"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 53,
+          "quote": "var eventHandlers = Object.create(null);"
+        }
+      ],
+      "id": "0f98b4e2",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Improper Cleanup on Timeout Events",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `clearTimer` function removes listeners, but there is a risk of race conditions where listeners might be re-added or triggered after the object is destroyed.",
+      "steps_to_exploit": [
+        "Attacker triggers a timeout concurrently with an error.",
+        "The cleanup function executes, but the event loop might have already queued the timeout callback.",
+        "Zombie timers trigger unintended logic."
+      ],
+      "impact": "Unpredictable application behavior under load.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 240,
+          "quote": "function clearTimer() {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 240,
+          "quote": "function clearTimer() {"
+        }
+      ],
+      "id": "8adf61c1",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Handling of `auth` URL field",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `preservedUrlFields` includes `auth`, which carries credentials. The code does not explicitly scrub the `auth` field when redirecting to a different domain, potentially sending credentials to a malicious site.",
+      "steps_to_exploit": [
+        "Attacker provides a URL with embedded basic auth.",
+        "The library redirects to a different origin.",
+        "The `spreadUrlObject` copies the `auth` field to the new request options.",
+        "The credentials are sent to the attacker-controlled origin."
+      ],
+      "impact": "Credential leakage across domains.",
+      "evolved_from": [],
+      "attack_category": "data_privacy",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [],
+      "code_refs": [],
+      "id": "8af2a996",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Error Disclosure in CustomError",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `CustomError` constructor appends `this.cause.message` to the error message, potentially leaking internal server details or file system paths if an internal error occurs during request processing.",
+      "steps_to_exploit": [
+        "Attacker sends a request that triggers an internal error (e.g., invalid URL, protocol error).",
+        "The library captures the native error and wraps it.",
+        "The response sent to the client includes the stack trace or descriptive error internal to the library."
+      ],
+      "impact": "Information disclosure of internal application state.",
+      "evolved_from": [],
+      "attack_category": "error_handling",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 651,
+          "quote": "this.message = this.cause ? message + \": \" + this.cause.message : message;"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 651,
+          "quote": "this.message = this.cause ? message + \": \" + this.cause.message : message;"
+        }
+      ],
+      "id": "89b36c12",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Lack of Explicit `content-length` stripping on Redirects",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "When method is changed to GET, the library drops content-related headers but does not explicitly ensure `content-length` is zeroed out or removed for all scenarios, potentially causing desync issues.",
+      "steps_to_exploit": [
+        "Attacker initiates a POST request.",
+        "The redirect logic switches the method to GET.",
+        "The `content-length` header from the original POST remains in the headers object.",
+        "A proxy or downstream server might misinterpret the subsequent GET request due to the presence of a length header."
+      ],
+      "impact": "HTTP Request Smuggling or desynchronization.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 466,
+          "quote": "removeMatchingHeaders(/^content-/i, this._options.headers);"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 466,
+          "quote": "removeMatchingHeaders(/^content-/i, this._options.headers);"
+        }
+      ],
+      "id": "36259848",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "proposed": [
+    {
+      "title": "Insufficient Header Stripping on Cross-Domain Redirects",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 489,
+          "quote": "!isSubdomain(redirectUrl.host, currentHost)) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Open Redirection via User-Supplied Input",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 479,
+          "quote": "var redirectUrl = resolveUrl(location, currentUrl);"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "SSRF via Unrestricted Protocol Redirection",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 486,
+          "quote": "if (redirectUrl.protocol !== currentUrlParts.protocol &&"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unbounded Redirection Recursion",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 516,
+          "quote": "maxRedirects: 21,"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Large Body Accumulation in Memory",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 517,
+          "quote": "maxBodyLength: 10 * 1024 * 1024,"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Host Header Injection/Confusion",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 470,
+          "quote": "var currentHostHeader = removeMatchingHeaders(/^host$/i, this._options.headers);"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure `beforeRedirect` Callback Usage",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 504,
+          "quote": "beforeRedirect(this._options, responseDetails, requestDetails);"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Missing Validation of Protocol Schemes",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 340,
+          "quote": "throw new TypeError(\"Unsupported protocol \" + protocol);"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Regex Injection in Header Filter",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 118,
+          "quote": "this._headerFilter = new RegExp(\"^(?:\" +"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Possible Integer Overflow in Body Length Calculation",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 164,
+          "quote": "if (this._requestBodyLength + data.length <= this._options.maxBodyLength) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of `Object.create(null)` for Event Handlers",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 53,
+          "quote": "var eventHandlers = Object.create(null);"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Improper Cleanup on Timeout Events",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 240,
+          "quote": "function clearTimer() {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure Handling of `auth` URL field",
+      "code_refs": [],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Error Disclosure in CustomError",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 651,
+          "quote": "this.message = this.cause ? message + \": \" + this.cause.message : message;"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Lack of Explicit `content-length` stripping on Redirects",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 466,
+          "quote": "removeMatchingHeaders(/^content-/i, this._options.headers);"
+        }
+      ],
+      "outcome": "unchecked"
+    }
+  ],
+  "rejected": [],
+  "verification": null,
+  "arm_meta": {
+    "baseline": {
+      "model": "gemini/gemini-3.1-flash-lite",
+      "context": "code",
+      "requested": 15,
+      "returned": 15,
+      "files_shown": 11,
+      "chars_shown": 38551,
+      "files_that_did_not_fit": []
+    }
+  },
+  "seconds": {
+    "arm": 10.2,
+    "check": 0.0,
+    "total": 10.2
+  },
+  "usage": {
+    "arm": {
+      "calls": 1,
+      "failed": 0,
+      "est_tokens": 13144,
+      "seconds_in_calls": 10.2,
+      "by_task": {
+        "baseline": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 39605,
+          "completion_chars": 12972,
+          "seconds": 10.19624219997786,
+          "est_tokens": 13144
+        }
+      }
+    },
+    "check": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    }
+  }
+}

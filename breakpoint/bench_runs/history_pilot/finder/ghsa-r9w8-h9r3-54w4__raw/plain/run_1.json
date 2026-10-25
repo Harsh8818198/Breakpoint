@@ -1,0 +1,801 @@
+{
+  "schema": 1,
+  "set": "ghsa-r9w8-h9r3-54w4",
+  "variant": "raw",
+  "arm": "plain",
+  "run": 1,
+  "commit": "dae8153e9d7541b975cc4018138d6cebec6c1199",
+  "started_at": "2026-10-24T11:00:06+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": false,
+  "status": "ok",
+  "candidates": 15,
+  "kept": [
+    {
+      "title": "Command Injection via unsanitized branch arguments",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `benchmarking/compare/index.js` file passes process arguments directly into `execSync` via the `exec` helper. An attacker controlling the arguments can inject arbitrary shell commands.",
+      "steps_to_exploit": [
+        "Clone the repository.",
+        "Run `pnpm bench:compare 'branch; touch exploit.txt'`.",
+        "The shell executes `git checkout branch; touch exploit.txt`."
+      ],
+      "impact": "Remote Code Execution on the machine running the benchmarks.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "benchmarking/compare/index.js",
+          "line": 6,
+          "quote": "const exec = (command) => execSync(command).toString().trim();"
+        },
+        {
+          "file": "benchmarking/compare/index.js",
+          "line": 17,
+          "quote": "const checkout = is_jj ? (branch) => exec(`jj edit ${branch}`) : (branch) => exec(`git checkout ${branch}`);"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "benchmarking/compare/index.js",
+          "line": 6,
+          "quote": "const exec = (command) => execSync(command).toString().trim();"
+        },
+        {
+          "file": "benchmarking/compare/index.js",
+          "line": 17,
+          "quote": "const checkout = is_jj ? (branch) => exec(`jj edit ${branch}`) : (branch) => exec(`git checkout ${branch}`);"
+        }
+      ],
+      "id": "51edae75",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Prototype Pollution via unflattened object keys",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "In `src/parse.js`, the unflattening logic processes object keys but has incomplete protection against `__proto__` pollution when using custom object construction overrides.",
+      "steps_to_exploit": [
+        "Construct a malformed JSON string payload targeting the unflattening logic.",
+        "Include a key named '__proto__'.",
+        "Observe that while the internal 'null' case blocks it, the standard 'else' block loop (lines 266-272) is vulnerable if the `ops.set` override is improperly implemented."
+      ],
+      "impact": "Global object pollution, potentially leading to privilege escalation or bypass of security controls in the host application.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/parse.js",
+          "line": 271,
+          "quote": "ops.set(object, key, hydrate(value[key]));"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/parse.js",
+          "line": 271,
+          "quote": "ops.set(object, key, hydrate(value[key]));"
+        }
+      ],
+      "id": "efa19ccf",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Denial of Service via unbounded recursion in hydrate",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `hydrate` function in `src/parse.js` allows for deeply nested object structures without depth limits, potentially exhausting the call stack.",
+      "steps_to_exploit": [
+        "Serialize a deeply nested array or object structure (e.g., 50,000 levels deep).",
+        "Pass the output to `devalue.parse()`.",
+        "The engine throws a RangeError: Maximum call stack size exceeded, crashing the process."
+      ],
+      "impact": "Application process crash leading to Denial of Service.",
+      "evolved_from": [],
+      "attack_category": "scalability",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/parse.js",
+          "line": 271,
+          "quote": "ops.set(object, key, hydrate(value[key]));"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/parse.js",
+          "line": 271,
+          "quote": "ops.set(object, key, hydrate(value[key]));"
+        }
+      ],
+      "id": "3f948867",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Deserialization of untrusted input leads to arbitrary object creation",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `parse` function does not validate the structure of the input array thoroughly, allowing an attacker to instantiate various types including URLs and Dates, leading to potential gadgets.",
+      "steps_to_exploit": [
+        "Craft a payload defining arbitrary types supported by the reviver.",
+        "Trigger the `ops.fromStringValue` or constructor calls with malicious inputs.",
+        "Force the creation of objects that may cause side effects."
+      ],
+      "impact": "Creation of malicious object types during deserialization.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/parse.js",
+          "line": 196,
+          "quote": "hydrated[index] = ops.fromViewInfo(type, buffer, value[2], value[3]);"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/parse.js",
+          "line": 196,
+          "quote": "hydrated[index] = ops.fromViewInfo(type, buffer, value[2], value[3]);"
+        }
+      ],
+      "id": "4c373050",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of unsafe `eval`-like behavior in `uneval`",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `uneval` function generates code that is then expected to be executed to recreate the value. While not using `eval()` directly, it produces code strings prone to scope capture issues.",
+      "steps_to_exploit": [
+        "Pass an object with malicious keys that break out of the generated IIFE string.",
+        "The resulting string, when executed by a developer, runs attacker-controlled code."
+      ],
+      "impact": "Injection of arbitrary code when the output of `uneval` is executed.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/uneval.js",
+          "line": 526,
+          "quote": "return `(function(${params.join(',')}){${body}}(${values.join(',')}))`;"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/uneval.js",
+          "line": 526,
+          "quote": "return `(function(${params.join(',')}){${body}}(${values.join(',')}))`;"
+        }
+      ],
+      "id": "08b5575d",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Denial of Service via large `length` properties in sparse arrays",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Although there is a check in `createSparseArray`, the `parse` logic relies on `is_valid_array_len` which trusts the `len` value provided in the serialized data.",
+      "steps_to_exploit": [
+        "Provide a serialized array with a massive `len` property.",
+        "The `createSparseArray` implementation might attempt to allocate or set the length of a JS array.",
+        "Resulting in massive memory consumption."
+      ],
+      "impact": "Memory exhaustion and Denial of Service.",
+      "evolved_from": [],
+      "attack_category": "scalability",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/parse.js",
+          "line": 232,
+          "quote": "if (!is_valid_array_len(len)) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/parse.js",
+          "line": 232,
+          "quote": "if (!is_valid_array_len(len)) {"
+        }
+      ],
+      "id": "51ba6c4f",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Missing validation on `fromViewInfo` input",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `parse` function uses `value[1]` as a buffer index without strictly checking that `value[1]` is a valid reference within the `values` array.",
+      "steps_to_exploit": [
+        "Craft a malicious JSON payload where `value[1]` points to an index outside of `values` or points to an incompatible type.",
+        "The `fromViewInfo` operation will attempt to construct a view using a non-buffer type."
+      ],
+      "impact": "Unexpected runtime errors or type confusion in the target runtime.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/parse.js",
+          "line": 196,
+          "quote": "hydrated[index] = ops.fromViewInfo(type, buffer, value[2], value[3]);"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/parse.js",
+          "line": 196,
+          "quote": "hydrated[index] = ops.fromViewInfo(type, buffer, value[2], value[3]);"
+        }
+      ],
+      "id": "a56df421",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insufficient validation of `ArrayBuffer` base64",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `parse` function assumes `decode64(base64)` returns a valid buffer, but doesn't handle failures or malformed base64 strings gracefully.",
+      "steps_to_exploit": [
+        "Send a payload with a non-base64 string in the ArrayBuffer slot.",
+        "The base64 decoder will throw an exception or return a corrupted buffer."
+      ],
+      "impact": "Runtime exception in deserialization.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/parse.js",
+          "line": 206,
+          "quote": "hydrated[index] = ops.fromArrayBuffer(decode64(base64));"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/parse.js",
+          "line": 206,
+          "quote": "hydrated[index] = ops.fromArrayBuffer(decode64(base64));"
+        }
+      ],
+      "id": "9883feab",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Information leak via benchmark results file",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `compare/index.js` script writes benchmark results into a file named after the branch. These files are saved in `.results/` and might contain sensitive info if the benchmarked code logs it.",
+      "steps_to_exploit": [
+        "Run the benchmark on a branch that exposes environment variables.",
+        "Access the resulting JSON file in the `.results/` directory."
+      ],
+      "impact": "Unintentional exposure of sensitive build information.",
+      "evolved_from": [],
+      "attack_category": "data_privacy",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "benchmarking/compare/index.js",
+          "line": 62,
+          "quote": "fs.writeFileSync(file, JSON.stringify(results, null, ' '));"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "benchmarking/compare/index.js",
+          "line": 62,
+          "quote": "fs.writeFileSync(file, JSON.stringify(results, null, ' '));"
+        }
+      ],
+      "id": "ba1c52e6",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unsafe `new Constructor()` calls with user-controlled strings",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "In `parse.js`, the code uses `globalThis[tag]` where `tag` can be influenced by the input data.",
+      "steps_to_exploit": [
+        "Provide a string in the payload that resolves to an unexpected global constructor (e.g., `Function`).",
+        "The parser calls the global constructor, potentially leading to code execution."
+      ],
+      "impact": "Potential arbitrary code execution if a dangerous constructor is allowed.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/operations.js",
+          "line": 144,
+          "quote": "const Constructor = /** @type {any} */ (globalThis)[tag];"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/operations.js",
+          "line": 144,
+          "quote": "const Constructor = /** @type {any} */ (globalThis)[tag];"
+        }
+      ],
+      "id": "779b5d48",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Lack of output sanitization in benchmark console output",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `compare/index.js` outputs branch names directly to the console group.",
+      "steps_to_exploit": [
+        "Create a branch with a name containing ANSI escape sequences.",
+        "Run the benchmarking tool.",
+        "The console output will be manipulated by the ANSI codes."
+      ],
+      "impact": "Terminal spoofing or UI disruption.",
+      "evolved_from": [],
+      "attack_category": "ux",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "benchmarking/compare/index.js",
+          "line": 48,
+          "quote": "console.group(`Benchmarking ${branch}`);"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "benchmarking/compare/index.js",
+          "line": 48,
+          "quote": "console.group(`Benchmarking ${branch}`);"
+        }
+      ],
+      "id": "637f6320",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure reliance on `Number.isInteger` for array indices",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Some index validation relies solely on `Number.isInteger`, which might fail to account for floating point edge cases in complex objects.",
+      "steps_to_exploit": [
+        "Use extremely large numbers that are safe integers but might collide or behave unexpectedly.",
+        "The index logic might bypass boundary checks."
+      ],
+      "impact": "Data corruption or unintended behavior during deserialization.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/utils.js",
+          "line": 120,
+          "quote": "if (!Number.isInteger(n)) return false;"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/utils.js",
+          "line": 120,
+          "quote": "if (!Number.isInteger(n)) return false;"
+        }
+      ],
+      "id": "8dec1e9e",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potential prototype pollution via `__proto__` in `parse.js`",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "While there is a check, `parse.js` performs a case-sensitive check for `__proto__`. Obfuscated variations might bypass it.",
+      "steps_to_exploit": [
+        "Use a unicode representation or different casing if the environment allows it.",
+        "The parser might ignore the check and set the property."
+      ],
+      "impact": "Pollution of Object prototype.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/parse.js",
+          "line": 166,
+          "quote": "if (key === '__proto__') {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/parse.js",
+          "line": 166,
+          "quote": "if (key === '__proto__') {"
+        }
+      ],
+      "id": "15ce5c66",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure temporary files in benchmark directory",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The benchmark uses a predictable folder name `.results` for storing sensitive JSON output.",
+      "steps_to_exploit": [
+        "Create a symlink to a sensitive file in the `.results` directory before the benchmark runs.",
+        "The benchmark overwrites the sensitive file."
+      ],
+      "impact": "Arbitrary file overwrite.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "benchmarking/compare/index.js",
+          "line": 22,
+          "quote": "const outdir = path.resolve(import.meta.filename, '../.results');"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "benchmarking/compare/index.js",
+          "line": 22,
+          "quote": "const outdir = path.resolve(import.meta.filename, '../.results');"
+        }
+      ],
+      "id": "12619f3c",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of `console.log` with user input",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `benchmarking/run.js` script logs branch names and benchmark labels directly to console without sanitization.",
+      "steps_to_exploit": [
+        "Inject malicious string payloads into benchmark labels.",
+        "The log will display the injected payload in the CI environment."
+      ],
+      "impact": "Injection into log aggregation systems.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "benchmarking/run.js",
+          "line": 49,
+          "quote": "pad_right(benchmark.label, COLUMN_WIDTHS[0]) +"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "benchmarking/run.js",
+          "line": 49,
+          "quote": "pad_right(benchmark.label, COLUMN_WIDTHS[0]) +"
+        }
+      ],
+      "id": "bf81c3b5",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "proposed": [
+    {
+      "title": "Command Injection via unsanitized branch arguments",
+      "code_refs": [
+        {
+          "file": "benchmarking/compare/index.js",
+          "line": 6,
+          "quote": "const exec = (command) => execSync(command).toString().trim();"
+        },
+        {
+          "file": "benchmarking/compare/index.js",
+          "line": 17,
+          "quote": "const checkout = is_jj ? (branch) => exec(`jj edit ${branch}`) : (branch) => exec(`git checkout ${branch}`);"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Prototype Pollution via unflattened object keys",
+      "code_refs": [
+        {
+          "file": "src/parse.js",
+          "line": 271,
+          "quote": "ops.set(object, key, hydrate(value[key]));"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Denial of Service via unbounded recursion in hydrate",
+      "code_refs": [
+        {
+          "file": "src/parse.js",
+          "line": 271,
+          "quote": "ops.set(object, key, hydrate(value[key]));"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Deserialization of untrusted input leads to arbitrary object creation",
+      "code_refs": [
+        {
+          "file": "src/parse.js",
+          "line": 196,
+          "quote": "hydrated[index] = ops.fromViewInfo(type, buffer, value[2], value[3]);"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of unsafe `eval`-like behavior in `uneval`",
+      "code_refs": [
+        {
+          "file": "src/uneval.js",
+          "line": 526,
+          "quote": "return `(function(${params.join(',')}){${body}}(${values.join(',')}))`;"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Denial of Service via large `length` properties in sparse arrays",
+      "code_refs": [
+        {
+          "file": "src/parse.js",
+          "line": 232,
+          "quote": "if (!is_valid_array_len(len)) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Missing validation on `fromViewInfo` input",
+      "code_refs": [
+        {
+          "file": "src/parse.js",
+          "line": 196,
+          "quote": "hydrated[index] = ops.fromViewInfo(type, buffer, value[2], value[3]);"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insufficient validation of `ArrayBuffer` base64",
+      "code_refs": [
+        {
+          "file": "src/parse.js",
+          "line": 206,
+          "quote": "hydrated[index] = ops.fromArrayBuffer(decode64(base64));"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Information leak via benchmark results file",
+      "code_refs": [
+        {
+          "file": "benchmarking/compare/index.js",
+          "line": 62,
+          "quote": "fs.writeFileSync(file, JSON.stringify(results, null, ' '));"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unsafe `new Constructor()` calls with user-controlled strings",
+      "code_refs": [
+        {
+          "file": "src/operations.js",
+          "line": 144,
+          "quote": "const Constructor = /** @type {any} */ (globalThis)[tag];"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Lack of output sanitization in benchmark console output",
+      "code_refs": [
+        {
+          "file": "benchmarking/compare/index.js",
+          "line": 48,
+          "quote": "console.group(`Benchmarking ${branch}`);"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure reliance on `Number.isInteger` for array indices",
+      "code_refs": [
+        {
+          "file": "src/utils.js",
+          "line": 120,
+          "quote": "if (!Number.isInteger(n)) return false;"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potential prototype pollution via `__proto__` in `parse.js`",
+      "code_refs": [
+        {
+          "file": "src/parse.js",
+          "line": 166,
+          "quote": "if (key === '__proto__') {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure temporary files in benchmark directory",
+      "code_refs": [
+        {
+          "file": "benchmarking/compare/index.js",
+          "line": 22,
+          "quote": "const outdir = path.resolve(import.meta.filename, '../.results');"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of `console.log` with user input",
+      "code_refs": [
+        {
+          "file": "benchmarking/run.js",
+          "line": 49,
+          "quote": "pad_right(benchmark.label, COLUMN_WIDTHS[0]) +"
+        }
+      ],
+      "outcome": "unchecked"
+    }
+  ],
+  "rejected": [],
+  "verification": null,
+  "arm_meta": {
+    "baseline": {
+      "model": "gemini/gemini-3.1-flash-lite",
+      "context": "code",
+      "requested": 15,
+      "returned": 15,
+      "files_shown": 23,
+      "chars_shown": 100750,
+      "files_that_did_not_fit": []
+    }
+  },
+  "seconds": {
+    "arm": 11.3,
+    "check": 0.0,
+    "total": 11.3
+  },
+  "usage": {
+    "arm": {
+      "calls": 1,
+      "failed": 0,
+      "est_tokens": 28308,
+      "seconds_in_calls": 11.2,
+      "by_task": {
+        "baseline": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 101828,
+          "completion_chars": 11404,
+          "seconds": 11.230158300022595,
+          "est_tokens": 28308
+        }
+      }
+    },
+    "check": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    }
+  }
+}

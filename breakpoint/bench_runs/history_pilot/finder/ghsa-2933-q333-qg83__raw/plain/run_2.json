@@ -1,0 +1,733 @@
+{
+  "schema": 1,
+  "set": "ghsa-2933-q333-qg83",
+  "variant": "raw",
+  "arm": "plain",
+  "run": 2,
+  "commit": "321916bb9afc0413277304cf209ae4fae111e5e3",
+  "started_at": "2026-10-24T10:44:54+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": false,
+  "status": "ok",
+  "candidates": 15,
+  "kept": [
+    {
+      "title": "Remote Code Execution via Eval on Untrusted Data",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The application uses `eval()` in `lib/readFile.js` to parse `.js` and `.ts` files, which can contain malicious JavaScript payloads. If an attacker can influence the content of these locale files, they achieve full arbitrary code execution.",
+      "steps_to_exploit": [
+        "Attacker identifies a writable path where the backend loads locales.",
+        "Attacker creates or modifies a .js locale file containing a shell command payload.",
+        "Attacker triggers a request that causes i18next to read this locale file.",
+        "The `evalAlias(data)` executes the attacker's payload."
+      ],
+      "impact": "Full system compromise, including unauthorized access to data, files, and remote server control.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/readFile.js",
+          "line": 86,
+          "quote": "result = evalAlias(data)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/readFile.js",
+          "line": 86,
+          "quote": "result = evalAlias(data)"
+        }
+      ],
+      "id": "3e3e4170",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unsafe Path Interpolation Allows Directory Traversal",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Although `interpolatePath` contains some checks, it uses a loose approach to sanitizing namespaces. If the segment logic is bypassed or if the implementation of `isSafeNsSegment` is incorrectly configured for specific filesystem environments, an attacker can traverse directories.",
+      "steps_to_exploit": [
+        "Attacker provides a crafted namespace string like '..\\..\\..\\..\\etc\\passwd'.",
+        "The `interpolatePath` function in `lib/utils.js` performs segment validation.",
+        "If the validation logic is flawed or bypassed by encoding, the backend reads sensitive files from the host filesystem."
+      ],
+      "impact": "Information disclosure of sensitive system files, potentially leading to credential theft or system configuration exposure.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/utils.js",
+          "line": 155,
+          "quote": "return unsafe ? null : result"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/utils.js",
+          "line": 155,
+          "quote": "return unsafe ? null : result"
+        }
+      ],
+      "id": "c2be12d3",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Prototype Pollution via `defaults` Utility",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `defaults` function in `lib/utils.js` attempts to block unsafe keys but performs a simple `indexOf` check on an array that does not account for nested or different variants of prototype keys, leaving it vulnerable to prototype pollution.",
+      "steps_to_exploit": [
+        "Attacker sends a JSON object with a key like 'constructor.prototype.polluted = true'.",
+        "The application merges these options using the vulnerable `defaults` function.",
+        "The global `Object.prototype` is modified, affecting the entire Node.js runtime and enabling DoS or secondary injection attacks."
+      ],
+      "impact": "Global application state compromise, potentially leading to denial of service or remote code execution via altered logic.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/utils.js",
+          "line": 11,
+          "quote": "if (UNSAFE_KEYS.indexOf(prop) > -1) continue"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/utils.js",
+          "line": 11,
+          "quote": "if (UNSAFE_KEYS.indexOf(prop) > -1) continue"
+        }
+      ],
+      "id": "d5b6d69c",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of Insecure `npm pack` and Shell Scripts in Build Pipeline",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `build` script in `example/fastify/package.json` uses arbitrary shell commands and `npm pack` to recreate a node_modules environment. This is inherently risky and relies on fragile environment assumptions.",
+      "steps_to_exploit": [
+        "Attacker compromises a dependency package.",
+        "The build script executes arbitrary shell commands during the installation process.",
+        "The build environment is compromised, leading to backdoored artifacts."
+      ],
+      "impact": "Integrity loss of the build artifact, allowing malicious code to be introduced during the deployment phase.",
+      "evolved_from": [],
+      "attack_category": "supply_chain",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [],
+      "code_refs": [],
+      "id": "8bf93ae0",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Race Condition in Async File Writing",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The backend uses a `debouncedWrite` mechanism and an asynchronous `readFile`/`writeFile` cycle that does not employ robust file locking. Concurrent updates to the same locale file can lead to data loss or corrupt state.",
+      "steps_to_exploit": [
+        "Attacker sends multiple rapid updates to missing translation keys.",
+        "Concurrent write operations are initiated.",
+        "The `readFile` check and `writeFile` operation overlap, causing the last-writer-wins issue or corrupted JSON state."
+      ],
+      "impact": "Denial of service for translation availability or data corruption in the application configuration.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/index.js",
+          "line": 166,
+          "quote": "writeFile(filename, data, this.options)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/index.js",
+          "line": 166,
+          "quote": "writeFile(filename, data, this.options)"
+        }
+      ],
+      "id": "22e29abc",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potential Arbitrary File Write via `writeFile`",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `writeFile` function in `lib/writeFile.js` blindly accepts a filename parameter derived from user-controllable path configuration, potentially allowing attackers to overwrite arbitrary files if the path sanitization is insufficient.",
+      "steps_to_exploit": [
+        "Attacker influences the `addPath` configuration.",
+        "The application writes content to a sensitive location, such as `.ssh/authorized_keys` or a critical config file."
+      ],
+      "impact": "Data destruction or privilege escalation by overwriting critical system files.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/writeFile.js",
+          "line": 43,
+          "quote": "fs.writeFile(filename, payload, 'utf8', (err, data) => err ? reject(err) : resolve(data))"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/writeFile.js",
+          "line": 43,
+          "quote": "fs.writeFile(filename, payload, 'utf8', (err, data) => err ? reject(err) : resolve(data))"
+        }
+      ],
+      "id": "11287e5d",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Exposure of Internals via `parse` Configuration",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The configuration allows users to define custom `parse` and `stringify` functions. Providing an arbitrary function can lead to code execution or manipulation of sensitive objects within the library.",
+      "steps_to_exploit": [
+        "Attacker provides an configuration object to the backend instance.",
+        "Attacker sets the `parse` method to an arbitrary function.",
+        "When `read` is called, the provided function executes with the locale file content."
+      ],
+      "impact": "Remote code execution or arbitrary logic control within the library context.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/index.js",
+          "line": 10,
+          "quote": "parse: JSON.parse,"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/index.js",
+          "line": 10,
+          "quote": "parse: JSON.parse,"
+        }
+      ],
+      "id": "b30ff10f",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of `fs.readFileSync` in production code path",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The backend uses synchronous file system operations (e.g., `fs.readFileSync`) when `initAsync` is false. This blocks the main event loop, making the application vulnerable to DoS attacks.",
+      "steps_to_exploit": [
+        "Attacker triggers a load of a large file or a file located on a slow or hanging filesystem.",
+        "The event loop is blocked, denying service to all other users of the application."
+      ],
+      "impact": "Denial of service through event loop exhaustion.",
+      "evolved_from": [],
+      "attack_category": "scalability",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/readFile.js",
+          "line": 13,
+          "quote": "const data = fs.readFileSync(filename, 'utf8')"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/readFile.js",
+          "line": 13,
+          "quote": "const data = fs.readFileSync(filename, 'utf8')"
+        }
+      ],
+      "id": "ec463208",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Lack of Input Sanitization in YAML/JSON Parsers",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The application manually copies various format parsers (JSON5, YAML) which may contain security vulnerabilities or logic errors that are not being maintained or patched by the host package.",
+      "steps_to_exploit": [
+        "Attacker supplies a specifically crafted JSON5 or YAML payload that triggers a crash (DoS) or unexpected behavior in the parser.",
+        "The manual integration of these parsers prevents automatic security updates."
+      ],
+      "impact": "Denial of service or potential for further logic manipulation.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [],
+      "code_refs": [],
+      "id": "ffa238b5",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure `npm` script configuration for hot-fix",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `fixcjs` configuration manually performs `fs.writeFileSync` to patch code after compilation. This is an insecure way to handle code modification, as it lacks integrity checks and could be manipulated by a malicious dependency.",
+      "steps_to_exploit": [
+        "A malicious dependency modifies the `package.json` `fixcjs` config.",
+        "The next build process executes arbitrary, attacker-controlled code to 'patch' the library files."
+      ],
+      "impact": "Code injection into the compiled artifacts, leading to compromised distribution.",
+      "evolved_from": [],
+      "attack_category": "supply_chain",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [],
+      "code_refs": [],
+      "id": "ac462564",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Information Leakage via Error Messages",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `readFile` and `writeFile` functions pass internal file system errors directly to the callback. This can leak path structures and filesystem details to the user.",
+      "steps_to_exploit": [
+        "Attacker intentionally requests non-existent or inaccessible files.",
+        "The application returns detailed file path information in the error response."
+      ],
+      "impact": "Enumeration of the internal server filesystem structure, aiding further attacks.",
+      "evolved_from": [],
+      "attack_category": "error_handling",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/readFile.js",
+          "line": 141,
+          "quote": "err.message = 'error parsing ' + filename + ': ' + err.message"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/readFile.js",
+          "line": 141,
+          "quote": "err.message = 'error parsing ' + filename + ': ' + err.message"
+        }
+      ],
+      "id": "22382edd",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unsafe `evalAlias` definition",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Defining `eval` as `const evalAlias = eval` in `lib/readFile.js` is a pattern used to bypass some simple static analysis security tools, indicating intent to obscure dangerous code paths.",
+      "steps_to_exploit": [
+        "Static analysis tools are bypassed by the obfuscated alias.",
+        "Maintainers may overlook the security implications of this code path."
+      ],
+      "impact": "Maintainability and security auditing impairment, increasing risk of vulnerability.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/readFile.js",
+          "line": 10,
+          "quote": "const evalAlias = eval"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/readFile.js",
+          "line": 10,
+          "quote": "const evalAlias = eval"
+        }
+      ],
+      "id": "9429fcc0",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Deno/Bun feature detection logic is fragile",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The code uses `typeof Deno !== 'undefined'` for feature detection. This is susceptible to environment manipulation where an attacker could provide a global `Deno` or `Bun` object to force incorrect code paths.",
+      "steps_to_exploit": [
+        "Attacker creates a malicious global object named `Deno` in an environment where it does not normally exist.",
+        "The library uses Deno-specific code paths, which may interact incorrectly with standard Node.js APIs, leading to instability or vulnerabilities."
+      ],
+      "impact": "Potential for bypassing security constraints or system crashes.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/readFile.js",
+          "line": 5,
+          "quote": "const isDeno = typeof Deno !== 'undefined'"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/readFile.js",
+          "line": 5,
+          "quote": "const isDeno = typeof Deno !== 'undefined'"
+        }
+      ],
+      "id": "3f88e868",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Missing `Content-Type` validation in `writeFile`",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The library allows writing to various extensions (js, json, yml) without checking if the file being written was originally the correct format, potentially allowing file type confusion.",
+      "steps_to_exploit": [
+        "Attacker forces an overwrite of a .json file with contents that are valid in a different format.",
+        "The library later interprets this file incorrectly depending on its extension."
+      ],
+      "impact": "Unexpected application behavior or exploitation of parsing logic differences.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/writeFile.js",
+          "line": 102,
+          "quote": "const stringifyData = (extension, data, options) => {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/writeFile.js",
+          "line": 102,
+          "quote": "const stringifyData = (extension, data, options) => {"
+        }
+      ],
+      "id": "b423b127",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure default directory creation",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `dirname` function recursively creates directories (`{ recursive: true }`) without explicit permission settings, potentially leading to directories with loose permissions on some operating systems.",
+      "steps_to_exploit": [
+        "Application creates directories for storing translations.",
+        "Directories inherit default OS umask, which might allow other users on the system to read or write to these files."
+      ],
+      "impact": "Data privacy loss if locale files contain sensitive information and are stored in world-readable directories.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/writeFile.js",
+          "line": 35,
+          "quote": "fs.mkdirSync(dirname(filename), { recursive: true })"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/writeFile.js",
+          "line": 35,
+          "quote": "fs.mkdirSync(dirname(filename), { recursive: true })"
+        }
+      ],
+      "id": "f49b5a62",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "proposed": [
+    {
+      "title": "Remote Code Execution via Eval on Untrusted Data",
+      "code_refs": [
+        {
+          "file": "lib/readFile.js",
+          "line": 86,
+          "quote": "result = evalAlias(data)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unsafe Path Interpolation Allows Directory Traversal",
+      "code_refs": [
+        {
+          "file": "lib/utils.js",
+          "line": 155,
+          "quote": "return unsafe ? null : result"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Prototype Pollution via `defaults` Utility",
+      "code_refs": [
+        {
+          "file": "lib/utils.js",
+          "line": 11,
+          "quote": "if (UNSAFE_KEYS.indexOf(prop) > -1) continue"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of Insecure `npm pack` and Shell Scripts in Build Pipeline",
+      "code_refs": [],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Race Condition in Async File Writing",
+      "code_refs": [
+        {
+          "file": "lib/index.js",
+          "line": 166,
+          "quote": "writeFile(filename, data, this.options)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potential Arbitrary File Write via `writeFile`",
+      "code_refs": [
+        {
+          "file": "lib/writeFile.js",
+          "line": 43,
+          "quote": "fs.writeFile(filename, payload, 'utf8', (err, data) => err ? reject(err) : resolve(data))"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Exposure of Internals via `parse` Configuration",
+      "code_refs": [
+        {
+          "file": "lib/index.js",
+          "line": 10,
+          "quote": "parse: JSON.parse,"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of `fs.readFileSync` in production code path",
+      "code_refs": [
+        {
+          "file": "lib/readFile.js",
+          "line": 13,
+          "quote": "const data = fs.readFileSync(filename, 'utf8')"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Lack of Input Sanitization in YAML/JSON Parsers",
+      "code_refs": [],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure `npm` script configuration for hot-fix",
+      "code_refs": [],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Information Leakage via Error Messages",
+      "code_refs": [
+        {
+          "file": "lib/readFile.js",
+          "line": 141,
+          "quote": "err.message = 'error parsing ' + filename + ': ' + err.message"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unsafe `evalAlias` definition",
+      "code_refs": [
+        {
+          "file": "lib/readFile.js",
+          "line": 10,
+          "quote": "const evalAlias = eval"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Deno/Bun feature detection logic is fragile",
+      "code_refs": [
+        {
+          "file": "lib/readFile.js",
+          "line": 5,
+          "quote": "const isDeno = typeof Deno !== 'undefined'"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Missing `Content-Type` validation in `writeFile`",
+      "code_refs": [
+        {
+          "file": "lib/writeFile.js",
+          "line": 102,
+          "quote": "const stringifyData = (extension, data, options) => {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure default directory creation",
+      "code_refs": [
+        {
+          "file": "lib/writeFile.js",
+          "line": 35,
+          "quote": "fs.mkdirSync(dirname(filename), { recursive: true })"
+        }
+      ],
+      "outcome": "unchecked"
+    }
+  ],
+  "rejected": [],
+  "verification": null,
+  "arm_meta": {
+    "baseline": {
+      "model": "gemini/gemini-3.1-flash-lite",
+      "context": "code",
+      "requested": 15,
+      "returned": 15,
+      "files_shown": 28,
+      "chars_shown": 281734,
+      "files_that_did_not_fit": []
+    }
+  },
+  "seconds": {
+    "arm": 15.5,
+    "check": 0.0,
+    "total": 15.5
+  },
+  "usage": {
+    "arm": {
+      "calls": 1,
+      "failed": 0,
+      "est_tokens": 74093,
+      "seconds_in_calls": 15.4,
+      "by_task": {
+        "baseline": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 282822,
+          "completion_chars": 13549,
+          "seconds": 15.442406499991193,
+          "est_tokens": 74093
+        }
+      }
+    },
+    "check": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    }
+  }
+}

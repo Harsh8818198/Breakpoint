@@ -1,0 +1,742 @@
+{
+  "schema": 1,
+  "set": "ghsa-5gmw-xhrv-c9v3",
+  "variant": "raw",
+  "arm": "plain",
+  "run": 3,
+  "commit": "abc247f85cba0309e3f1e5655db1837a2a1c2483",
+  "started_at": "2026-10-24T10:47:14+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": false,
+  "status": "ok",
+  "candidates": 15,
+  "kept": [
+    {
+      "title": "Arbitrary Code Execution via untrusted file loading",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The getHandler function dynamically imports modules based on input filenames provided to the pool.run() task runner. If a user can control the filename or path, they can execute arbitrary code on the worker.",
+      "steps_to_exploit": [
+        "Attacker identifies a service utilizing Tinypool where the 'filename' parameter is user-influenced",
+        "Attacker hosts a malicious JavaScript file on the filesystem or accessible path",
+        "Attacker triggers a task specifying the malicious file path",
+        "Worker process executes the malicious code upon dynamic import"
+      ],
+      "impact": "Full compromise of the worker process, leading to data exfiltration or lateral movement.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/entry/utils.ts",
+          "line": 36,
+          "quote": "const handlerModule = await import(filename)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/entry/utils.ts",
+          "line": 36,
+          "quote": "const handlerModule = await import(filename)"
+        }
+      ],
+      "id": "8beb5f1b",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Prototype Pollution via uncontrolled object assignment",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The serializeError function uses spread syntax to copy all properties from an error object, including potentially malicious prototype properties, which are then transmitted across processes.",
+      "steps_to_exploit": [
+        "Attacker forces an error condition that allows injecting properties into an Error object",
+        "Attacker sets properties like '__proto__' or 'constructor' on the error",
+        "serializeError spreads these into the new object",
+        "The receiving process consumes the object, resulting in prototype pollution"
+      ],
+      "impact": "Can lead to cross-process code execution or denial of service via corrupted object states.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [],
+      "code_refs": [],
+      "id": "df5c5ddd",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of 'off' rules for critical security linting",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The ESLint configuration explicitly disables 'no-unsafe-argument', 'no-unsafe-assignment', and 'no-explicit-any' rules, which increases the likelihood of injection and memory-safety vulnerabilities.",
+      "steps_to_exploit": [
+        "Developer introduces unsafe code that would normally be caught by static analysis",
+        "The build pipeline passes despite the insecure code patterns",
+        "An attacker identifies an entry point for an 'any' typed object to trigger unintended behavior"
+      ],
+      "impact": "Security regressions are missed during development, leading to exploitable vulnerabilities in production.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "eslint.config.js",
+          "line": 49,
+          "quote": "'@typescript-eslint/no-unsafe-assignment': 'off',"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "eslint.config.js",
+          "line": 49,
+          "quote": "'@typescript-eslint/no-unsafe-assignment': 'off',"
+        }
+      ],
+      "id": "1a48d408",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Sensitive information leakage in worker messages",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Unexpected messages on the worker port are serialized and logged via JSON.stringify including the entire message body.",
+      "steps_to_exploit": [
+        "Attacker triggers a malformed message that contains sensitive context data",
+        "The worker process receives the message and triggers an error path",
+        "The message content is logged to the worker's stdout/stderr, potentially including private task data"
+      ],
+      "impact": "Exposure of sensitive operational or user data through system logs.",
+      "evolved_from": [],
+      "attack_category": "data_privacy",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/entry/process.ts",
+          "line": 62,
+          "quote": "throw new Error(`Unexpected TinypoolWorkerMessage ${JSON.stringify(message)}`)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/entry/process.ts",
+          "line": 62,
+          "quote": "throw new Error(`Unexpected TinypoolWorkerMessage ${JSON.stringify(message)}`)"
+        }
+      ],
+      "id": "f0b18b4d",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure use of Function constructor for ESM loading",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The getImportESM function uses the 'new Function' constructor to create a module importer, which is a variation of eval() and can be exploited if input handling is improper.",
+      "steps_to_exploit": [
+        "An attacker finds a way to manipulate the string passed to the constructor",
+        "The application executes the injected string as code in the context of the worker"
+      ],
+      "impact": "Arbitrary code execution on the worker process.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/entry/utils.ts",
+          "line": 12,
+          "quote": "importESMCached = new Function("
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/entry/utils.ts",
+          "line": 12,
+          "quote": "importESMCached = new Function("
+        }
+      ],
+      "id": "eaa29a98",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Lack of rate limiting on worker spawning",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The pool does not implement strict rate limiting on spawn requests during high load, potentially allowing exhaustion of system process/thread limits.",
+      "steps_to_exploit": [
+        "Attacker floods the application with task requests",
+        "The pool continuously attempts to spin up new workers if maxThreads isn't reached",
+        "System resources (PID, memory) are exhausted"
+      ],
+      "impact": "Denial of Service (DoS) of the host operating system.",
+      "evolved_from": [],
+      "attack_category": "rate_limiting",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/index.ts",
+          "line": 1023,
+          "quote": "this._addNewWorker()"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/index.ts",
+          "line": 1023,
+          "quote": "this._addNewWorker()"
+        }
+      ],
+      "id": "faed63d3",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unsafe serialization of complex objects",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The system assumes data transmitted between the main process and workers is serializable and safe, but does not sanitize or validate deep object structures before passing them to postMessage.",
+      "steps_to_exploit": [
+        "Attacker crafts a complex object with circular references or getters",
+        "The object is sent through a message port",
+        "The worker process hangs or crashes during the cloning/deserialization process"
+      ],
+      "impact": "Denial of service via resource exhaustion or process crashes.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/index.ts",
+          "line": 585,
+          "quote": "this.port.postMessage(message, taskInfo.transferList)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/index.ts",
+          "line": 585,
+          "quote": "this.port.postMessage(message, taskInfo.transferList)"
+        }
+      ],
+      "id": "2b1bc312",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Information disclosure through stack traces",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The serializeError function includes full stack traces when transmitting errors from workers to the main process.",
+      "steps_to_exploit": [
+        "Attacker triggers an error that exposes sensitive internal file paths",
+        "The worker returns the full stack trace to the main process",
+        "The main process potentially exposes this stack trace to the end user"
+      ],
+      "impact": "Leakage of source code structure and server-side environment details.",
+      "evolved_from": [],
+      "attack_category": "data_privacy",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/entry/process.ts",
+          "line": 115,
+          "quote": "stack: error.stack,"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/entry/process.ts",
+          "line": 115,
+          "quote": "stack: error.stack,"
+        }
+      ],
+      "id": "db219259",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Race conditions in message handler logic",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The use of Atomics to manage message counts and a separate port listener can lead to race conditions if the port status changes between checks.",
+      "steps_to_exploit": [
+        "Attacker crafts a high-frequency sequence of tasks",
+        "The check for actualResponseCount fails to synchronize perfectly with the port message events",
+        "Tasks are processed in an unintended order or dropped"
+      ],
+      "impact": "Data inconsistency or potential logical bypasses in task execution.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/index.ts",
+          "line": 614,
+          "quote": "if (actualResponseCount !== this.lastSeenResponseCount) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/index.ts",
+          "line": 614,
+          "quote": "if (actualResponseCount !== this.lastSeenResponseCount) {"
+        }
+      ],
+      "id": "3ca5e662",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Over-privileged child process spawning",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Workers are spawned with the full environment of the parent process, which may contain sensitive credentials or tokens.",
+      "steps_to_exploit": [
+        "Attacker compromises the worker process",
+        "Attacker reads 'process.env' to capture secrets like AWS keys or database credentials injected into the parent",
+        "Attacker exfiltrates credentials"
+      ],
+      "impact": "Privilege escalation and credential theft.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/runtime/process-worker.ts",
+          "line": 31,
+          "quote": "...options.env,"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/runtime/process-worker.ts",
+          "line": 31,
+          "quote": "...options.env,"
+        }
+      ],
+      "id": "a0596c44",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of unsafe shell-like fork options",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The process-worker uses 'fork' with options that inherit file descriptors from the parent, potentially leaking sensitive open handles to workers.",
+      "steps_to_exploit": [
+        "Attacker compromises the worker process",
+        "Attacker iterates through inherited file descriptors",
+        "Attacker accesses sensitive data streams meant only for the parent"
+      ],
+      "impact": "Access to restricted resources or sensitive streams.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/runtime/process-worker.ts",
+          "line": 24,
+          "quote": "this.process = fork("
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/runtime/process-worker.ts",
+          "line": 24,
+          "quote": "this.process = fork("
+        }
+      ],
+      "id": "cf69ac9f",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure dependency management policy",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Dependabot is configured to run daily but without automated security fixes, leaving the project vulnerable to known dependency CVEs.",
+      "steps_to_exploit": [
+        "CVE is published for a dependency like 'vitest' or 'eslint'",
+        "Maintainers do not manually update in time",
+        "Attacker exploits the known vulnerability to compromise the build/CI system"
+      ],
+      "impact": "Increased risk of supply-chain attacks via vulnerable dependencies.",
+      "evolved_from": [],
+      "attack_category": "supply_chain",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [],
+      "code_refs": [],
+      "id": "d01ee8ee",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure automated release workflow",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The 'Publish Any Commit' workflow automatically publishes commits to npm. This is extremely dangerous as any contributor or compromised branch could trigger a malicious release.",
+      "steps_to_exploit": [
+        "Attacker submits a Pull Request with a malicious commit",
+        "The GitHub Actions workflow automatically builds and publishes the malicious code to the public registry",
+        "Users of the package receive the malicious update"
+      ],
+      "impact": "Widespread compromise of downstream users.",
+      "evolved_from": [],
+      "attack_category": "supply_chain",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": ".github/workflows/release-commits.yml",
+          "line": 1,
+          "quote": "name: Publish Any Commit"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": ".github/workflows/release-commits.yml",
+          "line": 1,
+          "quote": "name: Publish Any Commit"
+        }
+      ],
+      "id": "274c815d",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Improper error handling leads to Zalgo-like behavior",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The use of throwInNextTick can create unpredictable application states, where errors are thrown outside the original call stack, potentially bypassing global error handlers.",
+      "steps_to_exploit": [
+        "Attacker triggers an edge-case error in the worker setup",
+        "The error is caught and passed to throwInNextTick",
+        "The application state becomes inconsistent because the error is thrown asynchronously"
+      ],
+      "impact": "Instability and potential bypass of security-critical error-handling logic.",
+      "evolved_from": [],
+      "attack_category": "error_handling",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [],
+      "code_refs": [],
+      "id": "b470e257",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unrestricted file path resolution",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The pool relies on `maybeFileURLToPath` which performs minimal validation on file paths before loading them into a worker.",
+      "steps_to_exploit": [
+        "Attacker passes a path containing '..' or other directory traversal sequences",
+        "The pool resolves the path to an unintended directory outside the project root",
+        "The worker loads a file from a sensitive system location if the user has read access"
+      ],
+      "impact": "Unauthorized file reading or execution via directory traversal.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/index.ts",
+          "line": 253,
+          "quote": "function maybeFileURLToPath(filename: string): string {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/index.ts",
+          "line": 253,
+          "quote": "function maybeFileURLToPath(filename: string): string {"
+        }
+      ],
+      "id": "7e587b61",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "proposed": [
+    {
+      "title": "Arbitrary Code Execution via untrusted file loading",
+      "code_refs": [
+        {
+          "file": "src/entry/utils.ts",
+          "line": 36,
+          "quote": "const handlerModule = await import(filename)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Prototype Pollution via uncontrolled object assignment",
+      "code_refs": [],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of 'off' rules for critical security linting",
+      "code_refs": [
+        {
+          "file": "eslint.config.js",
+          "line": 49,
+          "quote": "'@typescript-eslint/no-unsafe-assignment': 'off',"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Sensitive information leakage in worker messages",
+      "code_refs": [
+        {
+          "file": "src/entry/process.ts",
+          "line": 62,
+          "quote": "throw new Error(`Unexpected TinypoolWorkerMessage ${JSON.stringify(message)}`)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure use of Function constructor for ESM loading",
+      "code_refs": [
+        {
+          "file": "src/entry/utils.ts",
+          "line": 12,
+          "quote": "importESMCached = new Function("
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Lack of rate limiting on worker spawning",
+      "code_refs": [
+        {
+          "file": "src/index.ts",
+          "line": 1023,
+          "quote": "this._addNewWorker()"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unsafe serialization of complex objects",
+      "code_refs": [
+        {
+          "file": "src/index.ts",
+          "line": 585,
+          "quote": "this.port.postMessage(message, taskInfo.transferList)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Information disclosure through stack traces",
+      "code_refs": [
+        {
+          "file": "src/entry/process.ts",
+          "line": 115,
+          "quote": "stack: error.stack,"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Race conditions in message handler logic",
+      "code_refs": [
+        {
+          "file": "src/index.ts",
+          "line": 614,
+          "quote": "if (actualResponseCount !== this.lastSeenResponseCount) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Over-privileged child process spawning",
+      "code_refs": [
+        {
+          "file": "src/runtime/process-worker.ts",
+          "line": 31,
+          "quote": "...options.env,"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of unsafe shell-like fork options",
+      "code_refs": [
+        {
+          "file": "src/runtime/process-worker.ts",
+          "line": 24,
+          "quote": "this.process = fork("
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure dependency management policy",
+      "code_refs": [],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure automated release workflow",
+      "code_refs": [
+        {
+          "file": ".github/workflows/release-commits.yml",
+          "line": 1,
+          "quote": "name: Publish Any Commit"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Improper error handling leads to Zalgo-like behavior",
+      "code_refs": [],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unrestricted file path resolution",
+      "code_refs": [
+        {
+          "file": "src/index.ts",
+          "line": 253,
+          "quote": "function maybeFileURLToPath(filename: string): string {"
+        }
+      ],
+      "outcome": "unchecked"
+    }
+  ],
+  "rejected": [],
+  "verification": null,
+  "arm_meta": {
+    "baseline": {
+      "model": "gemini/gemini-3.1-flash-lite",
+      "context": "code",
+      "requested": 15,
+      "returned": 15,
+      "files_shown": 27,
+      "chars_shown": 85755,
+      "files_that_did_not_fit": []
+    }
+  },
+  "seconds": {
+    "arm": 9.1,
+    "check": 0.0,
+    "total": 9.1
+  },
+  "usage": {
+    "arm": {
+      "calls": 1,
+      "failed": 0,
+      "est_tokens": 24580,
+      "seconds_in_calls": 9.1,
+      "by_task": {
+        "baseline": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 86841,
+          "completion_chars": 11480,
+          "seconds": 9.068346899934113,
+          "est_tokens": 24580
+        }
+      }
+    },
+    "check": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    }
+  }
+}

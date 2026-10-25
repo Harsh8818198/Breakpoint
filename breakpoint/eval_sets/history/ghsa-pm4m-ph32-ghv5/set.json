@@ -1,0 +1,70 @@
+{
+  "id": "ghsa-pm4m-ph32-ghv5",
+  "title": "js-yaml: js-yaml: Exponential parsing time in flow collections leads to denial of service",
+  "role": "heldout",
+  "repo": {
+    "url": "https://github.com/nodeca/js-yaml",
+    "commit": "bd7ebb2b7818873407c942c6371504e427c99cba",
+    "partial": true
+  },
+  "language": "javascript",
+  "framework": "",
+  "provenance": "Labels come from the maintainers' fix commit, not from a model: the lines it changed or removed in its parent commit (advisory GHSA-pm4m-ph32-ghv5). Whether the patch really addresses the advisory is recorded in history.label_review.",
+  "contamination": "Advisory published 2026-07-24 and fix committed 2026-07-23, both on or after 2026-03-10, after the 2026-03-03 release of gemini-3.1-flash-lite (knowledge cutoff January 2025): that model cannot have trained on this fix. A model with a later cutoff might have. The code may still resemble earlier public fixes of similar bugs in the same project.",
+  "bugs": [
+    {
+      "id": "ghsa-pm4m-ph32-ghv5",
+      "title": "js-yaml: Exponential parsing time in flow collections leads to denial of service",
+      "class": "dos",
+      "cwe": "CWE-407",
+      "locations": [
+        {
+          "file": "src/parser/parser.ts",
+          "lines": [
+            150,
+            150
+          ]
+        },
+        {
+          "file": "src/parser/parser.ts",
+          "lines": [
+            914,
+            921
+          ]
+        },
+        {
+          "file": "src/parser/parser.ts",
+          "lines": [
+            936,
+            938
+          ]
+        }
+      ],
+      "notes": "Judge a finding against the advisory text in `history`, not only against the lines."
+    }
+  ],
+  "variants": {},
+  "history": {
+    "advisory": "GHSA-pm4m-ph32-ghv5",
+    "advisory_url": "https://github.com/advisories/GHSA-pm4m-ph32-ghv5",
+    "severity": "high",
+    "published": "2026-07-24",
+    "package": "js-yaml",
+    "ecosystem": "npm",
+    "vulnerable_versions": ">= 5.0.0, <= 5.2.1",
+    "patched": "5.2.2",
+    "fix_commit": "3e5240f9cbe645ce5afb58524954a13c8539c853",
+    "fix_url": "https://github.com/nodeca/js-yaml/commit/3e5240f9cbe645ce5afb58524954a13c8539c853",
+    "fix_date": "2026-07-23T22:33:42Z",
+    "changed_lines": 27,
+    "source_files_changed": [
+      "src/parser/parser.ts"
+    ],
+    "other_files_changed": 1,
+    "addition_only": false,
+    "source_bytes": 212186,
+    "fits_in_one_prompt": true,
+    "description": "### Summary\nParsing a small YAML document can take exponential time. An application that calls `load()` or `loadAll()` on untrusted input can be hung by a payload under 200 bytes.\n\n### Details\nWhen an entry in a flow sequence turns out to be a `key: value` pair, the parser rewinds and parses that entry a second time as the key.\nIf the key is itself a nested flow sequence of the same shape, every level is parsed twice, so the total work is O(2^n) in the nesting depth. The default `maxDepth` of 100 does not help, because the time is already unmanageable at about 30 to 40 levels.\n\nRoot cause, potentially the: `readFlowCollection` in [parser.ts](https://github.com/nodeca/js-yaml/blob/master/src/parser/parser.ts), the `restoreState` followed by a second `parseNode` further down.\n\n\n### PoC\n\n```javascript\nconst yaml = require('js-yaml')\nconst n = 30\nyaml.load('[ '.repeat(n) + '1' + ' ]: 0'.repeat(n))\n```\n\nWith default options: 22 levels takes about 1 second, 26 levels about 17 seconds, 30 levels over 2 minutes. The input stays under 200 bytes and grows linearly with `n`.\n\n### Impact\nDenial of service. A single small request can keep one CPU busy for minutes or longer and blocks the Node event loop, so one request can stall the whole process. No anchors, aliases, merges, tags, or non default options are required, and it reproduces on the default schema.",
+    "label_review": "Claude read the fix patch against the advisory text on 2026-10-24 and found they match (one reader, not independently reviewed)."
+  }
+}

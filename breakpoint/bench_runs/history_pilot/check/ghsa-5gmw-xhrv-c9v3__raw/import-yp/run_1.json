@@ -1,0 +1,96 @@
+{
+  "schema": 1,
+  "set": "ghsa-5gmw-xhrv-c9v3",
+  "variant": "raw",
+  "arm": "import-yp",
+  "run": 1,
+  "commit": "abc247f85cba0309e3f1e5655db1837a2a1c2483",
+  "started_at": "2026-10-24T11:14:59+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": true,
+  "status": "ok",
+  "candidates": 1,
+  "kept": [],
+  "proposed": [
+    {
+      "title": "Potential Prototype Pollution via Object.assign/spread",
+      "code_refs": [
+        {
+          "file": "src/index.ts",
+          "line": 658,
+          "quote": "this.options = { ...kDefaultOptions, ...options, filename, maxQueue: 0 }"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    }
+  ],
+  "rejected": [
+    {
+      "title": "Potential Prototype Pollution via Object.assign/spread",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    }
+  ],
+  "verification": {
+    "mode": "source-code",
+    "files_indexed": 68,
+    "checked": 1,
+    "confirmed": 0,
+    "refuted": 1,
+    "unverified": 0,
+    "errors": 0,
+    "defender_pass": true,
+    "appeal_pass": true
+  },
+  "arm_meta": {
+    "imported_from": "eval_runs_check/inputs/ghsa-5gmw-xhrv-c9v3/yp.json",
+    "note": "produced elsewhere; not repeatable by this harness"
+  },
+  "seconds": {
+    "arm": 0.0,
+    "check": 48.8,
+    "total": 48.8
+  },
+  "usage": {
+    "arm": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    },
+    "check": {
+      "calls": 3,
+      "failed": 0,
+      "est_tokens": 33029,
+      "seconds_in_calls": 48.7,
+      "by_task": {
+        "verify_appeal": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 83268,
+          "completion_chars": 600,
+          "seconds": 5.882574599934742,
+          "est_tokens": 20967
+        },
+        "verify_judge": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 43308,
+          "completion_chars": 1112,
+          "seconds": 8.031729199923575,
+          "est_tokens": 11105
+        },
+        "verify_locate": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 3490,
+          "completion_chars": 338,
+          "seconds": 34.82043389999308,
+          "est_tokens": 957
+        }
+      }
+    }
+  }
+}

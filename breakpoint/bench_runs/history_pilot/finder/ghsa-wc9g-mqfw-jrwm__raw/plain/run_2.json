@@ -1,0 +1,795 @@
+{
+  "schema": 1,
+  "set": "ghsa-wc9g-mqfw-jrwm",
+  "variant": "raw",
+  "arm": "plain",
+  "run": 2,
+  "commit": "ab6aeae650328cf31799dcfa4c3e116ba8faaacc",
+  "started_at": "2026-10-24T11:00:51+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": false,
+  "status": "ok",
+  "candidates": 15,
+  "kept": [
+    {
+      "title": "Denial of Service via Unbounded File Upload",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Multer does not enforce global file upload limits (total request size or total file count), allowing an attacker to exhaust server memory and disk space by uploading many large files in a single multipart request.",
+      "steps_to_exploit": [
+        "Craft a multipart/form-data request with hundreds of large file parts.",
+        "Send the request to an endpoint utilizing Multer's default memory or disk storage.",
+        "Observe the server process memory consumption growing rapidly or disk space filling up on the host system."
+      ],
+      "impact": "Resource exhaustion leading to service unavailability (DoS).",
+      "evolved_from": [],
+      "attack_category": "rate_limiting",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 94,
+          "quote": "return new Multer({})"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 94,
+          "quote": "return new Multer({})"
+        }
+      ],
+      "id": "045023e7",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unbounded Memory Consumption via memoryStorage",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The memoryStorage implementation stores entire file buffers in memory without inspecting fileSize limits defined in the configuration, leading to heap exhaustion.",
+      "steps_to_exploit": [
+        "Configure Multer to use memoryStorage.",
+        "Upload a file significantly larger than the available Node.js heap memory.",
+        "The server will crash with an out-of-memory error."
+      ],
+      "impact": "Remote Denial of Service by crashing the Node.js process.",
+      "evolved_from": [],
+      "attack_category": "scalability",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "storage/memory.js",
+          "line": 6,
+          "quote": "file.stream.pipe(concat({ encoding: 'buffer' }, function (data) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "storage/memory.js",
+          "line": 6,
+          "quote": "file.stream.pipe(concat({ encoding: 'buffer' }, function (data) {"
+        }
+      ],
+      "id": "95abd173",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potential File Injection via Insecure Temporary Storage",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The default diskStorage uses the system's insecure global temp directory (os.tmpdir()) without adequate isolation, risking unauthorized access to uploaded files by other users on the host.",
+      "steps_to_exploit": [
+        "Identify the server OS and default temp directory location.",
+        "Monitor the temp directory while sending a multipart request.",
+        "Access the temporary file created by the application before it is deleted."
+      ],
+      "impact": "Information disclosure of sensitive user uploads.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "storage/disk.js",
+          "line": 19,
+          "quote": "cb(null, os.tmpdir())"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "storage/disk.js",
+          "line": 19,
+          "quote": "cb(null, os.tmpdir())"
+        }
+      ],
+      "id": "a8e6aabd",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Prototype Pollution via append-field",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The 'append-field' dependency is used to populate req.body. If this version is vulnerable to prototype pollution, an attacker can overwrite Object properties, potentially leading to RCE or logic bypasses in the Express application.",
+      "steps_to_exploit": [
+        "Craft a field name like '__proto__[polluted]' or 'constructor[prototype][polluted]'.",
+        "Submit the malicious payload via a form-data field.",
+        "Verify if the global Object prototype has been modified in the application context."
+      ],
+      "impact": "Full application compromise through Prototype Pollution.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/make-middleware.js",
+          "line": 230,
+          "quote": "appendField(req.body, fieldname, value)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/make-middleware.js",
+          "line": 230,
+          "quote": "appendField(req.body, fieldname, value)"
+        }
+      ],
+      "id": "8b10b99d",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Memory Leak via Unfinished Request Streams",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "When multiple error conditions trigger `done()`, some stream references or event listeners might not be correctly cleaned up, leading to memory accumulation over long-running processes.",
+      "steps_to_exploit": [
+        "Repeatedly trigger errors during file processing (e.g., aborting connections).",
+        "Observe memory usage over time.",
+        "Application exhibits signs of a memory leak."
+      ],
+      "impact": "Gradual degradation of service availability.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/make-middleware.js",
+          "line": 117,
+          "quote": "busboy.removeAllListeners()"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/make-middleware.js",
+          "line": 117,
+          "quote": "busboy.removeAllListeners()"
+        }
+      ],
+      "id": "8e6af5f6",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unsafe File Extension/Type handling",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Multer relies entirely on the user-provided 'fileFilter' for security, but the default 'allowAll' is insecure for many production environments, encouraging developers to accept potentially malicious file types.",
+      "steps_to_exploit": [
+        "Determine that the developer is using the default 'allowAll' filter.",
+        "Upload an executable or malicious script file disguised as an image.",
+        "Execute the file if the application later serves it from a directory with execution permissions."
+      ],
+      "impact": "Remote Code Execution (RCE) if uploaded files are served.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 7,
+          "quote": "function allowAll (req, file, cb) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 7,
+          "quote": "function allowAll (req, file, cb) {"
+        }
+      ],
+      "id": "3d84aee7",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Bypass of fileFilter via Race Condition",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The fileFilter is executed after the 'file' event has started, and although it resumes the stream, there's a window where partial data might have been buffered or processed incorrectly depending on the storage implementation.",
+      "steps_to_exploit": [
+        "Send a stream of data for a prohibited file type.",
+        "Trigger an error/rejection in the fileFilter.",
+        "Observe if the backend continues to process or buffers parts of the data before the rejection is fully processed."
+      ],
+      "impact": "Security filter bypass.",
+      "evolved_from": [],
+      "attack_category": "authz",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/make-middleware.js",
+          "line": 280,
+          "quote": "fileFilter(req, file, function (err, includeFile) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/make-middleware.js",
+          "line": 280,
+          "quote": "fileFilter(req, file, function (err, includeFile) {"
+        }
+      ],
+      "id": "d943757b",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Randomness for Filenames",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "While `crypto.randomBytes` is used, if the application is run in a misconfigured environment where the RNG is weak, the resulting filenames could be predictable, leading to Insecure Direct Object Reference (IDOR).",
+      "steps_to_exploit": [
+        "Analyze the random number generator entropy in the deployment environment.",
+        "Attempt to predict subsequent file names generated by the system.",
+        "Directly access files of other users by guessing the filename."
+      ],
+      "impact": "Unauthorized access to other users' uploaded files.",
+      "evolved_from": [],
+      "attack_category": "crypto",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "storage/disk.js",
+          "line": 13,
+          "quote": "crypto.randomBytes(16, function (err, raw) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "storage/disk.js",
+          "line": 13,
+          "quote": "crypto.randomBytes(16, function (err, raw) {"
+        }
+      ],
+      "id": "496280e3",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Lack of Field Name Length Validation",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "While `fieldNameSize` is documented as a limit, the code implements it as a workaround, potentially leaving edge cases where very long field names consume excessive CPU during parsing.",
+      "steps_to_exploit": [
+        "Send a request with an exceptionally long field name (multi-megabyte).",
+        "Observe the CPU spike in the busboy parser.",
+        "Multiple requests can cause CPU exhaustion."
+      ],
+      "impact": "Denial of Service via CPU exhaustion.",
+      "evolved_from": [],
+      "attack_category": "rate_limiting",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/make-middleware.js",
+          "line": 216,
+          "quote": "if (limits && Object.prototype.hasOwnProperty.call(limits, 'fieldNameSize')) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/make-middleware.js",
+          "line": 216,
+          "quote": "if (limits && Object.prototype.hasOwnProperty.call(limits, 'fieldNameSize')) {"
+        }
+      ],
+      "id": "5a8b7f4f",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Error Handling: Leak of Local Path",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Errors in file operations (especially in diskStorage) may include internal filesystem paths in the error messages returned to the client, exposing server-side structure.",
+      "steps_to_exploit": [
+        "Force a file operation failure (e.g., read-only destination directory).",
+        "Inspect the error response returned to the client.",
+        "The message contains full file system paths."
+      ],
+      "impact": "Information disclosure of internal server paths.",
+      "evolved_from": [],
+      "attack_category": "error_handling",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/multer-error.js",
+          "line": 20,
+          "quote": "this.message = errorMessages[code] || `Unknown error: ${code}`"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/multer-error.js",
+          "line": 20,
+          "quote": "this.message = errorMessages[code] || `Unknown error: ${code}`"
+        }
+      ],
+      "id": "b87029ea",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Uncontrolled Resource usage via Array Nesting",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "While there is an array index limit, the combination of complex nested fields can still lead to high memory usage during the conversion of multipart fields into a JSON object.",
+      "steps_to_exploit": [
+        "Craft a payload with deeply nested and sparse arrays within the field names.",
+        "Submit the request and monitor memory consumption.",
+        "The application spends significant time parsing/constructing the req.body object."
+      ],
+      "impact": "Denial of Service via memory/CPU exhaustion.",
+      "evolved_from": [],
+      "attack_category": "scalability",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/make-middleware.js",
+          "line": 221,
+          "quote": "if (fieldname.split('[').length - 1 > limits.fieldNestingDepth) return abortWithCode('LIMIT_FIELD_NESTING', fieldname)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/make-middleware.js",
+          "line": 221,
+          "quote": "if (fieldname.split('[').length - 1 > limits.fieldNestingDepth) return abortWithCode('LIMIT_FIELD_NESTING', fieldname)"
+        }
+      ],
+      "id": "cb9d9c5a",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potential EPIPE Error handling during stream processing",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The logic to handle `EPIPE` and stream drainage is complex and relies on event listeners that might not cover all possible premature termination scenarios (like TCP reset).",
+      "steps_to_exploit": [
+        "Create a client that abruptly closes the connection during a large upload.",
+        "Observe if the server catches the error correctly or allows an unhandled exception.",
+        "Application crashes due to unhandled stream error."
+      ],
+      "impact": "Denial of Service via process crash.",
+      "evolved_from": [],
+      "attack_category": "error_handling",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/make-middleware.js",
+          "line": 128,
+          "quote": "if (err && req.readable && !req.destroyed) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/make-middleware.js",
+          "line": 128,
+          "quote": "if (err && req.readable && !req.destroyed) {"
+        }
+      ],
+      "id": "4614358f",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Sensitive information leakage in logs",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "If a developer uses a global error logger that captures the error objects produced by Multer, the objects might contain user-specific details (filenames, field names) that should be redacted for PII compliance.",
+      "steps_to_exploit": [
+        "Upload a file with a sensitive filename.",
+        "Trigger an error that includes file metadata.",
+        "Check application logs to see if the sensitive filename was logged."
+      ],
+      "impact": "Privacy violation and PII leak.",
+      "evolved_from": [],
+      "attack_category": "data_privacy",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/multer-error.js",
+          "line": 22,
+          "quote": "if (field) this.field = field"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/multer-error.js",
+          "line": 22,
+          "quote": "if (field) this.field = field"
+        }
+      ],
+      "id": "0b8c0f05",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Default Registry Configuration",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The GitHub actions use a registry-url for npm without explicit locking to a specific private registry or verifying checksums, which could lead to dependency confusion or man-in-the-middle attacks on build artifacts.",
+      "steps_to_exploit": [
+        "Perform a man-in-the-middle attack on the NPM registry connection during CI.",
+        "Inject a malicious version of a dependency.",
+        "The build pipeline accepts the malicious package."
+      ],
+      "impact": "Compromised build integrity.",
+      "evolved_from": [],
+      "attack_category": "supply_chain",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": ".github/workflows/npm-publish.yml",
+          "line": 30,
+          "quote": "registry-url: \"https://registry.npmjs.org\""
+        }
+      ],
+      "code_refs": [
+        {
+          "file": ".github/workflows/npm-publish.yml",
+          "line": 30,
+          "quote": "registry-url: \"https://registry.npmjs.org\""
+        }
+      ],
+      "id": "85bfb74a",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Inconsistent field decoding",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The manual decoding of form-data names for only three characters (LF, CR, quotes) might lead to inconsistencies with other backend components that expect standard URI decoding or different escaping schemes.",
+      "steps_to_exploit": [
+        "Use unusual characters in field names.",
+        "Observe how different parts of the application interpret the name compared to the Multer-decoded version.",
+        "Identify potential for logic errors in data processing."
+      ],
+      "impact": "Data processing errors or security logic bypasses based on field names.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/make-middleware.js",
+          "line": 47,
+          "quote": "return str.replace(/%0A|%0D|%22/gi, function (match) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/make-middleware.js",
+          "line": 47,
+          "quote": "return str.replace(/%0A|%0D|%22/gi, function (match) {"
+        }
+      ],
+      "id": "4ac4caae",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "proposed": [
+    {
+      "title": "Denial of Service via Unbounded File Upload",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 94,
+          "quote": "return new Multer({})"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unbounded Memory Consumption via memoryStorage",
+      "code_refs": [
+        {
+          "file": "storage/memory.js",
+          "line": 6,
+          "quote": "file.stream.pipe(concat({ encoding: 'buffer' }, function (data) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potential File Injection via Insecure Temporary Storage",
+      "code_refs": [
+        {
+          "file": "storage/disk.js",
+          "line": 19,
+          "quote": "cb(null, os.tmpdir())"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Prototype Pollution via append-field",
+      "code_refs": [
+        {
+          "file": "lib/make-middleware.js",
+          "line": 230,
+          "quote": "appendField(req.body, fieldname, value)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Memory Leak via Unfinished Request Streams",
+      "code_refs": [
+        {
+          "file": "lib/make-middleware.js",
+          "line": 117,
+          "quote": "busboy.removeAllListeners()"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unsafe File Extension/Type handling",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 7,
+          "quote": "function allowAll (req, file, cb) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Bypass of fileFilter via Race Condition",
+      "code_refs": [
+        {
+          "file": "lib/make-middleware.js",
+          "line": 280,
+          "quote": "fileFilter(req, file, function (err, includeFile) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure Randomness for Filenames",
+      "code_refs": [
+        {
+          "file": "storage/disk.js",
+          "line": 13,
+          "quote": "crypto.randomBytes(16, function (err, raw) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Lack of Field Name Length Validation",
+      "code_refs": [
+        {
+          "file": "lib/make-middleware.js",
+          "line": 216,
+          "quote": "if (limits && Object.prototype.hasOwnProperty.call(limits, 'fieldNameSize')) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Error Handling: Leak of Local Path",
+      "code_refs": [
+        {
+          "file": "lib/multer-error.js",
+          "line": 20,
+          "quote": "this.message = errorMessages[code] || `Unknown error: ${code}`"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Uncontrolled Resource usage via Array Nesting",
+      "code_refs": [
+        {
+          "file": "lib/make-middleware.js",
+          "line": 221,
+          "quote": "if (fieldname.split('[').length - 1 > limits.fieldNestingDepth) return abortWithCode('LIMIT_FIELD_NESTING', fieldname)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potential EPIPE Error handling during stream processing",
+      "code_refs": [
+        {
+          "file": "lib/make-middleware.js",
+          "line": 128,
+          "quote": "if (err && req.readable && !req.destroyed) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Sensitive information leakage in logs",
+      "code_refs": [
+        {
+          "file": "lib/multer-error.js",
+          "line": 22,
+          "quote": "if (field) this.field = field"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure Default Registry Configuration",
+      "code_refs": [
+        {
+          "file": ".github/workflows/npm-publish.yml",
+          "line": 30,
+          "quote": "registry-url: \"https://registry.npmjs.org\""
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Inconsistent field decoding",
+      "code_refs": [
+        {
+          "file": "lib/make-middleware.js",
+          "line": 47,
+          "quote": "return str.replace(/%0A|%0D|%22/gi, function (match) {"
+        }
+      ],
+      "outcome": "unchecked"
+    }
+  ],
+  "rejected": [],
+  "verification": null,
+  "arm_meta": {
+    "baseline": {
+      "model": "gemini/gemini-3.1-flash-lite",
+      "context": "code",
+      "requested": 15,
+      "returned": 15,
+      "files_shown": 16,
+      "chars_shown": 43869,
+      "files_that_did_not_fit": []
+    }
+  },
+  "seconds": {
+    "arm": 10.4,
+    "check": 0.0,
+    "total": 10.4
+  },
+  "usage": {
+    "arm": {
+      "calls": 1,
+      "failed": 0,
+      "est_tokens": 14276,
+      "seconds_in_calls": 10.3,
+      "by_task": {
+        "baseline": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 44933,
+          "completion_chars": 12173,
+          "seconds": 10.26443310000468,
+          "est_tokens": 14276
+        }
+      }
+    },
+    "check": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    }
+  }
+}

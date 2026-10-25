@@ -1,0 +1,105 @@
+{
+  "id": "ghsa-6m44-fpc8-c3rq",
+  "title": "mistune: Mistune: Denial of Service \u2014 RecursionError via Excessive Emphasis Markers in Markdown",
+  "role": "heldout",
+  "repo": {
+    "url": "https://github.com/lepture/mistune",
+    "commit": "9946c9207d74a55eed872483ab3c9cdc698b89cc",
+    "partial": true
+  },
+  "language": "python",
+  "framework": "",
+  "provenance": "Labels come from the maintainers' fix commit, not from a model: the lines it changed or removed in its parent commit (advisory GHSA-6m44-fpc8-c3rq). Whether the patch really addresses the advisory is recorded in history.label_review.",
+  "contamination": "Advisory published 2026-09-02 and fix committed 2026-07-09, both on or after 2026-03-10, after the 2026-03-03 release of gemini-3.1-flash-lite (knowledge cutoff January 2025): that model cannot have trained on this fix. A model with a later cutoff might have. The code may still resemble earlier public fixes of similar bugs in the same project.",
+  "bugs": [
+    {
+      "id": "ghsa-6m44-fpc8-c3rq",
+      "title": "Mistune: Denial of Service \u2014 RecursionError via Excessive Emphasis Markers in Markdown",
+      "class": "dos",
+      "cwe": "CWE-674",
+      "locations": [
+        {
+          "file": "src/mistune/inline_parser.py",
+          "lines": [
+            29,
+            29
+          ]
+        },
+        {
+          "file": "src/mistune/inline_parser.py",
+          "lines": [
+            87,
+            90
+          ]
+        },
+        {
+          "file": "src/mistune/inline_parser.py",
+          "lines": [
+            383,
+            383
+          ]
+        },
+        {
+          "file": "src/mistune/inline_parser.py",
+          "lines": [
+            545,
+            545
+          ]
+        },
+        {
+          "file": "src/mistune/inline_parser.py",
+          "lines": [
+            562,
+            562
+          ]
+        },
+        {
+          "file": "src/mistune/inline_parser.py",
+          "lines": [
+            642,
+            642
+          ]
+        },
+        {
+          "file": "src/mistune/inline_parser.py",
+          "lines": [
+            690,
+            693
+          ]
+        },
+        {
+          "file": "src/mistune/inline_parser.py",
+          "lines": [
+            723,
+            723
+          ]
+        }
+      ],
+      "notes": "Judge a finding against the advisory text in `history`, not only against the lines."
+    }
+  ],
+  "variants": {},
+  "history": {
+    "advisory": "GHSA-6m44-fpc8-c3rq",
+    "advisory_url": "https://github.com/advisories/GHSA-6m44-fpc8-c3rq",
+    "severity": "high",
+    "published": "2026-09-02",
+    "package": "mistune",
+    "ecosystem": "pip",
+    "vulnerable_versions": ">= 3.3.0, < 3.3.3",
+    "patched": "3.3.3",
+    "fix_commit": "0938fb781d0aded99de801b340ec1f8debeae5b2",
+    "fix_url": "https://github.com/lepture/mistune/commit/0938fb781d0aded99de801b340ec1f8debeae5b2",
+    "fix_date": "2026-07-09T05:22:26Z",
+    "changed_lines": 44,
+    "source_files_changed": [
+      "src/mistune/inline_parser.py"
+    ],
+    "other_files_changed": 2,
+    "addition_only": false,
+    "source_bytes": 197694,
+    "fits_in_one_prompt": true,
+    "description": "## Summary\nMistune v3.3.2 is vulnerable to a Denial of Service (DoS) attack via uncontrolled recursion in the HTML rendering of deeply-nested emphasis tokens. By submitting Markdown containing approximately 1,000 consecutive asterisk characters, an attacker causes the Python process to crash with RecursionError.\n\n## Details\nThe InlineParser's _process_emphasis_delimiters() creates deeply nested <strong> tokens from consecutive emphasis markers (every 2 asterisks add one nesting level). With 1,000 consecutive asterisks, approximately 500 levels of nesting are produced. The HTMLRenderer.render_token() method (src/mistune/renderers/html.py:40-57) renders these tokens recursively: when a token has children, line 48 calls self.render_tokens(token['children'], state), entering child rendering. Each nesting level produces ~2 stack frames, so 500 levels \u2248 1,000 frames, exceeding Python's default recursion limit (sys.getrecursionlimit() = 1000). The emphasis() and strong() methods (lines 80-84) wrap recursively rendered child content in <em> and <strong> tags, perpetuating the recursion. This vulnerability affects all mistune APIs including markdown() and html().\n\nCore vulnerable code path:\n\n```python\n# src/mistune/renderers/html.py:40-57\ndef render_token(self, token: Dict[str, Any], state: BlockState) -> str:\n    func = self._get_method(token[\"type\"])\n    attrs = token.get(\"attrs\")\n    if \"raw\" in token:\n        text = token[\"raw\"]\n    elif \"children\" in token:\n        text = self.render_tokens(token[\"children\"], state)\n    else:\n        if attrs:\n            return func(**attrs)\n        else:\n            return func()\n    if attrs:\n        return func(text, **attrs)\n    else:\n        return func(text)\n```\n\nThe recursive call to render_tokens() on line 48 processes nested child tokens. With 500 levels of nested emphasis/strong tokens, this recursion exceeds Python's default recursion limit of 1000, causing a RecursionError.\n\n```python\n# src/mistune/renderers/html.py:80-84\ndef emphasis(self, text: str) -> str:\n    return \"<em>\" + text + \"</em>\"\n\ndef strong(self, text: str) -> str:\n    return \"<strong>\" + text + \"</strong>\"\n```\n\nThe emphasis() and strong() methods wrap their text content (which is itself the recursively-rendered output of nested child tokens) in HTML tags, creating the chain of recursion: each call to strong() includes rendered children that themselves call strong(), etc.\n\n## POC\n\n``` wiki\nfrom mistune import html\n\npayload = '*' * 1000\ntry:\n    result = html(payload)\n    print('No crash - recursion handled')\nexcept RecursionError as e:\n    print(f'[VULN] RecursionError: {e} - Process would crash!')\nexcept Exception as e:\n    print(f'Error: {type(e).__name__}: {e}')\n```\n\n<img width=\"1139\" height=\"664\" alt=\"1\" src=\"https://github.com/user-attachments/assets/d2095b9f-0a6a-4bef-8013-cbc6946cf8f1\" />\n\n\n\n## Impact\nCVSS 3.1: 7.5 (High) \u2014 AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H. An attacker can crash any server process using mistune with approximately 2KB of Markdown input. In web applications, this can be triggered through user-generated content such as forum posts or comments, causing denial of service for all concurrent users sharing the same Python process. Both mistune.markdown() and mistune.html() are affected.\n\n## Remediation\n1. Add a maximum nesting depth limit in the emphasis parsing stage, similar to BlockParser's max_nested_level mechanism (currently at DEFAULT_MAX_NESTED_LEVEL = 20). When the limit is exceeded, treat excess emphasis markers as literal text. 2. Alternatively, refactor HTMLRenderer to use an explicit stack-based iterative approach instead of recursive calls for rendering nested tokens. 3. As a defense-in-depth measure, document the recursion risk and recommend that applications deploying mistune set a higher recursion limit or implement request-level timeouts.",
+    "label_review": "Claude read the fix patch against the advisory text on 2026-10-24 and found they match (one reader, not independently reviewed)."
+  }
+}

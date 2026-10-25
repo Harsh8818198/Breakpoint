@@ -1,0 +1,113 @@
+{
+  "schema": 1,
+  "set": "ghsa-pqg4-j6r4-53mv",
+  "variant": "raw",
+  "arm": "import-yp",
+  "run": 1,
+  "commit": "36f23944db50dd3f0df4da9c7cba0bb63df05f64",
+  "started_at": "2026-10-24T11:24:27+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": true,
+  "status": "ok",
+  "candidates": 2,
+  "kept": [],
+  "proposed": [
+    {
+      "title": "Insecure handling of line terminators in quotes",
+      "code_refs": [
+        {
+          "file": "quote.js",
+          "line": 24,
+          "quote": "var LINE_TERMINATORS = /[\\n\\r\\u2028\\u2029]/;"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    },
+    {
+      "title": "Improper Handling of Line Terminators",
+      "code_refs": [
+        {
+          "file": "quote.js",
+          "line": 24,
+          "quote": "var LINE_TERMINATORS = /[\\n\\r\\u2028\\u2029]/;"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    }
+  ],
+  "rejected": [
+    {
+      "title": "Insecure handling of line terminators in quotes",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    },
+    {
+      "title": "Improper Handling of Line Terminators",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    }
+  ],
+  "verification": {
+    "mode": "source-code",
+    "files_indexed": 34,
+    "checked": 2,
+    "confirmed": 0,
+    "refuted": 2,
+    "unverified": 0,
+    "errors": 0,
+    "defender_pass": true,
+    "appeal_pass": true
+  },
+  "arm_meta": {
+    "imported_from": "eval_runs_check/inputs/ghsa-pqg4-j6r4-53mv/yp.json",
+    "note": "produced elsewhere; not repeatable by this harness"
+  },
+  "seconds": {
+    "arm": 0.0,
+    "check": 117.0,
+    "total": 117.0
+  },
+  "usage": {
+    "arm": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    },
+    "check": {
+      "calls": 6,
+      "failed": 0,
+      "est_tokens": 55590,
+      "seconds_in_calls": 117.0,
+      "by_task": {
+        "verify_appeal": {
+          "calls": 2,
+          "failed": 0,
+          "prompt_chars": 126978,
+          "completion_chars": 1251,
+          "seconds": 6.333051300025545,
+          "est_tokens": 32057
+        },
+        "verify_judge": {
+          "calls": 2,
+          "failed": 0,
+          "prompt_chars": 86772,
+          "completion_chars": 2759,
+          "seconds": 79.88018900004681,
+          "est_tokens": 22383
+        },
+        "verify_locate": {
+          "calls": 2,
+          "failed": 0,
+          "prompt_chars": 4114,
+          "completion_chars": 485,
+          "seconds": 30.79006239993032,
+          "est_tokens": 1150
+        }
+      }
+    }
+  }
+}

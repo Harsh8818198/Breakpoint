@@ -1,0 +1,807 @@
+{
+  "schema": 1,
+  "set": "ghsa-f2hq-32vh-53cc",
+  "variant": "raw",
+  "arm": "plain",
+  "run": 2,
+  "commit": "abfee49e691dc1cafe0978900c132d89ab8b3595",
+  "started_at": "2026-10-24T11:04:49+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": false,
+  "status": "ok",
+  "candidates": 15,
+  "kept": [
+    {
+      "title": "Unsafe Regex backtracking in HTML tag processing",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `replaceTags` and `replaceBlocks` methods in `src/text-format.ts` use regex patterns that can cause catastrophic backtracking when processing malformed or crafted HTML with unclosed tags, leading to ReDoS (Regular Expression Denial of Service).",
+      "steps_to_exploit": [
+        "Craft an HTML email with thousands of unclosed tags or specific patterns (e.g., <a href=).",
+        "Send the email to a system using `postal-mime` to parse it.",
+        "The CPU will spike to 100% and block the event loop, effectively crashing the parser or stalling the application."
+      ],
+      "impact": "Denial of Service (DoS) against any system relying on this library to parse emails.",
+      "evolved_from": [],
+      "attack_category": "scalability",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/text-format.ts",
+          "line": 210,
+          "quote": "const match = pattern.exec(str);"
+        },
+        {
+          "file": "src/text-format.ts",
+          "line": 274,
+          "quote": "const closer = nextClose(from);"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/text-format.ts",
+          "line": 210,
+          "quote": "const match = pattern.exec(str);"
+        },
+        {
+          "file": "src/text-format.ts",
+          "line": 274,
+          "quote": "const closer = nextClose(from);"
+        }
+      ],
+      "id": "4b14db08",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Lack of input sanitization in header processing",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "`MimeNode.processHeaders` in `src/mime-node.ts` processes raw headers and passes them to `formatHtmlHeader` in `src/text-format.ts`. While there is some escaping, the parser is permissive with header keys and values, potentially allowing for XSS if the resulting parsed HTML is rendered in a browser.",
+      "steps_to_exploit": [
+        "Craft an email header (e.g., Subject) containing malicious payload: `<img src=x onerror=alert(1)>`.",
+        "Parse the email using `postal-mime`.",
+        "Render the output in an HTML view without additional context-aware sanitization."
+      ],
+      "impact": "Cross-Site Scripting (XSS) in applications displaying parsed email content.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/mime-node.ts",
+          "line": 599,
+          "quote": "this.headers.push({ key: key.toLowerCase(), originalKey: key, value });"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/mime-node.ts",
+          "line": 599,
+          "quote": "this.headers.push({ key: key.toLowerCase(), originalKey: key, value });"
+        }
+      ],
+      "id": "45a66cd8",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potential prototype pollution via `parseStructuredHeader`",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "In `src/mime-node.ts`, `parseStructuredHeader` parses parameters into a plain object. If keys are not strictly validated, attackers could attempt to inject properties like `__proto__` or `constructor` into the `params` object.",
+      "steps_to_exploit": [
+        "Craft a Content-Type header with a parameter name like `__proto__` or `prototype`.",
+        "Observe if the parser assigns this key to the object without checking.",
+        "Trigger logic that relies on `params` values to alter application state."
+      ],
+      "impact": "Arbitrary code execution or application logic corruption.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/mime-node.ts",
+          "line": 364,
+          "quote": "if (name && !Object.prototype.hasOwnProperty.call(response.params, name)) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/mime-node.ts",
+          "line": 364,
+          "quote": "if (name && !Object.prototype.hasOwnProperty.call(response.params, name)) {"
+        }
+      ],
+      "id": "9e5b9d14",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of `TextDecoder` without proper validation for character sets",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "`getDecoder` in `src/decode-strings.ts` falls back to `windows-1252` when an unknown charset is encountered. This may lead to encoding confusion or bypasses of security filters that rely on text inspection.",
+      "steps_to_exploit": [
+        "Identify a security filter looking for specific strings (e.g., 'script').",
+        "Encode the script tags in a charset that the parser defaults to `windows-1252` or interprets differently.",
+        "Observe if the filter misses the payload while the parser executes it."
+      ],
+      "impact": "Bypassing security checks (WAF/Filters) via charset confusion.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/decode-strings.ts",
+          "line": 272,
+          "quote": "return findDecoder(charset) || tryDecoder('windows-1252') || utf8Decoder;"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/decode-strings.ts",
+          "line": 272,
+          "quote": "return findDecoder(charset) || tryDecoder('windows-1252') || utf8Decoder;"
+        }
+      ],
+      "id": "4f0d574e",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure `npm update` script usage",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `update` script in `package.json` performs `rm -rf node_modules package-lock.json && ncu -u && npm install` without verifying integrity or using a lockfile during the update process.",
+      "steps_to_exploit": [
+        "A developer runs `npm run update`.",
+        "An attacker compromises a dependency version on the registry.",
+        "The script pulls the latest version without verifying hashes, leading to inclusion of malicious code."
+      ],
+      "impact": "Supply chain compromise via unverified dependency updates.",
+      "evolved_from": [],
+      "attack_category": "supply_chain",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "package.json",
+          "line": 32,
+          "quote": "\"update\": \"rm -rf node_modules package-lock.json && ncu -u && npm install\""
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "package.json",
+          "line": 32,
+          "quote": "\"update\": \"rm -rf node_modules package-lock.json && ncu -u && npm install\""
+        }
+      ],
+      "id": "83833ac4",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Memory exhaustion via uncontrolled `ChunkWriter`",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `ChunkWriter` class in `src/chunk-writer.ts` keeps an array of buffers. While it limits chunk sizes, a malicious email with extremely high numbers of small parts can still exhaust memory as `this.chunks` grows unbounded.",
+      "steps_to_exploit": [
+        "Send an email with a massive number of small MIME attachments or parts.",
+        "The `ChunkWriter` collects these parts in the `chunks` array.",
+        "Memory usage continues to grow until the Node.js process crashes."
+      ],
+      "impact": "Denial of Service (DoS) via memory exhaustion.",
+      "evolved_from": [],
+      "attack_category": "scalability",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/chunk-writer.ts",
+          "line": 13,
+          "quote": "chunks: Uint8Array<ArrayBuffer>[];"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/chunk-writer.ts",
+          "line": 13,
+          "quote": "chunks: Uint8Array<ArrayBuffer>[];"
+        }
+      ],
+      "id": "43333795",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Path traversal risk in filename handling",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "`collectAttachment` in `src/postal-mime.ts` extracts filenames from headers. These filenames are returned to the consumer, who may use them to write files to disk, potentially leading to path traversal.",
+      "steps_to_exploit": [
+        "Craft an email with a Content-Disposition filename like `../../etc/passwd`.",
+        "Parse the email and write the attachment to the filesystem using the returned filename.",
+        "The file is written to an unintended directory."
+      ],
+      "impact": "Arbitrary file write on the system hosting the application.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/postal-mime.ts",
+          "line": 425,
+          "quote": "const filename = node.contentDisposition.parsed.params.filename || node.contentType.parsed.params.name || null;"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/postal-mime.ts",
+          "line": 425,
+          "quote": "const filename = node.contentDisposition.parsed.params.filename || node.contentType.parsed.params.name || null;"
+        }
+      ],
+      "id": "3ad16401",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Weak logic in address extraction via regex",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The address parser in `src/address-parser.ts` attempts to recover addresses from malformed text using complex regex, which can be misled into picking up sensitive text or spoofing addresses.",
+      "steps_to_exploit": [
+        "Craft a string that looks like a legitimate address to the `LOOSE_ADDR_SPEC` regex.",
+        "The parser extracts this string as a valid `from` or `to` address.",
+        "Use this for spoofing attacks or to trick the user into trusting the address."
+      ],
+      "impact": "Address spoofing or misinformation.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/address-parser.ts",
+          "line": 33,
+          "quote": "const LOOSE_ADDR_SPEC = /^[^@\\s]+@\\S+$/;"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/address-parser.ts",
+          "line": 33,
+          "quote": "const LOOSE_ADDR_SPEC = /^[^@\\s]+@\\S+$/;"
+        }
+      ],
+      "id": "758e3e11",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Missing enforcement of maximum nested groups in address parsing",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "While `parseAddressList` in `src/address-parser.ts` uses `MAX_NESTED_GROUP_DEPTH`, a very deeply nested structure can trigger excessive recursion before hitting the limit.",
+      "steps_to_exploit": [
+        "Craft an address string with extremely deep group nesting.",
+        "Trigger address parsing.",
+        "Stack exhaustion."
+      ],
+      "impact": "Application crash due to stack overflow.",
+      "evolved_from": [],
+      "attack_category": "scalability",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/address-parser.ts",
+          "line": 848,
+          "quote": "if (depth > MAX_NESTED_GROUP_DEPTH) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/address-parser.ts",
+          "line": 848,
+          "quote": "if (depth > MAX_NESTED_GROUP_DEPTH) {"
+        }
+      ],
+      "id": "8a104968",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potential for unbounded growth in `PassThroughDecoder`",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "`PassThroughDecoder` in `src/pass-through-decoder.ts` manages chunks in an array. Similar to the `ChunkWriter`, it lacks strict total-size limits for the entire message body assembly.",
+      "steps_to_exploit": [
+        "Send an email with a massive, non-encoded, non-multipart body.",
+        "The parser will accumulate the whole thing in memory before completion."
+      ],
+      "impact": "Memory consumption leading to DoS.",
+      "evolved_from": [],
+      "attack_category": "scalability",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/pass-through-decoder.ts",
+          "line": 18,
+          "quote": "chunks: Uint8Array<ArrayBuffer>[];"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/pass-through-decoder.ts",
+          "line": 18,
+          "quote": "chunks: Uint8Array<ArrayBuffer>[];"
+        }
+      ],
+      "id": "bcab0e89",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of deprecated `Intl` locale handling",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "`formatDate` in `src/text-format.ts` blindly uses `Intl.DateTimeFormat('default')`, which might behave unpredictably across different server environments.",
+      "steps_to_exploit": [
+        "Change server locale.",
+        "Observe changes in date format which might cause parsing errors or logic gaps in downstream applications."
+      ],
+      "impact": "Inconsistent application state or logic errors.",
+      "evolved_from": [],
+      "attack_category": "error_handling",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/text-format.ts",
+          "line": 407,
+          "quote": "return new Intl.DateTimeFormat('default', {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/text-format.ts",
+          "line": 407,
+          "quote": "return new Intl.DateTimeFormat('default', {"
+        }
+      ],
+      "id": "74f12fa7",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potential DoS via large `maxHeadersSize` configuration",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The default `maxHeadersSize` of 2 MiB is quite generous for emails and can be configured even higher, allowing for potentially large amounts of memory to be locked per parsing instance.",
+      "steps_to_exploit": [
+        "Configure `maxHeadersSize` to a high value.",
+        "Send many concurrent emails with headers just under the limit."
+      ],
+      "impact": "Increased risk of DoS under high concurrent load.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/postal-mime.ts",
+          "line": 61,
+          "quote": "const MAX_HEADERS_SIZE = 2 * 1024 * 1024;"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/postal-mime.ts",
+          "line": 61,
+          "quote": "const MAX_HEADERS_SIZE = 2 * 1024 * 1024;"
+        }
+      ],
+      "id": "081f3fdc",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insufficient sanitization of `Content-Description` in `collectAttachment`",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "`Content-Description` is decoded and included in the attachment object. If this is later used in an HTML context, it remains un-sanitized.",
+      "steps_to_exploit": [
+        "Set `Content-Description` to `<script>alert(1)</script>`.",
+        "Access the `description` field in the resulting attachment object.",
+        "Render in HTML."
+      ],
+      "impact": "XSS in the application UI.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/postal-mime.ts",
+          "line": 451,
+          "quote": "attachment.description = decodeWords(node.contentDescription);"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/postal-mime.ts",
+          "line": 451,
+          "quote": "attachment.description = decodeWords(node.contentDescription);"
+        }
+      ],
+      "id": "e4ad4045",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Loose parsing of header values allowing malformed headers",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "`MimeNode.processHeaders` attempts to be robust, but it might misinterpret headers used for security-critical decisions by downstream components.",
+      "steps_to_exploit": [
+        "Supply multiple headers of the same key with different values.",
+        "Observe if the parser selects a different one than a proxy or mail filter."
+      ],
+      "impact": "Bypassing security policies or logic mismatch.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/mime-node.ts",
+          "line": 606,
+          "quote": "if (CONTENT_HEADERS.has(lowerKey) && !seenContentHeaders.has(lowerKey)) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/mime-node.ts",
+          "line": 606,
+          "quote": "if (CONTENT_HEADERS.has(lowerKey) && !seenContentHeaders.has(lowerKey)) {"
+        }
+      ],
+      "id": "54f2e18b",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potential for OOM on `decodeURIComponentWithCharset` with large strings",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The function `decodeURIComponentWithCharset` processes strings that could be very large, resulting in large temporary `ArrayBuffer` allocations.",
+      "steps_to_exploit": [
+        "Send a header containing a very long percent-encoded string.",
+        "The parser allocates a large `ArrayBuffer` and `encodedBytes` array."
+      ],
+      "impact": "Resource exhaustion and performance degradation.",
+      "evolved_from": [],
+      "attack_category": "scalability",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/decode-strings.ts",
+          "line": 685,
+          "quote": "let encodedBytes: number[] = [];"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/decode-strings.ts",
+          "line": 685,
+          "quote": "let encodedBytes: number[] = [];"
+        }
+      ],
+      "id": "dacb0b67",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "proposed": [
+    {
+      "title": "Unsafe Regex backtracking in HTML tag processing",
+      "code_refs": [
+        {
+          "file": "src/text-format.ts",
+          "line": 210,
+          "quote": "const match = pattern.exec(str);"
+        },
+        {
+          "file": "src/text-format.ts",
+          "line": 274,
+          "quote": "const closer = nextClose(from);"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Lack of input sanitization in header processing",
+      "code_refs": [
+        {
+          "file": "src/mime-node.ts",
+          "line": 599,
+          "quote": "this.headers.push({ key: key.toLowerCase(), originalKey: key, value });"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potential prototype pollution via `parseStructuredHeader`",
+      "code_refs": [
+        {
+          "file": "src/mime-node.ts",
+          "line": 364,
+          "quote": "if (name && !Object.prototype.hasOwnProperty.call(response.params, name)) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of `TextDecoder` without proper validation for character sets",
+      "code_refs": [
+        {
+          "file": "src/decode-strings.ts",
+          "line": 272,
+          "quote": "return findDecoder(charset) || tryDecoder('windows-1252') || utf8Decoder;"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure `npm update` script usage",
+      "code_refs": [
+        {
+          "file": "package.json",
+          "line": 32,
+          "quote": "\"update\": \"rm -rf node_modules package-lock.json && ncu -u && npm install\""
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Memory exhaustion via uncontrolled `ChunkWriter`",
+      "code_refs": [
+        {
+          "file": "src/chunk-writer.ts",
+          "line": 13,
+          "quote": "chunks: Uint8Array<ArrayBuffer>[];"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Path traversal risk in filename handling",
+      "code_refs": [
+        {
+          "file": "src/postal-mime.ts",
+          "line": 425,
+          "quote": "const filename = node.contentDisposition.parsed.params.filename || node.contentType.parsed.params.name || null;"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Weak logic in address extraction via regex",
+      "code_refs": [
+        {
+          "file": "src/address-parser.ts",
+          "line": 33,
+          "quote": "const LOOSE_ADDR_SPEC = /^[^@\\s]+@\\S+$/;"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Missing enforcement of maximum nested groups in address parsing",
+      "code_refs": [
+        {
+          "file": "src/address-parser.ts",
+          "line": 848,
+          "quote": "if (depth > MAX_NESTED_GROUP_DEPTH) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potential for unbounded growth in `PassThroughDecoder`",
+      "code_refs": [
+        {
+          "file": "src/pass-through-decoder.ts",
+          "line": 18,
+          "quote": "chunks: Uint8Array<ArrayBuffer>[];"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of deprecated `Intl` locale handling",
+      "code_refs": [
+        {
+          "file": "src/text-format.ts",
+          "line": 407,
+          "quote": "return new Intl.DateTimeFormat('default', {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potential DoS via large `maxHeadersSize` configuration",
+      "code_refs": [
+        {
+          "file": "src/postal-mime.ts",
+          "line": 61,
+          "quote": "const MAX_HEADERS_SIZE = 2 * 1024 * 1024;"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insufficient sanitization of `Content-Description` in `collectAttachment`",
+      "code_refs": [
+        {
+          "file": "src/postal-mime.ts",
+          "line": 451,
+          "quote": "attachment.description = decodeWords(node.contentDescription);"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Loose parsing of header values allowing malformed headers",
+      "code_refs": [
+        {
+          "file": "src/mime-node.ts",
+          "line": 606,
+          "quote": "if (CONTENT_HEADERS.has(lowerKey) && !seenContentHeaders.has(lowerKey)) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potential for OOM on `decodeURIComponentWithCharset` with large strings",
+      "code_refs": [
+        {
+          "file": "src/decode-strings.ts",
+          "line": 685,
+          "quote": "let encodedBytes: number[] = [];"
+        }
+      ],
+      "outcome": "unchecked"
+    }
+  ],
+  "rejected": [],
+  "verification": null,
+  "arm_meta": {
+    "baseline": {
+      "model": "gemini/gemini-3.1-flash-lite",
+      "context": "code",
+      "requested": 15,
+      "returned": 15,
+      "files_shown": 25,
+      "chars_shown": 299621,
+      "files_that_did_not_fit": [
+        ".github/workflows/release.yaml"
+      ]
+    }
+  },
+  "seconds": {
+    "arm": 13.0,
+    "check": 0.0,
+    "total": 13.0
+  },
+  "usage": {
+    "arm": {
+      "calls": 1,
+      "failed": 0,
+      "est_tokens": 78134,
+      "seconds_in_calls": 12.9,
+      "by_task": {
+        "baseline": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 300703,
+          "completion_chars": 11835,
+          "seconds": 12.90822450001724,
+          "est_tokens": 78134
+        }
+      }
+    },
+    "check": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    }
+  }
+}

@@ -1,0 +1,789 @@
+{
+  "schema": 1,
+  "set": "ghsa-c83g-rgw3-j3cx",
+  "variant": "raw",
+  "arm": "plain",
+  "run": 2,
+  "commit": "49b3d72986954c73fec8bb8fb69ad1f9febf265f",
+  "started_at": "2026-10-24T10:52:18+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": false,
+  "status": "ok",
+  "candidates": 15,
+  "kept": [
+    {
+      "title": "Remote Code Execution via Dynamic Require",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The application uses user-controllable input to dynamically require modules, enabling arbitrary code execution.",
+      "steps_to_exploit": [
+        "Identify a location where 'name' can be controlled via config files or CLI flags.",
+        "Provide a path to a malicious local JavaScript file.",
+        "The application executes the malicious code within the local process context."
+      ],
+      "impact": "Full system compromise with the privileges of the Node.js process.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "node.js",
+          "line": 257,
+          "quote": "var queries = require(require.resolve(name, { paths: ['.', ctx.path] }))"
+        },
+        {
+          "file": "node.js",
+          "line": 281,
+          "quote": "var stats = require("
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "node.js",
+          "line": 257,
+          "quote": "var queries = require(require.resolve(name, { paths: ['.', ctx.path] }))"
+        },
+        {
+          "file": "node.js",
+          "line": 281,
+          "quote": "var stats = require("
+        }
+      ],
+      "id": "05ca4e9c",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Prototype Pollution in Data Processing",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "While a DANGEROUS_KEYS blacklist exists, it is insufficient to prevent all forms of prototype pollution in object manipulation routines.",
+      "steps_to_exploit": [
+        "Craft a JSON input payload containing __proto__ or other hidden prototype chain keys.",
+        "Inject properties that affect application-wide behavior (e.g., modifying object prototypes used in logic).",
+        "Trigger logic that relies on object properties affected by the pollution."
+      ],
+      "impact": "Denial of service or logic manipulation across the application instance.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 272,
+          "quote": "android.releaseDate = copyObject(android.releaseDate)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 272,
+          "quote": "android.releaseDate = copyObject(android.releaseDate)"
+        }
+      ],
+      "id": "e941ff8d",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Use of Unsafe Commands in CI/CD",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The CI/CD pipeline explicitly enables insecure commands, exposing the build environment to potential execution of malicious scripts.",
+      "steps_to_exploit": [
+        "Compromise the repository or PR to include malicious code.",
+        "The CI/CD build runner processes the workflow which includes ACTIONS_ALLOW_UNSECURE_COMMANDS: true.",
+        "Inject malicious commands into the build logs/output that the runner executes."
+      ],
+      "impact": "Compromise of the build/release pipeline or leaked environment secrets.",
+      "evolved_from": [],
+      "attack_category": "supply_chain",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": ".github/workflows/test.yml",
+          "line": 66,
+          "quote": "ACTIONS_ALLOW_UNSECURE_COMMANDS: true"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": ".github/workflows/test.yml",
+          "line": 66,
+          "quote": "ACTIONS_ALLOW_UNSECURE_COMMANDS: true"
+        }
+      ],
+      "id": "9e129659",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Arbitrary File Read via Config Loading",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Functions loading configuration files via user-provided paths do not sufficiently constrain file access, potentially allowing reads of sensitive files outside intended directories.",
+      "steps_to_exploit": [
+        "Supply a --config argument pointing to a sensitive file (e.g., /etc/passwd).",
+        "The application uses fs.readFileSync on the provided path without validation.",
+        "The content is parsed or logged, revealing sensitive information."
+      ],
+      "impact": "Unauthorized access to sensitive server-side files.",
+      "evolved_from": [],
+      "attack_category": "data_privacy",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "node.js",
+          "line": 408,
+          "quote": "fs.readFileSync(file)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "node.js",
+          "line": 408,
+          "quote": "fs.readFileSync(file)"
+        }
+      ],
+      "id": "d3d63707",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Command Injection Risk in CLI Input",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "User input for CLI arguments is not properly sanitized, potentially leading to command injection or command line option injection if passed to other shell-based tools.",
+      "steps_to_exploit": [
+        "Provide malicious shell input characters in CLI flags.",
+        "The application fails to properly sanitize or validate the input in the argument parsing loop.",
+        "The malicious input is processed in a way that allows parameter tampering."
+      ],
+      "impact": "Execution of arbitrary commands or unintended tool behavior.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "cli.js",
+          "line": 62,
+          "quote": "var arg = args[i].split('=')"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "cli.js",
+          "line": 62,
+          "quote": "var arg = args[i].split('=')"
+        }
+      ],
+      "id": "031a2619",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Handling of Sensitive JSON Files",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The application blindly parses and uses JSON files from the filesystem which can lead to information disclosure or system manipulation if the file is attacker-controlled.",
+      "steps_to_exploit": [
+        "Create or replace a browserlist-stats.json file with malicious data.",
+        "Run the application with a path argument pointing to the directory containing the malicious file.",
+        "The application reads and processes the attacker-controlled JSON."
+      ],
+      "impact": "Manipulation of browser usage statistics used for decision making.",
+      "evolved_from": [],
+      "attack_category": "data_privacy",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "cli.js",
+          "line": 116,
+          "quote": "stats = JSON.parse(fs.readFileSync(opts.stats))"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "cli.js",
+          "line": 116,
+          "quote": "stats = JSON.parse(fs.readFileSync(opts.stats))"
+        }
+      ],
+      "id": "a45babd2",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Denial of Service via Regex Complexity",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Regex patterns used for parsing queries are vulnerable to ReDoS (Regular Expression Denial of Service) due to poor grouping and repetition.",
+      "steps_to_exploit": [
+        "Craft a long, malicious string that matches parts of the regex but fails at the end.",
+        "Submit this string as a query to the CLI tool.",
+        "The process hangs or consumes excessive CPU, leading to Denial of Service."
+      ],
+      "impact": "Application downtime or resource exhaustion.",
+      "evolved_from": [],
+      "attack_category": "scalability",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "parse.js",
+          "line": 30,
+          "quote": "var match = query.match(type.regexp)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "parse.js",
+          "line": 30,
+          "quote": "var match = query.match(type.regexp)"
+        }
+      ],
+      "id": "a63c6b0d",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Weak Configuration Integrity via Sync File System Access",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The application relies on synchronous file system operations to locate and read configuration files, which can lead to race conditions or file-system-level DoS.",
+      "steps_to_exploit": [
+        "Create a symbolic link attack to point config files to infinite loops or blocked character devices.",
+        "Execute the application.",
+        "The application hangs on synchronous operations."
+      ],
+      "impact": "Application instability and Denial of Service.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "node.js",
+          "line": 408,
+          "quote": "return module.exports.parseConfig(fs.readFileSync(file))"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "node.js",
+          "line": 408,
+          "quote": "return module.exports.parseConfig(fs.readFileSync(file))"
+        }
+      ],
+      "id": "17ae50f5",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Excessive Error Reporting Information Disclosure",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The application throws errors that can include local file system paths and internal state information, aiding in reconnaissance.",
+      "steps_to_exploit": [
+        "Trigger an error by requesting a missing or invalid file/config.",
+        "Observe the stderr output containing internal absolute path details or environment specifics."
+      ],
+      "impact": "Exposure of server-side directory structures and internal file names.",
+      "evolved_from": [],
+      "attack_category": "error_handling",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [],
+      "code_refs": [],
+      "id": "d7c4008d",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Default Version Assumptions",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Hardcoding default browser versions can lead to insecure baseline configurations if the environment or user expects more recent, safer standards.",
+      "steps_to_exploit": [
+        "Rely on the default browser configuration provided by the tool.",
+        "The tool defaults to older versions which may contain known security vulnerabilities or lack modern security mitigations."
+      ],
+      "impact": "Deployment of applications that support browsers with known vulnerabilities.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 497,
+          "quote": "browserslist.defaults = ['> 0.5%', 'last 2 versions', 'Firefox ESR', 'not dead']"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 497,
+          "quote": "browserslist.defaults = ['> 0.5%', 'last 2 versions', 'Firefox ESR', 'not dead']"
+        }
+      ],
+      "id": "3c81cb6b",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Path Traversal in Path Normalization",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "While path checking exists, manual path joining and parent directory traversal logic is susceptible to complex path traversal attacks.",
+      "steps_to_exploit": [
+        "Provide a path including '../' sequences.",
+        "The application, depending on the OS and Node version, might normalize the path improperly.",
+        "Gain access to unauthorized directories."
+      ],
+      "impact": "Unauthorized access to files outside the intended project directory.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "node.js",
+          "line": 95,
+          "quote": "} while (loc !== (loc = path.dirname(loc)))"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "node.js",
+          "line": 95,
+          "quote": "} while (loc !== (loc = path.dirname(loc)))"
+        }
+      ],
+      "id": "419cb815",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Lack of Strict Input Length Limits",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The CLI argument parser does not enforce a maximum length on query strings, allowing memory-exhaustion attacks.",
+      "steps_to_exploit": [
+        "Submit a massive query string (several megabytes in size).",
+        "The application stores and processes this in memory.",
+        "The application crashes due to Out of Memory (OOM)."
+      ],
+      "impact": "Denial of Service.",
+      "evolved_from": [],
+      "attack_category": "scalability",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "cli.js",
+          "line": 96,
+          "quote": "browsers = browserslist(queries, opts)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "cli.js",
+          "line": 96,
+          "quote": "browsers = browserslist(queries, opts)"
+        }
+      ],
+      "id": "2020421c",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Use of Shell Commands for Update DB",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The --update-db command suggests or relies on external scripts that may execute arbitrary commands if the path is manipulated.",
+      "steps_to_exploit": [
+        "Manipulate the execution context/environment.",
+        "Trigger the update script which is handled by a side-effect-heavy function.",
+        "The underlying tool might execute arbitrary code if the environment is polluted."
+      ],
+      "impact": "Code execution on the developer machine.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "cli.js",
+          "line": 47,
+          "quote": "updateDb(function (str) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "cli.js",
+          "line": 47,
+          "quote": "updateDb(function (str) {"
+        }
+      ],
+      "id": "d52515ce",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Improper Validation of Config Files",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The config file parser doesn't validate types thoroughly, allowing for unexpected object types to be introduced into the system state.",
+      "steps_to_exploit": [
+        "Pass a specially crafted JSON object that misleads the parser.",
+        "Cause a type confusion in downstream processing logic."
+      ],
+      "impact": "Unexpected application state or crashes.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "node.js",
+          "line": 395,
+          "quote": "result[section].push(line)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "node.js",
+          "line": 395,
+          "quote": "result[section].push(line)"
+        }
+      ],
+      "id": "6fb9d870",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unsafe Trust in Environment Variables",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Sensitive application flags are directly taken from environment variables without being properly scrubbed, which can be hijacked in shared environments.",
+      "steps_to_exploit": [
+        "Set BROAD_ENVIRONMENT_VARIABLES for BROWSERSLIST_... in a shared container/shell.",
+        "The application consumes these as trusted configuration overrides.",
+        "The application behavior is altered by a malicious local user."
+      ],
+      "impact": "Integrity loss of application configuration.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "node.js",
+          "line": 501,
+          "quote": "env: process.env"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "node.js",
+          "line": 501,
+          "quote": "env: process.env"
+        }
+      ],
+      "id": "72e5751b",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "proposed": [
+    {
+      "title": "Remote Code Execution via Dynamic Require",
+      "code_refs": [
+        {
+          "file": "node.js",
+          "line": 257,
+          "quote": "var queries = require(require.resolve(name, { paths: ['.', ctx.path] }))"
+        },
+        {
+          "file": "node.js",
+          "line": 281,
+          "quote": "var stats = require("
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Prototype Pollution in Data Processing",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 272,
+          "quote": "android.releaseDate = copyObject(android.releaseDate)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure Use of Unsafe Commands in CI/CD",
+      "code_refs": [
+        {
+          "file": ".github/workflows/test.yml",
+          "line": 66,
+          "quote": "ACTIONS_ALLOW_UNSECURE_COMMANDS: true"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Arbitrary File Read via Config Loading",
+      "code_refs": [
+        {
+          "file": "node.js",
+          "line": 408,
+          "quote": "fs.readFileSync(file)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Command Injection Risk in CLI Input",
+      "code_refs": [
+        {
+          "file": "cli.js",
+          "line": 62,
+          "quote": "var arg = args[i].split('=')"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure Handling of Sensitive JSON Files",
+      "code_refs": [
+        {
+          "file": "cli.js",
+          "line": 116,
+          "quote": "stats = JSON.parse(fs.readFileSync(opts.stats))"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Denial of Service via Regex Complexity",
+      "code_refs": [
+        {
+          "file": "parse.js",
+          "line": 30,
+          "quote": "var match = query.match(type.regexp)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Weak Configuration Integrity via Sync File System Access",
+      "code_refs": [
+        {
+          "file": "node.js",
+          "line": 408,
+          "quote": "return module.exports.parseConfig(fs.readFileSync(file))"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Excessive Error Reporting Information Disclosure",
+      "code_refs": [],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure Default Version Assumptions",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 497,
+          "quote": "browserslist.defaults = ['> 0.5%', 'last 2 versions', 'Firefox ESR', 'not dead']"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Path Traversal in Path Normalization",
+      "code_refs": [
+        {
+          "file": "node.js",
+          "line": 95,
+          "quote": "} while (loc !== (loc = path.dirname(loc)))"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Lack of Strict Input Length Limits",
+      "code_refs": [
+        {
+          "file": "cli.js",
+          "line": 96,
+          "quote": "browsers = browserslist(queries, opts)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure Use of Shell Commands for Update DB",
+      "code_refs": [
+        {
+          "file": "cli.js",
+          "line": 47,
+          "quote": "updateDb(function (str) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Improper Validation of Config Files",
+      "code_refs": [
+        {
+          "file": "node.js",
+          "line": 395,
+          "quote": "result[section].push(line)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unsafe Trust in Environment Variables",
+      "code_refs": [
+        {
+          "file": "node.js",
+          "line": 501,
+          "quote": "env: process.env"
+        }
+      ],
+      "outcome": "unchecked"
+    }
+  ],
+  "rejected": [],
+  "verification": null,
+  "arm_meta": {
+    "baseline": {
+      "model": "gemini/gemini-3.1-flash-lite",
+      "context": "code",
+      "requested": 15,
+      "returned": 15,
+      "files_shown": 32,
+      "chars_shown": 98356,
+      "files_that_did_not_fit": []
+    }
+  },
+  "seconds": {
+    "arm": 9.5,
+    "check": 0.0,
+    "total": 9.5
+  },
+  "usage": {
+    "arm": {
+      "calls": 1,
+      "failed": 0,
+      "est_tokens": 27710,
+      "seconds_in_calls": 9.3,
+      "by_task": {
+        "baseline": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 99452,
+          "completion_chars": 11387,
+          "seconds": 9.326036399928853,
+          "est_tokens": 27710
+        }
+      }
+    },
+    "check": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    }
+  }
+}

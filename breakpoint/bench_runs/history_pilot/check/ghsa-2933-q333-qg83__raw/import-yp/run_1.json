@@ -1,0 +1,136 @@
+{
+  "schema": 1,
+  "set": "ghsa-2933-q333-qg83",
+  "variant": "raw",
+  "arm": "import-yp",
+  "run": 1,
+  "commit": "321916bb9afc0413277304cf209ae4fae111e5e3",
+  "started_at": "2026-10-24T11:14:32+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": true,
+  "status": "ok",
+  "candidates": 1,
+  "kept": [
+    {
+      "title": "Prototype Pollution via recursive object merge",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "While `defaults` attempts to block some keys, the `setPath` and `pushPath` utility functions perform property assignment without validating that the path segments do not contain '__proto__', 'constructor', or 'prototype'.",
+      "steps_to_exploit": [
+        "Attacker provides a malicious object containing `__proto__` properties in `addPath` or `loadPath` configurations.",
+        "The system merges these objects into internal state or processing structures.",
+        "Subsequent operations allow the attacker to overwrite Object prototype properties, influencing application logic."
+      ],
+      "impact": "Denial of service or privilege escalation by altering object behavior globally.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "CONFIRMED",
+      "evidence": [
+        {
+          "file": "lib/utils.js",
+          "line": 105,
+          "quote": "export function setPath (object, path, newValue) { const { obj, k } = getLastOfPath(object, path, Object) if (Array.isArray(obj) && isNaN(k)) throw new Error(`Cannot create property \"${k}\" here since object is an array`) obj[k] = newValue }"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/utils.js",
+          "line": 108,
+          "quote": "obj[k] = newValue"
+        }
+      ],
+      "id": "e074f54d",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "proposed": [
+    {
+      "title": "Prototype Pollution via recursive object merge",
+      "code_refs": [
+        {
+          "file": "lib/utils.js",
+          "line": 108,
+          "quote": "obj[k] = newValue"
+        }
+      ],
+      "outcome": "kept"
+    }
+  ],
+  "rejected": [],
+  "verification": {
+    "mode": "source-code",
+    "files_indexed": 87,
+    "checked": 1,
+    "confirmed": 1,
+    "refuted": 0,
+    "unverified": 0,
+    "errors": 0,
+    "defender_pass": true,
+    "appeal_pass": true
+  },
+  "arm_meta": {
+    "imported_from": "eval_runs_check/inputs/ghsa-2933-q333-qg83/yp.json",
+    "note": "produced elsewhere; not repeatable by this harness"
+  },
+  "seconds": {
+    "arm": 0.0,
+    "check": 26.3,
+    "total": 26.3
+  },
+  "usage": {
+    "arm": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    },
+    "check": {
+      "calls": 4,
+      "failed": 0,
+      "est_tokens": 49407,
+      "seconds_in_calls": 25.9,
+      "by_task": {
+        "verify_appeal": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 83432,
+          "completion_chars": 1258,
+          "seconds": 6.849558100104332,
+          "est_tokens": 21172
+        },
+        "verify_defend": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 61279,
+          "completion_chars": 535,
+          "seconds": 7.329662999953143,
+          "est_tokens": 15454
+        },
+        "verify_judge": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 45110,
+          "completion_chars": 1255,
+          "seconds": 6.5932870000833645,
+          "est_tokens": 11591
+        },
+        "verify_locate": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 4521,
+          "completion_chars": 238,
+          "seconds": 5.1132610000204295,
+          "est_tokens": 1190
+        }
+      }
+    }
+  }
+}

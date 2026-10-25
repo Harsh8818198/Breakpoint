@@ -1,0 +1,122 @@
+{
+ "ghsa-2933-q333-qg83": {
+  "Prototype Pollution via recursive object merge": {
+   "run": 1,
+   "reading": "Y"
+  }
+ },
+ "ghsa-5gmw-xhrv-c9v3": {
+  "Potential Prototype Pollution via Object.assign/spread": {
+   "run": 2,
+   "reading": "P"
+  }
+ },
+ "ghsa-83w8-p2f5-377r": {
+  "Lack of Strict Path Normalization": {
+   "run": 1,
+   "reading": "P"
+  },
+  "Improper Input Sanitization in `getPathnameForSend`": {
+   "run": 2,
+   "reading": "Y"
+  },
+  "Unsafe consumption of `req.raw.url`": {
+   "run": 3,
+   "reading": "P"
+  }
+ },
+ "ghsa-8r9p-f939-6h3c": {
+  "Regex Injection in Header Filter": {
+   "run": 1,
+   "reading": "P"
+  },
+  "Regex Injection via sensitiveHeaders": {
+   "run": 2,
+   "reading": "P"
+  }
+ },
+ "ghsa-9m6g-wc8r-q59c": {
+  "Use of Prototype Pollution susceptible object assignment": {
+   "run": 1,
+   "reading": "Y"
+  },
+  "Use of Prototype Pollution Gadget": {
+   "run": 2,
+   "reading": "Y"
+  },
+  "Prototype Pollution via recursive object assignment": {
+   "run": 3,
+   "reading": "Y"
+  }
+ },
+ "ghsa-9v7f-9g4p-ffgj": {
+  "Potential for Arbitrary File Access via JWKS URI": {
+   "run": 1,
+   "reading": "P"
+  },
+  "JWKS URI Scheme Confusion": {
+   "run": 3,
+   "reading": "P"
+  }
+ },
+ "ghsa-g3jj-5cmm-3hxx": {
+  "Potential Key Confusion in Verification": {
+   "run": 2,
+   "reading": "P"
+  }
+ },
+ "ghsa-mxm6-v9r6-r94c": {
+  "Improper Validation of Link Protocols": {
+   "run": 2,
+   "reading": "P"
+  }
+ },
+ "ghsa-pqg4-j6r4-53mv": {
+  "Insecure handling of line terminators in quotes": {
+   "run": 1,
+   "reading": "P"
+  },
+  "Improper Handling of Line Terminators": {
+   "run": 3,
+   "reading": "P"
+  }
+ },
+ "ghsa-r9w8-h9r3-54w4": {
+  "Missing validation on `fromViewInfo` input": {
+   "run": 1,
+   "reading": "P"
+  },
+  "Missing validation of `byteOffset` and `length` in View creation": {
+   "run": 3,
+   "reading": "P"
+  }
+ },
+ "ghsa-wc9g-mqfw-jrwm": {
+  "Prototype Pollution via append-field": {
+   "run": 2,
+   "reading": "P"
+  },
+  "Unbounded Array Index Expansion": {
+   "run": 1,
+   "reading": "P"
+  },
+  "Unbounded Array Indexing Vulnerability": {
+   "run": 3,
+   "reading": "P"
+  },
+  "Potential Prototype Pollution in Field Handling": {
+   "run": 3,
+   "reading": "P"
+  }
+ },
+ "ghsa-xcpc-8h2w-3j85": {
+  "Lack of Memory Limits on Decompression": {
+   "run": 3,
+   "reading": "Y"
+  },
+  "Implicit Trust in Zip Header Metadata": {
+   "run": 3,
+   "reading": "Y"
+  }
+ }
+}

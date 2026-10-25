@@ -1,0 +1,121 @@
+{
+  "schema": 1,
+  "set": "ghsa-r9w8-h9r3-54w4",
+  "variant": "raw",
+  "arm": "import-yp",
+  "run": 1,
+  "commit": "dae8153e9d7541b975cc4018138d6cebec6c1199",
+  "started_at": "2026-10-24T11:26:25+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": true,
+  "status": "ok",
+  "candidates": 2,
+  "kept": [],
+  "proposed": [
+    {
+      "title": "Missing validation on `fromViewInfo` input",
+      "code_refs": [
+        {
+          "file": "src/parse.js",
+          "line": 196,
+          "quote": "hydrated[index] = ops.fromViewInfo(type, buffer, value[2], value[3]);"
+        }
+      ],
+      "outcome": "REFUTED:defence_found"
+    },
+    {
+      "title": "Missing validation of `byteOffset` and `length` in View creation",
+      "code_refs": [
+        {
+          "file": "src/operations.js",
+          "line": 146,
+          "quote": "new Constructor(buffer, byteOffset, length)"
+        }
+      ],
+      "outcome": "REFUTED:defence_found"
+    }
+  ],
+  "rejected": [
+    {
+      "title": "Missing validation on `fromViewInfo` input",
+      "status": "REFUTED",
+      "code": "defence_found",
+      "why": "a protection enforced in the code defeats the claim"
+    },
+    {
+      "title": "Missing validation of `byteOffset` and `length` in View creation",
+      "status": "REFUTED",
+      "code": "defence_found",
+      "why": "a protection enforced in the code defeats the claim"
+    }
+  ],
+  "verification": {
+    "mode": "source-code",
+    "files_indexed": 34,
+    "checked": 2,
+    "confirmed": 0,
+    "refuted": 2,
+    "unverified": 0,
+    "errors": 0,
+    "defender_pass": true,
+    "appeal_pass": true
+  },
+  "arm_meta": {
+    "imported_from": "eval_runs_check/inputs/ghsa-r9w8-h9r3-54w4/yp.json",
+    "note": "produced elsewhere; not repeatable by this harness"
+  },
+  "seconds": {
+    "arm": 0.0,
+    "check": 83.0,
+    "total": 83.0
+  },
+  "usage": {
+    "arm": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    },
+    "check": {
+      "calls": 7,
+      "failed": 0,
+      "est_tokens": 85682,
+      "seconds_in_calls": 82.9,
+      "by_task": {
+        "verify_appeal": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 81110,
+          "completion_chars": 1029,
+          "seconds": 36.702395000029355,
+          "est_tokens": 20535
+        },
+        "verify_defend": {
+          "calls": 2,
+          "failed": 0,
+          "prompt_chars": 162905,
+          "completion_chars": 1874,
+          "seconds": 31.677001199917868,
+          "est_tokens": 41195
+        },
+        "verify_judge": {
+          "calls": 2,
+          "failed": 0,
+          "prompt_chars": 88647,
+          "completion_chars": 2370,
+          "seconds": 6.665136499912478,
+          "est_tokens": 22754
+        },
+        "verify_locate": {
+          "calls": 2,
+          "failed": 0,
+          "prompt_chars": 4314,
+          "completion_chars": 477,
+          "seconds": 7.882050100015476,
+          "est_tokens": 1198
+        }
+      }
+    }
+  }
+}

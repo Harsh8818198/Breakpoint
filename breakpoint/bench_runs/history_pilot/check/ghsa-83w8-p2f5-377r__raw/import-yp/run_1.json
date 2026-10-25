@@ -1,0 +1,138 @@
+{
+  "schema": 1,
+  "set": "ghsa-83w8-p2f5-377r",
+  "variant": "raw",
+  "arm": "import-yp",
+  "run": 1,
+  "commit": "c68224e3067e18ee4c676cc9db66aae6b30ffb02",
+  "started_at": "2026-10-24T11:15:48+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": true,
+  "status": "ok",
+  "candidates": 3,
+  "kept": [],
+  "proposed": [
+    {
+      "title": "Lack of Strict Path Normalization",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 743,
+          "quote": "return decodeURI(pathname)"
+        }
+      ],
+      "outcome": "REFUTED:defence_found"
+    },
+    {
+      "title": "Improper Input Sanitization in `getPathnameForSend`",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 743,
+          "quote": "return decodeURI(pathname)"
+        }
+      ],
+      "outcome": "UNVERIFIED:quote_is_comment"
+    },
+    {
+      "title": "Unsafe consumption of `req.raw.url`",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 142,
+          "quote": "const pathname = getPathnameForSend(req.raw.url, matchRoutePrefix)"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    }
+  ],
+  "rejected": [
+    {
+      "title": "Lack of Strict Path Normalization",
+      "status": "REFUTED",
+      "code": "defence_found",
+      "why": "a protection enforced in the code defeats the claim"
+    },
+    {
+      "title": "Improper Input Sanitization in `getPathnameForSend`",
+      "status": "UNVERIFIED",
+      "code": "quote_is_comment",
+      "why": "the reviewer's quotes are comments, not live code"
+    },
+    {
+      "title": "Unsafe consumption of `req.raw.url`",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    }
+  ],
+  "verification": {
+    "mode": "source-code",
+    "files_indexed": 66,
+    "checked": 3,
+    "confirmed": 0,
+    "refuted": 2,
+    "unverified": 1,
+    "errors": 0,
+    "defender_pass": true,
+    "appeal_pass": true
+  },
+  "arm_meta": {
+    "imported_from": "eval_runs_check/inputs/ghsa-83w8-p2f5-377r/yp.json",
+    "note": "produced elsewhere; not repeatable by this harness"
+  },
+  "seconds": {
+    "arm": 0.0,
+    "check": 98.7,
+    "total": 98.7
+  },
+  "usage": {
+    "arm": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    },
+    "check": {
+      "calls": 9,
+      "failed": 0,
+      "est_tokens": 99038,
+      "seconds_in_calls": 98.5,
+      "by_task": {
+        "verify_appeal": {
+          "calls": 2,
+          "failed": 0,
+          "prompt_chars": 165814,
+          "completion_chars": 1690,
+          "seconds": 17.75843030004762,
+          "est_tokens": 41876
+        },
+        "verify_defend": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 83130,
+          "completion_chars": 667,
+          "seconds": 20.40183149999939,
+          "est_tokens": 20949
+        },
+        "verify_judge": {
+          "calls": 3,
+          "failed": 0,
+          "prompt_chars": 130081,
+          "completion_chars": 3219,
+          "seconds": 51.353168400004506,
+          "est_tokens": 33325
+        },
+        "verify_locate": {
+          "calls": 3,
+          "failed": 0,
+          "prompt_chars": 10859,
+          "completion_chars": 693,
+          "seconds": 8.999788100016303,
+          "est_tokens": 2888
+        }
+      }
+    }
+  }
+}

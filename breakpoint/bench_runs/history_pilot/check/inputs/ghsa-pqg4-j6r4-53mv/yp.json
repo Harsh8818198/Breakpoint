@@ -1,0 +1,81 @@
+{
+ "findings": [
+  {
+   "title": "Insecure handling of line terminators in quotes",
+   "generation": 1,
+   "discovered_by": "single-prompt baseline",
+   "description": "The quote function throws on line terminators for glob patterns but uses inconsistent regex-based sanitization for other inputs.",
+   "steps_to_exploit": [
+    "Pass a token containing line terminators outside the glob context",
+    "Observe the output string breaking the shell command context",
+    "Attempt to execute injected commands across line breaks"
+   ],
+   "impact": "Command injection via shell escape.",
+   "evolved_from": [],
+   "attack_category": "code_quality",
+   "confidence": 1.0,
+   "exploitability": 0.0,
+   "impact_score": 0.0,
+   "spread": 0.0,
+   "fix_difficulty": 1.0,
+   "verification": "",
+   "evidence": [
+    {
+     "file": "quote.js",
+     "line": 24,
+     "quote": "var LINE_TERMINATORS = /[\\n\\r\\u2028\\u2029]/;"
+    }
+   ],
+   "code_refs": [
+    {
+     "file": "quote.js",
+     "line": 24,
+     "quote": "var LINE_TERMINATORS = /[\\n\\r\\u2028\\u2029]/;"
+    }
+   ],
+   "id": "80b4dd4f",
+   "bss": 0.0,
+   "severity_band": "LOW",
+   "fix_priority": "MONITOR"
+  },
+  {
+   "title": "Improper Handling of Line Terminators",
+   "generation": 1,
+   "discovered_by": "single-prompt baseline",
+   "description": "While there are some checks, the logic surrounding line terminator validation is inconsistent across different parsing contexts, potentially allowing CRLF injection.",
+   "steps_to_exploit": [
+    "Attacker crafts a glob pattern containing non-standard line terminators not fully covered by the regex.",
+    "The input passes the validation step.",
+    "The output is passed to a shell that treats these characters as command separators.",
+    "The attacker executes additional unauthorized shell commands."
+   ],
+   "impact": "Command injection via unexpected line termination characters.",
+   "evolved_from": [],
+   "attack_category": "injection",
+   "confidence": 1.0,
+   "exploitability": 0.0,
+   "impact_score": 0.0,
+   "spread": 0.0,
+   "fix_difficulty": 1.0,
+   "verification": "",
+   "evidence": [
+    {
+     "file": "quote.js",
+     "line": 24,
+     "quote": "var LINE_TERMINATORS = /[\\n\\r\\u2028\\u2029]/;"
+    }
+   ],
+   "code_refs": [
+    {
+     "file": "quote.js",
+     "line": 24,
+     "quote": "var LINE_TERMINATORS = /[\\n\\r\\u2028\\u2029]/;"
+    }
+   ],
+   "id": "68add283",
+   "bss": 0.0,
+   "severity_band": "LOW",
+   "fix_priority": "MONITOR"
+  }
+ ]
+}

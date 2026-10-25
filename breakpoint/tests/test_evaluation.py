@@ -236,6 +236,19 @@ class Running(unittest.TestCase):
         files = run_eval(es, "raw", ["route-review"], 1, out, cache, llm=Fake(), log=lambda *_: None)
         self.assertEqual(json.loads(files[0].read_text(encoding="utf-8"))["status"], "unsupported")
 
+    def test_a_reply_that_cannot_be_read_is_a_failed_run_not_a_miss_and_resume_retries_it(self):
+        replies = iter(["I am unable to help with that.", plain_reply()])
+        llm = Fake(baseline=lambda user: next(replies))
+        es = load_set(str(write_set()))
+        out, cache = Path(tempfile.mkdtemp()), Path(tempfile.mkdtemp())
+        files = run_eval(es, "raw", ["plain"], 1, out, cache, llm=llm, verifier_factory=ConfirmAll, log=lambda *_: None)
+        self.assertEqual(json.loads(files[0].read_text(encoding="utf-8"))["status"], "error")
+        s = score.summarize(es, "raw", score.load_runs(out, "mini", "raw"))
+        self.assertEqual(s["arms"]["plain"]["runs"], 0)                        # not counted as a run that found nothing
+        self.assertTrue(any("could not be read" in f for f in s["flags"]))
+        run_eval(es, "raw", ["plain"], 1, out, cache, llm=llm, verifier_factory=ConfirmAll, log=lambda *_: None)
+        self.assertEqual(json.loads(files[0].read_text(encoding="utf-8"))["status"], "ok")
+
     def test_without_the_code_check_the_cited_lines_are_the_evidence_and_the_run_says_so(self):
         es, out, _, files = self.go(["plain"], runs=1, verify=False)
         rec = json.loads(files[0].read_text(encoding="utf-8"))

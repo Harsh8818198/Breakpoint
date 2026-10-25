@@ -1,0 +1,783 @@
+{
+  "schema": 1,
+  "set": "ghsa-2933-q333-qg83",
+  "variant": "raw",
+  "arm": "plain",
+  "run": 3,
+  "commit": "321916bb9afc0413277304cf209ae4fae111e5e3",
+  "started_at": "2026-10-24T10:45:10+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": false,
+  "status": "ok",
+  "candidates": 15,
+  "kept": [
+    {
+      "title": "Arbitrary Code Execution via eval in File Parsing",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `parseData` function in `lib/readFile.js` uses `eval` to process file contents if the extension is .js or .ts. An attacker who can influence the content of the translation files can execute arbitrary JavaScript code on the server.",
+      "steps_to_exploit": [
+        "Attacker identifies a writable locale directory or gains access to the filesystem.",
+        "Attacker modifies or uploads a malicious .js file inside the locale folder.",
+        "Attacker triggers an application request that causes the i18next-fs-backend to read the malicious file.",
+        "The application executes `evalAlias(data)` on the malicious payload."
+      ],
+      "impact": "Full control over the Node.js or Deno process, leading to system compromise.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/readFile.js",
+          "line": 86,
+          "quote": "result = evalAlias(data)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/readFile.js",
+          "line": 86,
+          "quote": "result = evalAlias(data)"
+        }
+      ],
+      "id": "b3724ac5",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Path Traversal via Unsafe `ns` Segment Handling",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "While `lng` is validated against a strict set of rules, `ns` (namespace) is validated using `isSafeNsSegment` (a loose check), which allows directory traversals if the filesystem path is not strictly anchored to the expected base directory.",
+      "steps_to_exploit": [
+        "Attacker crafts a namespace parameter containing directory traversal sequences (e.g., 'sub/../../etc/passwd').",
+        "The `interpolatePath` function allows the segment as it contains no restricted characters except `..` in a specific context.",
+        "The file read/write operations resolve the resulting path outside the target locale directory."
+      ],
+      "impact": "Unauthorized reading or overwriting of sensitive files on the server.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/utils.js",
+          "line": 53,
+          "quote": "export function isSafeNsSegment (v) {"
+        },
+        {
+          "file": "lib/utils.js",
+          "line": 54,
+          "quote": "return isSafeSegmentBase(v)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/utils.js",
+          "line": 53,
+          "quote": "export function isSafeNsSegment (v) {"
+        },
+        {
+          "file": "lib/utils.js",
+          "line": 54,
+          "quote": "return isSafeSegmentBase(v)"
+        }
+      ],
+      "id": "944f2759",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Prototype Pollution in `defaults` Helper",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `defaults` function in `lib/utils.js` attempts to block `__proto__`, `constructor`, and `prototype` in `UNSAFE_KEYS`, but it does not account for nested property access or other bypasses common in older JS environments, potentially leading to prototype pollution.",
+      "steps_to_exploit": [
+        "Attacker provides a crafted object containing malicious deep properties that bypass the shallow `indexOf` check.",
+        "The `defaults` function merges these into the options object.",
+        "Application logic uses the tainted options object, causing unintended behavior or privilege escalation."
+      ],
+      "impact": "Global application state manipulation, potential denial of service or remote code execution.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/utils.js",
+          "line": 11,
+          "quote": "if (UNSAFE_KEYS.indexOf(prop) > -1) continue"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/utils.js",
+          "line": 11,
+          "quote": "if (UNSAFE_KEYS.indexOf(prop) > -1) continue"
+        }
+      ],
+      "id": "ee3c9a54",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Script in `package.json` build command",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The build script in `example/fastify/package.json` executes `npm pack` and performs uncontrolled shell operations on untrusted archive contents, potentially leading to command injection during the build process.",
+      "steps_to_exploit": [
+        "Attacker contributes a malicious package or modifies the package structure.",
+        "The CI/CD pipeline or a developer runs `npm run build`.",
+        "The script executes commands like `find ... -exec touch ...` and `tar -xvzf ...` in an unsafe manner."
+      ],
+      "impact": "Code execution on the build environment, leading to CI/CD pipeline compromise.",
+      "evolved_from": [],
+      "attack_category": "supply_chain",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "example/fastify/package.json",
+          "line": 6,
+          "quote": "\"build\": \"rm -rf build && packageName=$(npm pack) && tar -xvzf $packageName && mv package build && rm $packageName && cd build && npm i --production && find ./node_modules/* -mtime +10950 -exec touch {} \\\\; && rm -f package-lock.json && cd "
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "example/fastify/package.json",
+          "line": 6,
+          "quote": "\"build\": \"rm -rf build && packageName=$(npm pack) && tar -xvzf $packageName && mv package build && rm $packageName && cd build && npm i --production && find ./node_modules/* -mtime +10950 -exec touch {} \\\\; && rm -f package-lock.json && cd "
+        }
+      ],
+      "id": "667678bd",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Denial of Service via `expirationTime` File Deletion",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The backend automatically deletes files if they are expired. An attacker can force the backend to repeatedly attempt to remove files, causing disk I/O exhaustion or deleting legitimate files if the path can be manipulated.",
+      "steps_to_exploit": [
+        "Attacker forces a high volume of requests for expired resources.",
+        "The application calls `removeFile` on the resulting paths.",
+        "Repeated file system writes and unlinks cause disk I/O load."
+      ],
+      "impact": "Denial of Service for legitimate users and potential file system instability.",
+      "evolved_from": [],
+      "attack_category": "rate_limiting",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/index.js",
+          "line": 47,
+          "quote": "this.removeFile(language, namespace)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/index.js",
+          "line": 47,
+          "quote": "this.removeFile(language, namespace)"
+        }
+      ],
+      "id": "582aa06a",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Path Traversal via `interpolatePath` with `+` separator",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `interpolatePath` function supports `+` for joining segments, but if the underlying segment validator is bypassed (e.g., via loose `isSafeNsSegment`), the joined path can lead to directory traversal.",
+      "steps_to_exploit": [
+        "Attacker uses a combined segment string with `+`.",
+        "Validator checks segments individually.",
+        "If one segment is unsafe but passes check, the result resolves to an arbitrary path."
+      ],
+      "impact": "Arbitrary file read/write.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/utils.js",
+          "line": 146,
+          "quote": "const segments = String(value).split('+')"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/utils.js",
+          "line": 146,
+          "quote": "const segments = String(value).split('+')"
+        }
+      ],
+      "id": "9a923d93",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure `eval` Alias Pattern",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The code creates an alias to `eval` using `const evalAlias = eval`. This is a classic pattern used to bypass some static analysis tools that look for direct `eval()` calls.",
+      "steps_to_exploit": [
+        "Attacker exploits any existing data input that reaches the `parseData` switch case for .js/.ts files.",
+        "The `evalAlias(data)` call bypasses simple string-match security scanners."
+      ],
+      "impact": "Evasion of security tooling, facilitating successful code injection.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/readFile.js",
+          "line": 10,
+          "quote": "const evalAlias = eval"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/readFile.js",
+          "line": 10,
+          "quote": "const evalAlias = eval"
+        }
+      ],
+      "id": "53b466d3",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Race Condition in Queued File Writes",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `writeFile` method uses a simple boolean lock and a debounced function, but doesn't handle concurrent write requests to the same path effectively. It could lead to partial writes or corrupted JSON content if writes overlap.",
+      "steps_to_exploit": [
+        "Attacker triggers multiple concurrent missing-key events.",
+        "Multiple `writeFile` calls are queued.",
+        "The file is read and written in a way that risks interleaving, resulting in corrupted JSON translations."
+      ],
+      "impact": "Denial of Service due to corrupted localization files.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/index.js",
+          "line": 144,
+          "quote": "setPath(this.queuedWrites, ['locks', lng, namespace], true)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/index.js",
+          "line": 144,
+          "quote": "setPath(this.queuedWrites, ['locks', lng, namespace], true)"
+        }
+      ],
+      "id": "a33b4736",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Lack of Content Security on `writeFile`",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `writeFile` function does not validate the input payload for structural integrity beyond basic stringification. An attacker could potentially inject malicious structures into the JSON files.",
+      "steps_to_exploit": [
+        "Attacker influences the `fallbackValue` used in `create()` or `save()`.",
+        "The application persists this value into the JSON file.",
+        "When the app re-reads the JSON file, the injected structure is parsed."
+      ],
+      "impact": "Stored cross-site scripting or application logic errors if the parsed JSON is used elsewhere.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [],
+      "code_refs": [],
+      "id": "7dcafeef",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of `fs.readFileSync` in production code",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The code uses synchronous file operations (`fs.readFileSync`) when `initAsync` is false. This blocks the entire Node.js event loop while waiting for disk I/O.",
+      "steps_to_exploit": [
+        "Attacker requests a resource that is not cached and forces a synchronous read.",
+        "The event loop is blocked, preventing the server from handling other requests."
+      ],
+      "impact": "Denial of Service.",
+      "evolved_from": [],
+      "attack_category": "scalability",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/index.js",
+          "line": 44,
+          "quote": "const { data, stat } = readFileSync(filename, this.options)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/index.js",
+          "line": 44,
+          "quote": "const { data, stat } = readFileSync(filename, this.options)"
+        }
+      ],
+      "id": "25d6ec67",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Exposure of sensitive info via verbose error messages",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Parsing errors explicitly include the filename in the error message, which may reveal directory structures to end users if passed back in API responses.",
+      "steps_to_exploit": [
+        "Attacker provides malformed translation file.",
+        "Server responds with error message containing absolute server path."
+      ],
+      "impact": "Information disclosure of internal server structure.",
+      "evolved_from": [],
+      "attack_category": "error_handling",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/readFile.js",
+          "line": 141,
+          "quote": "err.message = 'error parsing ' + filename + ': ' + err.message"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/readFile.js",
+          "line": 141,
+          "quote": "err.message = 'error parsing ' + filename + ': ' + err.message"
+        }
+      ],
+      "id": "5a6e9e5a",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Weak validation in `isSafeSegmentBase`",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The length check (128 chars) and control character check are good but potentially insufficient. Other characters like shell metacharacters or specific OS-dependent path delimiters may still bypass validation depending on the host system.",
+      "steps_to_exploit": [
+        "Attacker provides a segment containing unusual but technically allowed characters that may trigger non-standard behavior in the underlying OS path resolution."
+      ],
+      "impact": "Path traversal or unexpected filesystem behavior.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/utils.js",
+          "line": 27,
+          "quote": "if (v.length === 0 || v.length > 128) return false"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/utils.js",
+          "line": 27,
+          "quote": "if (v.length === 0 || v.length > 128) return false"
+        }
+      ],
+      "id": "01cb5935",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unsafe `module.exports` usage in CJS build",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The build process uses a fragile `fixcjs` regex replacement to patch internal require statements. This is highly error-prone and can lead to broken builds or security regressions.",
+      "steps_to_exploit": [
+        "A dependency update changes the generated structure, causing the regex to replace the wrong part or nothing at all.",
+        "The application crashes or falls back to an insecure, non-bundled dependency."
+      ],
+      "impact": "Build instability and potential vulnerability to malicious dependency replacement.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "package.json",
+          "line": 71,
+          "quote": "\"fixcjs\": \"fs.writeFileSync('cjs/writeFile.js', ...)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "package.json",
+          "line": 71,
+          "quote": "\"fixcjs\": \"fs.writeFileSync('cjs/writeFile.js', ...)"
+        }
+      ],
+      "id": "a17f1a97",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Reliance on `evalAlias` for `require`-like behavior",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The code tries to mimic CommonJS behavior in non-Node environments using `evalAlias`. Relying on eval for module loading logic is fundamentally insecure.",
+      "steps_to_exploit": [
+        "An attacker compromises the translation data in a .js file, which is then loaded via the `evalAlias` evaluation loop."
+      ],
+      "impact": "Arbitrary code execution.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/readFile.js",
+          "line": 86,
+          "quote": "result = evalAlias(data)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/readFile.js",
+          "line": 86,
+          "quote": "result = evalAlias(data)"
+        }
+      ],
+      "id": "cb0b816b",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure default directory permissions",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The library creates missing directories using `recursive: true` but does not enforce specific permissions, potentially inheriting default system permissions which may be too permissive.",
+      "steps_to_exploit": [
+        "Attacker creates directories using the tool, then exploits the default permissions (e.g., world-writable) to replace translation files later."
+      ],
+      "impact": "Privilege escalation and unauthorized data modification.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/writeFile.js",
+          "line": 35,
+          "quote": "fs.mkdirSync(dirname(filename), { recursive: true })"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/writeFile.js",
+          "line": 35,
+          "quote": "fs.mkdirSync(dirname(filename), { recursive: true })"
+        }
+      ],
+      "id": "273c88a8",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "proposed": [
+    {
+      "title": "Arbitrary Code Execution via eval in File Parsing",
+      "code_refs": [
+        {
+          "file": "lib/readFile.js",
+          "line": 86,
+          "quote": "result = evalAlias(data)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Path Traversal via Unsafe `ns` Segment Handling",
+      "code_refs": [
+        {
+          "file": "lib/utils.js",
+          "line": 53,
+          "quote": "export function isSafeNsSegment (v) {"
+        },
+        {
+          "file": "lib/utils.js",
+          "line": 54,
+          "quote": "return isSafeSegmentBase(v)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Prototype Pollution in `defaults` Helper",
+      "code_refs": [
+        {
+          "file": "lib/utils.js",
+          "line": 11,
+          "quote": "if (UNSAFE_KEYS.indexOf(prop) > -1) continue"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure Script in `package.json` build command",
+      "code_refs": [
+        {
+          "file": "example/fastify/package.json",
+          "line": 6,
+          "quote": "\"build\": \"rm -rf build && packageName=$(npm pack) && tar -xvzf $packageName && mv package build && rm $packageName && cd build && npm i --production && find ./node_modules/* -mtime +10950 -exec touch {} \\\\; && rm -f package-lock.json && cd "
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Denial of Service via `expirationTime` File Deletion",
+      "code_refs": [
+        {
+          "file": "lib/index.js",
+          "line": 47,
+          "quote": "this.removeFile(language, namespace)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Path Traversal via `interpolatePath` with `+` separator",
+      "code_refs": [
+        {
+          "file": "lib/utils.js",
+          "line": 146,
+          "quote": "const segments = String(value).split('+')"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure `eval` Alias Pattern",
+      "code_refs": [
+        {
+          "file": "lib/readFile.js",
+          "line": 10,
+          "quote": "const evalAlias = eval"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Race Condition in Queued File Writes",
+      "code_refs": [
+        {
+          "file": "lib/index.js",
+          "line": 144,
+          "quote": "setPath(this.queuedWrites, ['locks', lng, namespace], true)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Lack of Content Security on `writeFile`",
+      "code_refs": [],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of `fs.readFileSync` in production code",
+      "code_refs": [
+        {
+          "file": "lib/index.js",
+          "line": 44,
+          "quote": "const { data, stat } = readFileSync(filename, this.options)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Exposure of sensitive info via verbose error messages",
+      "code_refs": [
+        {
+          "file": "lib/readFile.js",
+          "line": 141,
+          "quote": "err.message = 'error parsing ' + filename + ': ' + err.message"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Weak validation in `isSafeSegmentBase`",
+      "code_refs": [
+        {
+          "file": "lib/utils.js",
+          "line": 27,
+          "quote": "if (v.length === 0 || v.length > 128) return false"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unsafe `module.exports` usage in CJS build",
+      "code_refs": [
+        {
+          "file": "package.json",
+          "line": 71,
+          "quote": "\"fixcjs\": \"fs.writeFileSync('cjs/writeFile.js', ...)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Reliance on `evalAlias` for `require`-like behavior",
+      "code_refs": [
+        {
+          "file": "lib/readFile.js",
+          "line": 86,
+          "quote": "result = evalAlias(data)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure default directory permissions",
+      "code_refs": [
+        {
+          "file": "lib/writeFile.js",
+          "line": 35,
+          "quote": "fs.mkdirSync(dirname(filename), { recursive: true })"
+        }
+      ],
+      "outcome": "unchecked"
+    }
+  ],
+  "rejected": [],
+  "verification": null,
+  "arm_meta": {
+    "baseline": {
+      "model": "gemini/gemini-3.1-flash-lite",
+      "context": "code",
+      "requested": 15,
+      "returned": 15,
+      "files_shown": 28,
+      "chars_shown": 281734,
+      "files_that_did_not_fit": []
+    }
+  },
+  "seconds": {
+    "arm": 63.7,
+    "check": 0.0,
+    "total": 63.7
+  },
+  "usage": {
+    "arm": {
+      "calls": 1,
+      "failed": 0,
+      "est_tokens": 73747,
+      "seconds_in_calls": 63.6,
+      "by_task": {
+        "baseline": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 282822,
+          "completion_chars": 12167,
+          "seconds": 63.564136300003156,
+          "est_tokens": 73747
+        }
+      }
+    },
+    "check": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    }
+  }
+}

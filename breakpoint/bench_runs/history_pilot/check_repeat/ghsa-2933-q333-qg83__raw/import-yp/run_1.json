@@ -1,0 +1,104 @@
+{
+  "schema": 1,
+  "set": "ghsa-2933-q333-qg83",
+  "variant": "raw",
+  "arm": "import-yp",
+  "run": 1,
+  "commit": "321916bb9afc0413277304cf209ae4fae111e5e3",
+  "started_at": "2026-10-25T05:49:14+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": true,
+  "status": "ok",
+  "candidates": 1,
+  "kept": [],
+  "proposed": [
+    {
+      "title": "Prototype Pollution via recursive object merge",
+      "code_refs": [
+        {
+          "file": "lib/utils.js",
+          "line": 108,
+          "quote": "obj[k] = newValue"
+        }
+      ],
+      "outcome": "REFUTED:defence_found"
+    }
+  ],
+  "rejected": [
+    {
+      "title": "Prototype Pollution via recursive object merge",
+      "status": "REFUTED",
+      "code": "defence_found",
+      "why": "a protection enforced in the code defeats the claim"
+    }
+  ],
+  "verification": {
+    "mode": "source-code",
+    "files_indexed": 87,
+    "checked": 1,
+    "confirmed": 0,
+    "refuted": 1,
+    "unverified": 0,
+    "errors": 0,
+    "defender_pass": true,
+    "appeal_pass": true
+  },
+  "arm_meta": {
+    "imported_from": "eval_runs_check/inputs/ghsa-2933-q333-qg83/yp.json",
+    "note": "produced elsewhere; not repeatable by this harness"
+  },
+  "seconds": {
+    "arm": 0.0,
+    "check": 11.0,
+    "total": 11.0
+  },
+  "usage": {
+    "arm": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    },
+    "check": {
+      "calls": 4,
+      "failed": 0,
+      "est_tokens": 49042,
+      "seconds_in_calls": 10.9,
+      "by_task": {
+        "verify_appeal": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 75824,
+          "completion_chars": 1600,
+          "seconds": 4.712333300034516,
+          "est_tokens": 19356
+        },
+        "verify_defend": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 66544,
+          "completion_chars": 701,
+          "seconds": 2.2385215000249445,
+          "est_tokens": 16811
+        },
+        "verify_judge": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 45535,
+          "completion_chars": 1207,
+          "seconds": 2.2790202000178397,
+          "est_tokens": 11686
+        },
+        "verify_locate": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 4521,
+          "completion_chars": 235,
+          "seconds": 1.6305009999778122,
+          "est_tokens": 1189
+        }
+      }
+    }
+  }
+}

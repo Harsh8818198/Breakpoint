@@ -1,0 +1,80 @@
+{
+ "findings": [
+  {
+   "title": "Potential for Arbitrary File Access via JWKS URI",
+   "generation": 1,
+   "discovered_by": "single-prompt baseline",
+   "description": "While the JWK client checks for 'http' and 'https' schemes, `urllib.request` might still be influenced by internal redirections or header manipulations depending on the environment and `SSLContext` configuration.",
+   "steps_to_exploit": [
+    "Supply a URL that triggers an open redirect on an attacker-controlled server.",
+    "The `PyJWKClient` follows the redirect to an unintended destination.",
+    "If the internal environment permits, the client may be forced to reach internal-only resources."
+   ],
+   "impact": "Potential for SSRF (Server-Side Request Forgery).",
+   "evolved_from": [],
+   "attack_category": "injection",
+   "confidence": 1.0,
+   "exploitability": 0.0,
+   "impact_score": 0.0,
+   "spread": 0.0,
+   "fix_difficulty": 1.0,
+   "verification": "",
+   "evidence": [
+    {
+     "file": "jwt/jwks_client.py",
+     "line": 78,
+     "quote": "if scheme not in (\"http\", \"https\"):"
+    }
+   ],
+   "code_refs": [
+    {
+     "file": "jwt/jwks_client.py",
+     "line": 78,
+     "quote": "if scheme not in (\"http\", \"https\"):"
+    }
+   ],
+   "id": "16736cf4",
+   "bss": 0.0,
+   "severity_band": "LOW",
+   "fix_priority": "MONITOR"
+  },
+  {
+   "title": "JWKS URI Scheme Confusion",
+   "generation": 1,
+   "discovered_by": "single-prompt baseline",
+   "description": "While `PyJWKClient` filters schemes, it relies on standard `urllib` which may process unintended schemes if the validation is bypassed or if internal redirects within the library's dependencies occur.",
+   "steps_to_exploit": [
+    "Supply a file-based or secondary URI to `PyJWKClient` if the URL parsing can be circumvented via variations.",
+    "Trigger the library to perform a 'fetch' on a local system resource.",
+    "Expose sensitive local files via the JWK endpoint response."
+   ],
+   "impact": "Local File Disclosure or SSRF via configuration.",
+   "evolved_from": [],
+   "attack_category": "architecture",
+   "confidence": 1.0,
+   "exploitability": 0.0,
+   "impact_score": 0.0,
+   "spread": 0.0,
+   "fix_difficulty": 1.0,
+   "verification": "",
+   "evidence": [
+    {
+     "file": "jwt/jwks_client.py",
+     "line": 78,
+     "quote": "if scheme not in (\"http\", \"https\"):"
+    }
+   ],
+   "code_refs": [
+    {
+     "file": "jwt/jwks_client.py",
+     "line": 78,
+     "quote": "if scheme not in (\"http\", \"https\"):"
+    }
+   ],
+   "id": "682da9db",
+   "bss": 0.0,
+   "severity_band": "LOW",
+   "fix_priority": "MONITOR"
+  }
+ ]
+}

@@ -1,0 +1,113 @@
+{
+  "schema": 1,
+  "set": "ghsa-8r9p-f939-6h3c",
+  "variant": "raw",
+  "arm": "import-yp",
+  "run": 1,
+  "commit": "0c23a223067201c368035e82954c11eb2578a33b",
+  "started_at": "2026-10-24T11:17:28+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": true,
+  "status": "ok",
+  "candidates": 2,
+  "kept": [],
+  "proposed": [
+    {
+      "title": "Regex Injection in Header Filter",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 118,
+          "quote": "this._headerFilter = new RegExp(\"^(?:\" +"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    },
+    {
+      "title": "Regex Injection via sensitiveHeaders",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 118,
+          "quote": "this._headerFilter = new RegExp(\"^(?:\" +"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    }
+  ],
+  "rejected": [
+    {
+      "title": "Regex Injection in Header Filter",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    },
+    {
+      "title": "Regex Injection via sensitiveHeaders",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    }
+  ],
+  "verification": {
+    "mode": "source-code",
+    "files_indexed": 21,
+    "checked": 2,
+    "confirmed": 0,
+    "refuted": 2,
+    "unverified": 0,
+    "errors": 0,
+    "defender_pass": true,
+    "appeal_pass": true
+  },
+  "arm_meta": {
+    "imported_from": "eval_runs_check/inputs/ghsa-8r9p-f939-6h3c/yp.json",
+    "note": "produced elsewhere; not repeatable by this harness"
+  },
+  "seconds": {
+    "arm": 0.0,
+    "check": 46.7,
+    "total": 46.7
+  },
+  "usage": {
+    "arm": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    },
+    "check": {
+      "calls": 6,
+      "failed": 0,
+      "est_tokens": 56320,
+      "seconds_in_calls": 46.6,
+      "by_task": {
+        "verify_appeal": {
+          "calls": 2,
+          "failed": 0,
+          "prompt_chars": 132706,
+          "completion_chars": 1011,
+          "seconds": 7.711477200151421,
+          "est_tokens": 33429
+        },
+        "verify_judge": {
+          "calls": 2,
+          "failed": 0,
+          "prompt_chars": 86010,
+          "completion_chars": 2060,
+          "seconds": 11.437401900067925,
+          "est_tokens": 22018
+        },
+        "verify_locate": {
+          "calls": 2,
+          "failed": 0,
+          "prompt_chars": 3209,
+          "completion_chars": 283,
+          "seconds": 27.420215400052257,
+          "est_tokens": 873
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "id": "ghsa-5846-7qm3-r52j",
+  "title": "dssrf: dssrf: any users using 1.1.1.1 DNS is impacted by SSRF",
+  "role": "heldout",
+  "repo": {
+    "url": "https://github.com/HackingRepo/dssrf-js",
+    "commit": "2eef49dc0fc3a864e566f44bf6cf9c95e4410798",
+    "partial": true
+  },
+  "language": "javascript",
+  "framework": "",
+  "provenance": "Labels come from the maintainers' fix commit, not from a model: the lines it changed or removed in its parent commit (advisory GHSA-5846-7qm3-r52j). Whether the patch really addresses the advisory is recorded in history.label_review.",
+  "contamination": "Advisory published 2026-07-31 and fix committed 2026-06-09, both on or after 2026-03-10, after the 2026-03-03 release of gemini-3.1-flash-lite (knowledge cutoff January 2025): that model cannot have trained on this fix. A model with a later cutoff might have. The code may still resemble earlier public fixes of similar bugs in the same project.",
+  "bugs": [
+    {
+      "id": "ghsa-5846-7qm3-r52j",
+      "title": "dssrf: any users using 1.1.1.1 DNS is impacted by SSRF",
+      "class": "ssrf",
+      "cwe": "CWE-918",
+      "locations": [
+        {
+          "file": "src/helpers.ts",
+          "lines": [
+            273,
+            283
+          ]
+        }
+      ],
+      "notes": "Judge a finding against the advisory text in `history`, not only against the lines."
+    }
+  ],
+  "variants": {},
+  "history": {
+    "advisory": "GHSA-5846-7qm3-r52j",
+    "advisory_url": "https://github.com/advisories/GHSA-5846-7qm3-r52j",
+    "severity": "high",
+    "published": "2026-07-31",
+    "package": "dssrf",
+    "ecosystem": "npm",
+    "vulnerable_versions": "<= 1.0.4",
+    "patched": "1.0.5",
+    "fix_commit": "668c21792cd1252baf779a176aa652e2b4c0067d",
+    "fix_url": "https://github.com/HackingRepo/dssrf-js/commit/668c21792cd1252baf779a176aa652e2b4c0067d",
+    "fix_date": "2026-06-09T11:13:27Z",
+    "changed_lines": 28,
+    "source_files_changed": [
+      "src/helpers.ts"
+    ],
+    "other_files_changed": 0,
+    "addition_only": false,
+    "source_bytes": 30066,
+    "fits_in_one_prompt": true,
+    "description": "## Summary\n\nis_url_safe can treat localhost as safe when DNS resolver 1.1.1.1 returns NXDOMAIN because dns.resolve4 yields no address and no dns.lookup fallback occurs, allowing server-side request forgery.\n\n## POC\n\nExample to simulate 1.1.1.1 in version before 1.5.0 of dssrf:\n\n```js\nimport { is_url_safe } from '../dist/helpers.js';\nimport dns from 'dns';\n\n\ndns.setServers(['1.1.1.1']);\n\nconst TARGET = 'http://localhost/admin';\n\nconsole.log(`Testing: ${TARGET}`);\nconsole.log(`Current DNS Servers: ${dns.getServers()}`);\n\nconst result = await is_url_safe(TARGET);\n\nif (result === true) {\n    console.log('dssrf treated localhost as SAFE because 1.1.1.1 returned NXDOMAIN.');\n} else {\n    console.log('dssrf blocked localhost.');\n}\n```",
+    "label_review": "Claude read the fix patch against the advisory text on 2026-10-24 and found they match (one reader, not independently reviewed). The fix replaces a resolver call, so the label is the resolver function, not a single bad line."
+  }
+}

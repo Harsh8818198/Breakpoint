@@ -1,0 +1,806 @@
+{
+  "schema": 1,
+  "set": "ghsa-9m6g-wc8r-q59c",
+  "variant": "raw",
+  "arm": "plain",
+  "run": 1,
+  "commit": "871b1e202b0f6fb393409e8962cfdc958fb0f1c1",
+  "started_at": "2026-10-24T10:50:57+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": false,
+  "status": "ok",
+  "candidates": 15,
+  "kept": [
+    {
+      "title": "Use of Prototype Pollution susceptible object assignment",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `assign` function at src/scimPatch.ts:437 iterates over arbitrary user-controlled property keys and directly assigns them to the target object. Because there is no validation of the key names, an attacker can pass '__proto__', 'constructor', or 'prototype' to manipulate the object's prototype.",
+      "steps_to_exploit": [
+        "Craft a malicious SCIM PATCH operation where the 'value' object contains a key named '__proto__'.",
+        "Inject a payload such as 'polluted': 'yes' into the '__proto__' key.",
+        "Submit the patch request to the application.",
+        "The global object structure is modified, potentially leading to Remote Code Execution (RCE) or Denial of Service (DoS)."
+      ],
+      "impact": "Remote code execution or complete application compromise via prototype pollution.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/scimPatch.ts",
+          "line": 437,
+          "quote": "function assign(obj:any, keyPath:Array<string>, value:any, op: string) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/scimPatch.ts",
+          "line": 437,
+          "quote": "function assign(obj:any, keyPath:Array<string>, value:any, op: string) {"
+        }
+      ],
+      "id": "81a5c481",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unsafe use of JSON.parse(JSON.stringify()) for deep cloning",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Using JSON methods for deep cloning in src/scimPatch.ts:106 is inefficient and fragile. It strips non-serializable properties (like functions, Date objects, or undefined), leading to state corruption and potential bypasses of application-level logic constraints.",
+      "steps_to_exploit": [
+        "Submit a SCIM resource that includes complex objects or non-serializable data.",
+        "Trigger a patch operation with 'mutateDocument' set to false.",
+        "The resulting object will have data types converted or stripped.",
+        "Exploit the resulting logic errors when the application attempts to process the mangled resource."
+      ],
+      "impact": "Application state corruption and logic bypasses due to data loss.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/scimPatch.ts",
+          "line": 106,
+          "quote": "scimResource = JSON.parse(JSON.stringify(scimResource));"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/scimPatch.ts",
+          "line": 106,
+          "quote": "scimResource = JSON.parse(JSON.stringify(scimResource));"
+        }
+      ],
+      "id": "4446889b",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure auto-merging of dependencies",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The .kodiak.toml configuration at line 8 and 12 allows automatic approval and merging of dependabot pull requests. This enables a malicious actor to compromise a dependency and have it merged into the codebase without human review.",
+      "steps_to_exploit": [
+        "Identify a dependency used by the project.",
+        "Compromise the dependency's registry account (e.g., via credential stuffing).",
+        "Release a malicious update to the dependency.",
+        "Dependabot opens a PR, Kodiak automatically approves and merges it, injecting malicious code into the project."
+      ],
+      "impact": "Automated injection of malicious code into the production codebase.",
+      "evolved_from": [],
+      "attack_category": "supply_chain",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": ".kodiak.toml",
+          "line": 8,
+          "quote": "versions = [\"minor\", \"patch\"]"
+        },
+        {
+          "file": ".kodiak.toml",
+          "line": 12,
+          "quote": "auto_approve_usernames = [\"dependabot\"]"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": ".kodiak.toml",
+          "line": 8,
+          "quote": "versions = [\"minor\", \"patch\"]"
+        },
+        {
+          "file": ".kodiak.toml",
+          "line": 12,
+          "quote": "auto_approve_usernames = [\"dependabot\"]"
+        }
+      ],
+      "id": "7cddb1a6",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Lack of input validation on patch operations",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `patchBodyValidation` function at src/scimPatch.ts:80 fails to sanitize or restrict the structure of user-supplied `Operations`, allowing attackers to provide unexpectedly large or deeply nested payloads that can cause DoS.",
+      "steps_to_exploit": [
+        "Create a JSON payload with a massive number of operations.",
+        "Submit the payload to the API.",
+        "The server spends excessive CPU time traversing the 'Operations' array, resulting in Denial of Service."
+      ],
+      "impact": "Denial of Service via resource exhaustion.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/scimPatch.ts",
+          "line": 80,
+          "quote": "export function patchBodyValidation(body: ScimPatch): void {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/scimPatch.ts",
+          "line": 80,
+          "quote": "export function patchBodyValidation(body: ScimPatch): void {"
+        }
+      ],
+      "id": "26574dc6",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Sensitive secrets in GitHub Actions environment",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The .github/workflows/release.yml file and others use `${{ secrets.NPM_TOKEN }}` and `${{ secrets.GITHUB_TOKEN }}`. While standard practice, excessive permissions or lack of environment protection on these tokens can lead to unauthorized registry publishing or repository tampering.",
+      "steps_to_exploit": [
+        "Gain access to the repository secrets through a CI/CD misconfiguration or compromised GitHub account.",
+        "Use the NPM_TOKEN to publish a malicious version of the package to the public registry.",
+        "All users of the package are now compromised."
+      ],
+      "impact": "Supply chain compromise via unauthorized package publishing.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": ".github/workflows/release.yml",
+          "line": 17,
+          "quote": "token: ${{ secrets.NPM_TOKEN }}"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": ".github/workflows/release.yml",
+          "line": 17,
+          "quote": "token: ${{ secrets.NPM_TOKEN }}"
+        }
+      ],
+      "id": "3e31bd58",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Disabled security linting rules",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The eslint.config.js disables crucial security-related linting rules including 'no-explicit-any' and 'no-require-imports' at lines 16 and 17, which increases the likelihood of introducing type-safety vulnerabilities or dynamic require-based injections.",
+      "steps_to_exploit": [
+        "A developer introduces an unsafe dynamic import using 'require'.",
+        "Because the rule is disabled, the linter does not flag the unsafe pattern.",
+        "The code is deployed with a vulnerability that allows for arbitrary code path loading."
+      ],
+      "impact": "Reduced code quality and increased surface for security bugs.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "eslint.config.js",
+          "line": 16,
+          "quote": "'@typescript-eslint/no-explicit-any': 'off',"
+        },
+        {
+          "file": "eslint.config.js",
+          "line": 17,
+          "quote": "'@typescript-eslint/no-require-imports': 'off',"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "eslint.config.js",
+          "line": 16,
+          "quote": "'@typescript-eslint/no-explicit-any': 'off',"
+        },
+        {
+          "file": "eslint.config.js",
+          "line": 17,
+          "quote": "'@typescript-eslint/no-require-imports': 'off',"
+        }
+      ],
+      "id": "4b739c4e",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Over-privileged CI execution",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The CI workflow at .github/workflows/ci.yml and release.yml executes 'sudo npm install -g', running potentially untrusted dependencies with elevated privileges on the build agent.",
+      "steps_to_exploit": [
+        "Identify a vulnerable or malicious devDependency.",
+        "Trigger a PR or push.",
+        "The 'npm install' execution triggers a post-install script with root privileges on the build server."
+      ],
+      "impact": "Full compromise of the CI environment.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": ".github/workflows/ci.yml",
+          "line": 10,
+          "quote": "- run: sudo npm install -g typescript nyc mocha"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": ".github/workflows/ci.yml",
+          "line": 10,
+          "quote": "- run: sudo npm install -g typescript nyc mocha"
+        }
+      ],
+      "id": "a841beee",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Improper error handling leads to information disclosure",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `filterWithQuery` function at src/scimPatch.ts:477 catches errors and throws a new `InvalidScimPatchOp` with the raw error message string. This may propagate internal stack traces or database schema information to the API consumer.",
+      "steps_to_exploit": [
+        "Send a malformed query filter to the SCIM endpoint.",
+        "The function catches an internal error from the query parser.",
+        "The error is thrown containing internal implementation details, returned to the user."
+      ],
+      "impact": "Information disclosure of internal application structure.",
+      "evolved_from": [],
+      "attack_category": "error_handling",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/scimPatch.ts",
+          "line": 477,
+          "quote": "throw new InvalidScimPatchOp(`${error}`);"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/scimPatch.ts",
+          "line": 477,
+          "quote": "throw new InvalidScimPatchOp(`${error}`);"
+        }
+      ],
+      "id": "f54db0a4",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potential for ReDoS (Regular Expression Denial of Service)",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The regex used in src/scimPatch.ts:63 for `ARRAY_SEARCH` and others are not anchored or optimized for complex paths, creating a potential vector for ReDoS if an attacker provides a crafted string path.",
+      "steps_to_exploit": [
+        "Craft a long, malicious string path resembling an array search.",
+        "Submit the payload in a PATCH request.",
+        "The regex engine experiences catastrophic backtracking, leading to high CPU usage."
+      ],
+      "impact": "Denial of Service.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/scimPatch.ts",
+          "line": 63,
+          "quote": "const ARRAY_SEARCH = /^(.+)\\[(.+)\\]$/;"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/scimPatch.ts",
+          "line": 63,
+          "quote": "const ARRAY_SEARCH = /^(.+)\\[(.+)\\]$/;"
+        }
+      ],
+      "id": "aa8dd1ae",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure usage of 'any' type",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Extensive use of 'any' throughout the codebase (especially src/scimPatch.ts) circumvents TypeScript's type checking, hiding potential runtime errors that could lead to crashes or logical exploits.",
+      "steps_to_exploit": [
+        "Pass an object with an unexpected structure where the code expects a specific type.",
+        "The code proceeds without static validation.",
+        "A runtime error or type confusion occurs when accessing unexpected object properties."
+      ],
+      "impact": "High risk of runtime exceptions and logical flaws.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/scimPatch.ts",
+          "line": 171,
+          "quote": "let resources_scoped: Record<string, any>[];"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/scimPatch.ts",
+          "line": 171,
+          "quote": "let resources_scoped: Record<string, any>[];"
+        }
+      ],
+      "id": "7f4229fe",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Excessive permissions on 'pull_request_target'",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The .github/workflows/auto-assign-pull-request.yml uses `pull_request_target`, which runs in the context of the base branch and has write access, increasing the risk of pipeline tampering.",
+      "steps_to_exploit": [
+        "An attacker opens a PR from a fork.",
+        "The workflow triggers, potentially using a logic flaw in the referenced action to execute code in the context of the repository's main branch."
+      ],
+      "impact": "Risk of CI/CD pipeline compromise.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": ".github/workflows/auto-assign-pull-request.yml",
+          "line": 3,
+          "quote": "pull_request_target:"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": ".github/workflows/auto-assign-pull-request.yml",
+          "line": 3,
+          "quote": "pull_request_target:"
+        }
+      ],
+      "id": "206df65f",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Implicitly trusting 'scim2-parse-filter' parser",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The project relies on external library 'scim2-parse-filter' (v0.3.0). There is no pinning for integrity hashes or deep audit of this dependency, which handles complex query parsing.",
+      "steps_to_exploit": [
+        "Find an exploit in the 'scim2-parse-filter' library (e.g., command injection or parsing DoS).",
+        "Submit a crafted filter string that triggers the exploit in the dependency."
+      ],
+      "impact": "Injection vulnerability via sub-dependency.",
+      "evolved_from": [],
+      "attack_category": "supply_chain",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/scimPatch.ts",
+          "line": 29,
+          "quote": "import {parse, filter} from 'scim2-parse-filter';"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/scimPatch.ts",
+          "line": 29,
+          "quote": "import {parse, filter} from 'scim2-parse-filter';"
+        }
+      ],
+      "id": "0bc5d6fa",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Reliance on weak object equality for security decisions",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `deepEqual` usage at src/scimPatch.ts:515 for determining if an item should be removed or added is susceptible to object property injection, where specifically crafted objects may fail or pass equality checks inappropriately.",
+      "steps_to_exploit": [
+        "Create an object that passes a 'deepEqual' check but has unexpected side effects during property access.",
+        "Force the logic in `applyRemoveOperation` to perform a removal based on this object."
+      ],
+      "impact": "Inconsistent state management leading to unauthorized data removal.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/scimPatch.ts",
+          "line": 515,
+          "quote": "return array.some(el => deepEqual(item, el));"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/scimPatch.ts",
+          "line": 515,
+          "quote": "return array.some(el => deepEqual(item, el));"
+        }
+      ],
+      "id": "cabd1ce0",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of 'Unlicense' makes security disclosure ambiguous",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The project uses the 'Unlicense' (package.json:25). While this is an open-source choice, it complicates the legal framework for vulnerability reporting and security liability, which may discourage responsible disclosure.",
+      "steps_to_exploit": [
+        "Discover a zero-day vulnerability.",
+        "The legal status of the project makes it unclear how to contact maintainers formally for a security fix."
+      ],
+      "impact": "Hinders the security maintenance lifecycle.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "package.json",
+          "line": 25,
+          "quote": "\"license\": \"Unlicense\","
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "package.json",
+          "line": 25,
+          "quote": "\"license\": \"Unlicense\","
+        }
+      ],
+      "id": "f90007b5",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Missing security policy",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "There is no SECURITY.md file in the root directory. Security vulnerabilities found by researchers have no clear path for communication, leading to potential public exposure of unpatched bugs.",
+      "steps_to_exploit": [
+        "A security researcher finds a critical bug.",
+        "Researcher finds no security contact information.",
+        "Researcher discloses bug publicly to get attention, causing a 0-day exposure."
+      ],
+      "impact": "Increased risk of public disclosure of vulnerabilities before fixes are available.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [],
+      "code_refs": [],
+      "id": "49d95f65",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "proposed": [
+    {
+      "title": "Use of Prototype Pollution susceptible object assignment",
+      "code_refs": [
+        {
+          "file": "src/scimPatch.ts",
+          "line": 437,
+          "quote": "function assign(obj:any, keyPath:Array<string>, value:any, op: string) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unsafe use of JSON.parse(JSON.stringify()) for deep cloning",
+      "code_refs": [
+        {
+          "file": "src/scimPatch.ts",
+          "line": 106,
+          "quote": "scimResource = JSON.parse(JSON.stringify(scimResource));"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure auto-merging of dependencies",
+      "code_refs": [
+        {
+          "file": ".kodiak.toml",
+          "line": 8,
+          "quote": "versions = [\"minor\", \"patch\"]"
+        },
+        {
+          "file": ".kodiak.toml",
+          "line": 12,
+          "quote": "auto_approve_usernames = [\"dependabot\"]"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Lack of input validation on patch operations",
+      "code_refs": [
+        {
+          "file": "src/scimPatch.ts",
+          "line": 80,
+          "quote": "export function patchBodyValidation(body: ScimPatch): void {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Sensitive secrets in GitHub Actions environment",
+      "code_refs": [
+        {
+          "file": ".github/workflows/release.yml",
+          "line": 17,
+          "quote": "token: ${{ secrets.NPM_TOKEN }}"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Disabled security linting rules",
+      "code_refs": [
+        {
+          "file": "eslint.config.js",
+          "line": 16,
+          "quote": "'@typescript-eslint/no-explicit-any': 'off',"
+        },
+        {
+          "file": "eslint.config.js",
+          "line": 17,
+          "quote": "'@typescript-eslint/no-require-imports': 'off',"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Over-privileged CI execution",
+      "code_refs": [
+        {
+          "file": ".github/workflows/ci.yml",
+          "line": 10,
+          "quote": "- run: sudo npm install -g typescript nyc mocha"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Improper error handling leads to information disclosure",
+      "code_refs": [
+        {
+          "file": "src/scimPatch.ts",
+          "line": 477,
+          "quote": "throw new InvalidScimPatchOp(`${error}`);"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potential for ReDoS (Regular Expression Denial of Service)",
+      "code_refs": [
+        {
+          "file": "src/scimPatch.ts",
+          "line": 63,
+          "quote": "const ARRAY_SEARCH = /^(.+)\\[(.+)\\]$/;"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure usage of 'any' type",
+      "code_refs": [
+        {
+          "file": "src/scimPatch.ts",
+          "line": 171,
+          "quote": "let resources_scoped: Record<string, any>[];"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Excessive permissions on 'pull_request_target'",
+      "code_refs": [
+        {
+          "file": ".github/workflows/auto-assign-pull-request.yml",
+          "line": 3,
+          "quote": "pull_request_target:"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Implicitly trusting 'scim2-parse-filter' parser",
+      "code_refs": [
+        {
+          "file": "src/scimPatch.ts",
+          "line": 29,
+          "quote": "import {parse, filter} from 'scim2-parse-filter';"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Reliance on weak object equality for security decisions",
+      "code_refs": [
+        {
+          "file": "src/scimPatch.ts",
+          "line": 515,
+          "quote": "return array.some(el => deepEqual(item, el));"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of 'Unlicense' makes security disclosure ambiguous",
+      "code_refs": [
+        {
+          "file": "package.json",
+          "line": 25,
+          "quote": "\"license\": \"Unlicense\","
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Missing security policy",
+      "code_refs": [],
+      "outcome": "unchecked"
+    }
+  ],
+  "rejected": [],
+  "verification": null,
+  "arm_meta": {
+    "baseline": {
+      "model": "gemini/gemini-3.1-flash-lite",
+      "context": "code",
+      "requested": 15,
+      "returned": 15,
+      "files_shown": 17,
+      "chars_shown": 37933,
+      "files_that_did_not_fit": []
+    }
+  },
+  "seconds": {
+    "arm": 11.8,
+    "check": 0.0,
+    "total": 11.8
+  },
+  "usage": {
+    "arm": {
+      "calls": 1,
+      "failed": 0,
+      "est_tokens": 13045,
+      "seconds_in_calls": 11.8,
+      "by_task": {
+        "baseline": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 38999,
+          "completion_chars": 13182,
+          "seconds": 11.792955199955031,
+          "est_tokens": 13045
+        }
+      }
+    },
+    "check": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    }
+  }
+}

@@ -197,8 +197,22 @@ harness works and which way a leak points.
 - DVNA is a public teaching app that models have probably seen, so 12 of 18 says little about real code. The wall-clock for the
   NodeGoat hints row is not reliable (the machine slept during it).
 
+**6. Real flaws fixed after the model existed** (2026-10-24 and 25). 22 sets built from GitHub security advisories
+(`eval_sets/history/`): small npm and PyPI libraries, each pinned one commit before the maintainers' fix and labelled by it, fix
+committed after gemini-3.1-flash-lite was released. The plain prompt three times per set, every candidate read by hand
+(`bench_runs/history_pilot/RESULTS.md`: setup, selection log, readings, survivors).
+
+- The plain prompt named the maintainers' flaw clearly in 6 of 66 runs (4 of 22 sets in at least one run); counting a claim in the
+  right place and class but vaguer, 23 of 66 runs (12 of 22 sets). The teaching apps above gave 6 to 11 of 13 and were not a guide.
+- The code check kept 6 of 7 candidates that described the flaw and 0 of 19 vaguer ones. Run again on 9 of them it changed its
+  decision on 2, one of them a true flaw, so one check run per claim is not enough.
+- On all 15 candidates of four sets it kept 10 of 60. None of the 10 is a vulnerability: six are accurate observations about a
+  feature or a local tool, four are wrong. Kept means the code does what the claim says, not that it is a vulnerability.
+- One reader for every reading, one model for finder and checker, small repositories, nothing tuned on these sets.
+
 **What this supports:** reported findings come with quoted evidence and few false claims.
-**What it does not support:** that the engine, or the per-route review, finds more bugs than one prompt does. On a repo
+**What it does not support:** that the engine, or the per-route review, finds more bugs than one prompt does; or (item 6)
+that a kept finding is a vulnerability worth reporting. On a repo
 this small the whole source fits in one prompt, so the per-route review matched its recall with more noise and about
 fifty times as many model calls. Whether it pays off on a repo too big for one prompt is untested. Closing that gap
 is the open work: raising how many real bugs get found, not how many false ones get through.
@@ -255,6 +269,8 @@ breakpoint-eval run dvna --variant clean --arm plain --arm route-review --runs 3
 breakpoint-eval run dvna --variant clean --arm import:claude-review.json   # a result made elsewhere: our JSON or SARIF
 breakpoint-eval adjudicate --set dvna --variant clean       # writes the issues a person must read and judge
 breakpoint-eval report --set dvna --variant clean           # the comparison, with the caveats that apply
+breakpoint-eval harvest --count 24                          # real flaws: build sets from security advisories with a fix commit
+breakpoint-eval history --arm plain                         # one table over every advisory set that has runs
 ```
 
 - **Arms.** `plain` (one prompt with as much source as fits), `route-review`, and `import:<file>` for anything produced
@@ -273,7 +289,9 @@ breakpoint-eval report --set dvna --variant clean           # the comparison, wi
 
 The three sets shipped (NodeGoat as the dev set, DVNA and Juice Shop held out) are all public teaching apps that models
 have probably seen, labelled by one reader or taken from the maintainers' own markers. They check the harness and measure
-leakage; they do not show how Breakpoint does on real code. `eval_sets/README.md` lists what is still missing.
+leakage; they do not show how Breakpoint does on real code. The advisory sets (`eval_sets/history/`, described in
+`eval_sets/README.md`) are the real-code check: maintainers' own fixes, made after the model existed. `eval_sets/README.md` also
+lists what is still missing.
 
 ## Tests
 

@@ -1,0 +1,797 @@
+{
+  "schema": 1,
+  "set": "ghsa-pm4m-ph32-ghv5",
+  "variant": "raw",
+  "arm": "plain",
+  "run": 2,
+  "commit": "bd7ebb2b7818873407c942c6371504e427c99cba",
+  "started_at": "2026-10-24T10:58:02+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": false,
+  "status": "ok",
+  "candidates": 15,
+  "kept": [
+    {
+      "title": "Denial of Service via YAML Bomb (Billion Laughs Attack)",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The parser lacks protection against deeply nested or circular aliases, allowing an attacker to exhaust memory and CPU by referencing the same anchor multiple times in a nested structure (e.g., `&a [*a, *a, *a]`). File: src/parser/constructor.ts:443.",
+      "steps_to_exploit": [
+        "Craft a YAML payload with an anchor that points to a list containing the same anchor multiple times.",
+        "Repeat the nesting recursively.",
+        "Submit the payload to an endpoint using `js-yaml.load()`.",
+        "Observe memory exhaustion and process crash."
+      ],
+      "impact": "Unauthenticated attackers can crash the node process, leading to a complete Denial of Service.",
+      "evolved_from": [],
+      "attack_category": "rate_limiting",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/parser/constructor.ts",
+          "line": 443,
+          "quote": "if (state.maxAliases !== -1 && ++state.aliasCount > state.maxAliases) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/parser/constructor.ts",
+          "line": 443,
+          "quote": "if (state.maxAliases !== -1 && ++state.aliasCount > state.maxAliases) {"
+        }
+      ],
+      "id": "81f05737",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Client-side XSS via Base64 Permalinks",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The demo page decodes Base64 payloads from the URL fragment directly into the page state without validation, which can lead to XSS if malicious scripts are injected via the YAML content. File: support/demo_template/index.mjs:54.",
+      "steps_to_exploit": [
+        "Construct a malicious YAML payload that triggers XSS when rendered in the UI.",
+        "Base64 encode the payload.",
+        "Append it to the application URL fragment as #yaml=[base64_payload].",
+        "Send the link to a victim."
+      ],
+      "impact": "Remote code execution in the context of the user's browser, enabling session hijacking or data theft.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "support/demo_template/index.mjs",
+          "line": 54,
+          "quote": "yaml = decodeBase64(location.hash.slice(6))"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "support/demo_template/index.mjs",
+          "line": 54,
+          "quote": "yaml = decodeBase64(location.hash.slice(6))"
+        }
+      ],
+      "id": "c6df075f",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Implicit Schema Allows Arbitrary Data Types",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The use of `YAML11_SCHEMA` in various benchmarks and templates includes dangerous types like binary and merge tags without explicit restriction. File: src/schema.ts:190.",
+      "steps_to_exploit": [
+        "Target an application using `YAML11_SCHEMA` for parsing user input.",
+        "Inject `!!binary` or `!!merge` tags.",
+        "Observe that the library attempts to resolve these complex types."
+      ],
+      "impact": "Increased attack surface allowing for potentially unexpected behavior or object injection vulnerabilities in downstream applications relying on the default schema.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/schema.ts",
+          "line": 190,
+          "quote": "const YAML11_SCHEMA = new Schema(["
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/schema.ts",
+          "line": 190,
+          "quote": "const YAML11_SCHEMA = new Schema(["
+        }
+      ],
+      "id": "bb475884",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Exposure of Internal File System via CLI",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `js-yaml` CLI tool reads arbitrary files from the file system based on user-supplied arguments without restrictions. File: bin/js-yaml.mjs:60.",
+      "steps_to_exploit": [
+        "Run the `js-yaml` CLI in a restricted environment where an attacker can supply the file argument.",
+        "Pass a sensitive path like `/etc/passwd`.",
+        "The tool reads and outputs the content."
+      ],
+      "impact": "An attacker can read local system files where the CLI process has read permissions.",
+      "evolved_from": [],
+      "attack_category": "data_privacy",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "bin/js-yaml.mjs",
+          "line": 60,
+          "quote": "input = readFileSync(options.file === '-' ? 0 : options.file, 'utf8')"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "bin/js-yaml.mjs",
+          "line": 60,
+          "quote": "input = readFileSync(options.file === '-' ? 0 : options.file, 'utf8')"
+        }
+      ],
+      "id": "23f6151b",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unsafe Prototype Access in Mapping Tags",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "While there is a check for `__proto__`, the reliance on `Object.defineProperty` for the prototype object within custom mapping tags is a fragile defense mechanism that could lead to prototype pollution. File: src/tag/mapping/map.ts:24.",
+      "steps_to_exploit": [
+        "Construct a YAML mapping with `__proto__` as a key.",
+        "Attempt to assign a complex object as the value.",
+        "If downstream code expects plain objects, it may inadvertently traverse the polluted prototype."
+      ],
+      "impact": "Potential for prototype pollution, which can alter the behavior of JavaScript objects and lead to security bypasses or RCE in consuming code.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/tag/mapping/map.ts",
+          "line": 24,
+          "quote": "Object.defineProperty(container, normalizedKey, {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/tag/mapping/map.ts",
+          "line": 24,
+          "quote": "Object.defineProperty(container, normalizedKey, {"
+        }
+      ],
+      "id": "2b8e7b81",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Lack of Memory Limits on Large Payloads",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The library does not enforce a maximum input string length before parsing, making it susceptible to memory exhaustion via massive YAML payloads. File: src/load.ts:24.",
+      "steps_to_exploit": [
+        "Send a multi-gigabyte string as YAML input.",
+        "The library calls `String(input)` and proceeds to parse.",
+        "The process runs out of heap memory and crashes."
+      ],
+      "impact": "Denial of Service due to uncontrolled resource consumption.",
+      "evolved_from": [],
+      "attack_category": "rate_limiting",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/load.ts",
+          "line": 24,
+          "quote": "function loadDocuments (input: string, options: LoadOptions = {}) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/load.ts",
+          "line": 24,
+          "quote": "function loadDocuments (input: string, options: LoadOptions = {}) {"
+        }
+      ],
+      "id": "62f91160",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potentially Unsafe Deserialization of Omap",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The Omap parser allows the construction of objects that can be manipulated during the `addItem` phase. File: src/tag/sequence/omap.ts:11.",
+      "steps_to_exploit": [
+        "Craft a YAML sequence with `!!omap` tags.",
+        "Supply duplicate or malformed keys to bypass validation logic.",
+        "Cause unexpected object state."
+      ],
+      "impact": "Manipulation of ordered data structures which might be used to influence downstream business logic.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/tag/sequence/omap.ts",
+          "line": 11,
+          "quote": "addItem: (carrier, item) => {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/tag/sequence/omap.ts",
+          "line": 11,
+          "quote": "addItem: (carrier, item) => {"
+        }
+      ],
+      "id": "7f497267",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Randomness/Entropy in Benchmarking",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The use of benchmarks relies on external files and modules that could be tampered with in a CI/CD environment to inject malicious benchmarking code. File: benchmark/benchmark.mjs:18.",
+      "steps_to_exploit": [
+        "Tamper with `benchmark/implementations/` code.",
+        "Trigger the benchmark build process.",
+        "The malicious code is executed with the privileges of the build user."
+      ],
+      "impact": "Potential for Remote Code Execution during the build/test cycle.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "benchmark/benchmark.mjs",
+          "line": 18,
+          "quote": "const code = await import(filepath)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "benchmark/benchmark.mjs",
+          "line": 18,
+          "quote": "const code = await import(filepath)"
+        }
+      ],
+      "id": "a9629b7b",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Regex Denial of Service (ReDoS) in Integer Resolver",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Complex regular expressions for integer resolution are susceptible to backtracking attacks when processing long, malformed strings. File: src/tag/scalar/int_yaml11.ts:3.",
+      "steps_to_exploit": [
+        "Generate an extremely long string that matches parts of the integer pattern but fails at the end.",
+        "Submit the payload to the parser.",
+        "The regex engine consumes excessive CPU time due to catastrophic backtracking."
+      ],
+      "impact": "High CPU utilization causing temporary Denial of Service.",
+      "evolved_from": [],
+      "attack_category": "rate_limiting",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/tag/scalar/int_yaml11.ts",
+          "line": 3,
+          "quote": "const YAML_INTEGER_PATTERN = new RegExp("
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/tag/scalar/int_yaml11.ts",
+          "line": 3,
+          "quote": "const YAML_INTEGER_PATTERN = new RegExp("
+        }
+      ],
+      "id": "a578d76b",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Temporary Git Clone in Scripts",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `add-by-tag.sh` script blindly clones remote repositories without verifying git integrity or signatures. File: benchmark/add-by-tag.sh:16.",
+      "steps_to_exploit": [
+        "Perform a Man-in-the-Middle attack on the git traffic.",
+        "Inject malicious code into the cloned repo.",
+        "The script executes the code during the benchmark suite preparation."
+      ],
+      "impact": "Supply chain compromise of the environment where benchmarks are run.",
+      "evolved_from": [],
+      "attack_category": "supply_chain",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "benchmark/add-by-tag.sh",
+          "line": 16,
+          "quote": "git clone --branch \"$branch\" --depth 1 https://github.com/nodeca/js-yaml.git \"$impl_dir\""
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "benchmark/add-by-tag.sh",
+          "line": 16,
+          "quote": "git clone --branch \"$branch\" --depth 1 https://github.com/nodeca/js-yaml.git \"$impl_dir\""
+        }
+      ],
+      "id": "e19187f9",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Lack of Error Handling for Large Integer Inputs",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Large integers in YAML might be interpreted as `Infinity` or lose precision during parsing if not properly clamped. File: src/tag/scalar/int_yaml11.ts:35.",
+      "steps_to_exploit": [
+        "Submit a YAML file with a very large integer value (e.g., beyond `Number.MAX_SAFE_INTEGER`).",
+        "The parser returns `Infinity` or inaccurate values.",
+        "Downstream logic fails or behaves unexpectedly."
+      ],
+      "impact": "Business logic flaws due to incorrect data type handling.",
+      "evolved_from": [],
+      "attack_category": "error_handling",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/tag/scalar/int_yaml11.ts",
+          "line": 35,
+          "quote": "return sign * parseInt(value, 10)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/tag/scalar/int_yaml11.ts",
+          "line": 35,
+          "quote": "return sign * parseInt(value, 10)"
+        }
+      ],
+      "id": "d2387c36",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure URL Usage in Demo Template",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The demo template loads Bootstrap from a generic CDN without a Subresource Integrity (SRI) hash. File: support/demo_template/index.html:10.",
+      "steps_to_exploit": [
+        "Compromise the CDN server.",
+        "Replace the bootstrap file with a malicious script.",
+        "The demo page loads and executes the malicious script."
+      ],
+      "impact": "Remote code execution within the context of the user viewing the demo page.",
+      "evolved_from": [],
+      "attack_category": "supply_chain",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "support/demo_template/index.html",
+          "line": 10,
+          "quote": "<link rel=\"stylesheet\" href=\"https://unpkg.com/bootstrap@5.3.8/dist/css/bootstrap.min.css\">"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "support/demo_template/index.html",
+          "line": 10,
+          "quote": "<link rel=\"stylesheet\" href=\"https://unpkg.com/bootstrap@5.3.8/dist/css/bootstrap.min.css\">"
+        }
+      ],
+      "id": "2716e95a",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Deserialization of Binary Tag",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `binaryTag` handles Base64 data and converts it into a `Uint8Array`. Improper handling or excessive input size for this tag can lead to memory exhaustion. File: src/tag/scalar/binary.ts:10.",
+      "steps_to_exploit": [
+        "Craft a large base64-encoded string.",
+        "Apply the `!!binary` tag.",
+        "Parser creates a `Uint8Array` of that size, consuming significant heap space."
+      ],
+      "impact": "Memory exhaustion leading to Denial of Service.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/tag/scalar/binary.ts",
+          "line": 10,
+          "quote": "const binary = atob(input)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/tag/scalar/binary.ts",
+          "line": 10,
+          "quote": "const binary = atob(input)"
+        }
+      ],
+      "id": "461d1e98",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potential for Stack Overflow in AST Traversal",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The AST `visit` function uses recursive calls without explicit depth limiting, allowing for stack overflow on extremely nested YAML documents. File: src/ast/visit.ts:39.",
+      "steps_to_exploit": [
+        "Create a deeply nested YAML structure.",
+        "Call a visitor function on the parsed document.",
+        "The recursive call stack exceeds engine limits, causing a stack overflow error."
+      ],
+      "impact": "Denial of Service due to crash of the JavaScript process.",
+      "evolved_from": [],
+      "attack_category": "scalability",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/ast/visit.ts",
+          "line": 39,
+          "quote": "if (visitNode(item, visitor, { depth, parent: node, isKey: false })) return true"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/ast/visit.ts",
+          "line": 39,
+          "quote": "if (visitNode(item, visitor, { depth, parent: node, isKey: false })) return true"
+        }
+      ],
+      "id": "c5e99ed5",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Lack of Validation on YAML Tag URIs",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "While some validation exists, the tag URI handling is complex and allows potentially crafted URIs to bypass filter logic. File: src/parser/parser.ts:431.",
+      "steps_to_exploit": [
+        "Construct a malformed URI in a tag property.",
+        "Attempt to trigger unexpected resolution logic in the constructor.",
+        "Potentially cause the parser to resolve tags to unintended types."
+      ],
+      "impact": "Potential for bypassing schema restrictions and causing Type Confusion.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/parser/parser.ts",
+          "line": 431,
+          "quote": "if (tagName && !(isVerbatim ? PATTERN_TAG_URI.test(tagName) : PATTERN_TAG_SUFFIX.test(tagName))) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/parser/parser.ts",
+          "line": 431,
+          "quote": "if (tagName && !(isVerbatim ? PATTERN_TAG_URI.test(tagName) : PATTERN_TAG_SUFFIX.test(tagName))) {"
+        }
+      ],
+      "id": "9bcc44ad",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "proposed": [
+    {
+      "title": "Denial of Service via YAML Bomb (Billion Laughs Attack)",
+      "code_refs": [
+        {
+          "file": "src/parser/constructor.ts",
+          "line": 443,
+          "quote": "if (state.maxAliases !== -1 && ++state.aliasCount > state.maxAliases) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Client-side XSS via Base64 Permalinks",
+      "code_refs": [
+        {
+          "file": "support/demo_template/index.mjs",
+          "line": 54,
+          "quote": "yaml = decodeBase64(location.hash.slice(6))"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Implicit Schema Allows Arbitrary Data Types",
+      "code_refs": [
+        {
+          "file": "src/schema.ts",
+          "line": 190,
+          "quote": "const YAML11_SCHEMA = new Schema(["
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Exposure of Internal File System via CLI",
+      "code_refs": [
+        {
+          "file": "bin/js-yaml.mjs",
+          "line": 60,
+          "quote": "input = readFileSync(options.file === '-' ? 0 : options.file, 'utf8')"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unsafe Prototype Access in Mapping Tags",
+      "code_refs": [
+        {
+          "file": "src/tag/mapping/map.ts",
+          "line": 24,
+          "quote": "Object.defineProperty(container, normalizedKey, {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Lack of Memory Limits on Large Payloads",
+      "code_refs": [
+        {
+          "file": "src/load.ts",
+          "line": 24,
+          "quote": "function loadDocuments (input: string, options: LoadOptions = {}) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potentially Unsafe Deserialization of Omap",
+      "code_refs": [
+        {
+          "file": "src/tag/sequence/omap.ts",
+          "line": 11,
+          "quote": "addItem: (carrier, item) => {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure Randomness/Entropy in Benchmarking",
+      "code_refs": [
+        {
+          "file": "benchmark/benchmark.mjs",
+          "line": 18,
+          "quote": "const code = await import(filepath)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Regex Denial of Service (ReDoS) in Integer Resolver",
+      "code_refs": [
+        {
+          "file": "src/tag/scalar/int_yaml11.ts",
+          "line": 3,
+          "quote": "const YAML_INTEGER_PATTERN = new RegExp("
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure Temporary Git Clone in Scripts",
+      "code_refs": [
+        {
+          "file": "benchmark/add-by-tag.sh",
+          "line": 16,
+          "quote": "git clone --branch \"$branch\" --depth 1 https://github.com/nodeca/js-yaml.git \"$impl_dir\""
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Lack of Error Handling for Large Integer Inputs",
+      "code_refs": [
+        {
+          "file": "src/tag/scalar/int_yaml11.ts",
+          "line": 35,
+          "quote": "return sign * parseInt(value, 10)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure URL Usage in Demo Template",
+      "code_refs": [
+        {
+          "file": "support/demo_template/index.html",
+          "line": 10,
+          "quote": "<link rel=\"stylesheet\" href=\"https://unpkg.com/bootstrap@5.3.8/dist/css/bootstrap.min.css\">"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure Deserialization of Binary Tag",
+      "code_refs": [
+        {
+          "file": "src/tag/scalar/binary.ts",
+          "line": 10,
+          "quote": "const binary = atob(input)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potential for Stack Overflow in AST Traversal",
+      "code_refs": [
+        {
+          "file": "src/ast/visit.ts",
+          "line": 39,
+          "quote": "if (visitNode(item, visitor, { depth, parent: node, isKey: false })) return true"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Lack of Validation on YAML Tag URIs",
+      "code_refs": [
+        {
+          "file": "src/parser/parser.ts",
+          "line": 431,
+          "quote": "if (tagName && !(isVerbatim ? PATTERN_TAG_URI.test(tagName) : PATTERN_TAG_SUFFIX.test(tagName))) {"
+        }
+      ],
+      "outcome": "unchecked"
+    }
+  ],
+  "rejected": [],
+  "verification": null,
+  "arm_meta": {
+    "baseline": {
+      "model": "gemini/gemini-3.1-flash-lite",
+      "context": "code",
+      "requested": 15,
+      "returned": 15,
+      "files_shown": 62,
+      "chars_shown": 261933,
+      "files_that_did_not_fit": []
+    }
+  },
+  "seconds": {
+    "arm": 71.2,
+    "check": 0.0,
+    "total": 71.2
+  },
+  "usage": {
+    "arm": {
+      "calls": 1,
+      "failed": 0,
+      "est_tokens": 68850,
+      "seconds_in_calls": 71.1,
+      "by_task": {
+        "baseline": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 263089,
+          "completion_chars": 12309,
+          "seconds": 71.08348299993668,
+          "est_tokens": 68850
+        }
+      }
+    },
+    "check": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    }
+  }
+}

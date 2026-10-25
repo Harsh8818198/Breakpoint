@@ -1,0 +1,788 @@
+{
+  "schema": 1,
+  "set": "ghsa-wc9g-mqfw-jrwm",
+  "variant": "raw",
+  "arm": "plain",
+  "run": 1,
+  "commit": "ab6aeae650328cf31799dcfa4c3e116ba8faaacc",
+  "started_at": "2026-10-24T11:06:22+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": false,
+  "status": "ok",
+  "candidates": 15,
+  "kept": [
+    {
+      "title": "Unrestricted Temporary File Creation",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The DiskStorage engine uses os.tmpdir() by default without verifying storage path permissions or rotation, potentially leading to disk exhaustion or sensitive file exposure in shared environments (lib/storage/disk.js:19).",
+      "steps_to_exploit": [
+        "Identify a server running with default DiskStorage settings",
+        "Send numerous multipart requests with large file payloads",
+        "Observe the server disk space usage increase until failure or temporary files clutter the system"
+      ],
+      "impact": "Denial of Service (DoS) due to disk exhaustion or potential unauthorized access to uploaded files if the OS temporary directory permissions are misconfigured.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "storage/disk.js",
+          "line": 19,
+          "quote": "cb(null, os.tmpdir())"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "storage/disk.js",
+          "line": 19,
+          "quote": "cb(null, os.tmpdir())"
+        }
+      ],
+      "id": "598af87b",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Lack of Global File Count Limit",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "While specific field limits exist, there is no global constraint on the total number of files across all fields, allowing an attacker to exhaust memory or file handles (lib/make-middleware.js).",
+      "steps_to_exploit": [
+        "Create a multipart request with a vast number of small files spanning multiple field names",
+        "Bypass field-specific limits by spreading files across many unique keys",
+        "Monitor server memory/CPU usage as it attempts to process all parts"
+      ],
+      "impact": "Resource exhaustion leading to service downtime.",
+      "evolved_from": [],
+      "attack_category": "rate_limiting",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/make-middleware.js",
+          "line": 341,
+          "quote": "busboy.on('partsLimit', function () { abortWithCode('LIMIT_PART_COUNT') })"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/make-middleware.js",
+          "line": 341,
+          "quote": "busboy.on('partsLimit', function () { abortWithCode('LIMIT_PART_COUNT') })"
+        }
+      ],
+      "id": "9bcb5705",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Prototype Pollution via append-field",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The application uses 'append-field' to parse nested object structures. Without explicit sanitization of field names, an attacker could potentially inject properties into Object.prototype (lib/make-middleware.js:230).",
+      "steps_to_exploit": [
+        "Craft a multipart request with a field name like '__proto__[polluted_prop]'",
+        "Submit the request to a route using this middleware",
+        "Check if the server's global object has been modified"
+      ],
+      "impact": "Potential Remote Code Execution (RCE) or application-wide logic bypass via prototype pollution.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/make-middleware.js",
+          "line": 230,
+          "quote": "appendField(req.body, fieldname, value)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/make-middleware.js",
+          "line": 230,
+          "quote": "appendField(req.body, fieldname, value)"
+        }
+      ],
+      "id": "0e29f533",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Denial of Service via Request Body Draining",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The middleware attempts to 'drain' streams (lib/make-middleware.js:33) upon error, which can be weaponized by an attacker sending extremely large requests that force the server to constantly read and discard input.",
+      "steps_to_exploit": [
+        "Trigger a validation error early (e.g., file size limit)",
+        "Send a massive, endless stream of data",
+        "Server continues reading the entire stream to satisfy the 'drain' requirement, consuming I/O and CPU"
+      ],
+      "impact": "CPU and I/O exhaustion, causing the server to be unresponsive to other users.",
+      "evolved_from": [],
+      "attack_category": "rate_limiting",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/make-middleware.js",
+          "line": 33,
+          "quote": "function drainStream (stream) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/make-middleware.js",
+          "line": 33,
+          "quote": "function drainStream (stream) {"
+        }
+      ],
+      "id": "a377b94e",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Error Handling of File Streams",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "File stream errors are caught and trigger an abort, but the cleanup process in removeUploadedFiles involves sequential setImmediate calls, creating a race condition window (lib/remove-uploaded-files.js).",
+      "steps_to_exploit": [
+        "Initiate multiple large uploads",
+        "Force a failure mid-upload",
+        "The cleanup routine may lag, leaving orphan files on the filesystem longer than intended"
+      ],
+      "impact": "Disk space bloat and potential leakage of sensitive file fragments.",
+      "evolved_from": [],
+      "attack_category": "error_handling",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/remove-uploaded-files.js",
+          "line": 18,
+          "quote": "setImmediate(function () { handleFile(idx + 1) })"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/remove-uploaded-files.js",
+          "line": 18,
+          "quote": "setImmediate(function () { handleFile(idx + 1) })"
+        }
+      ],
+      "id": "5cd7b5d2",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unbounded Array Index Expansion",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Despite a regex check in exceedsArrayIndexLimit, the limit logic is opt-in (via options) and can lead to sparse array creation if the 'fieldArrayIndexLimit' is not configured appropriately (lib/make-middleware.js:27).",
+      "steps_to_exploit": [
+        "Craft a field name with a very high index, e.g., 'data[99999999]'",
+        "Submit request without specific fieldArrayIndexLimit protection enabled",
+        "Observe the server allocating memory for a sparse array of massive size"
+      ],
+      "impact": "Memory exhaustion (DoS).",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/make-middleware.js",
+          "line": 27,
+          "quote": "if (Number(match[1]) > limit) return true"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/make-middleware.js",
+          "line": 27,
+          "quote": "if (Number(match[1]) > limit) return true"
+        }
+      ],
+      "id": "5d2b6937",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Default Use of Latin1 Encoding",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The middleware defaults to 'latin1' for parameter charset if not specified, which can lead to data corruption or character set confusion when processing non-English filenames (index.js:22).",
+      "steps_to_exploit": [
+        "Upload files with UTF-8 non-ASCII filenames",
+        "Observe the characters being misinterpreted or replaced by the middleware during processing"
+      ],
+      "impact": "Integrity loss of filename data, which may be exploited for bypass of security filters looking for specific file extensions.",
+      "evolved_from": [],
+      "attack_category": "data_privacy",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 22,
+          "quote": "this.defParamCharset = options.defParamCharset || 'latin1'"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 22,
+          "quote": "this.defParamCharset = options.defParamCharset || 'latin1'"
+        }
+      ],
+      "id": "902e48b4",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potential File Descriptor Leakage",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "In lib/storage/disk.js, there is an edge case where 'close' might not fire for a stream, causing the WeakMap to hold references longer than needed (storage/disk.js:50).",
+      "steps_to_exploit": [
+        "Generate high-concurrency requests that trigger stream errors",
+        "Observe if the WeakMap or file descriptors are not being garbage collected correctly"
+      ],
+      "impact": "File descriptor exhaustion, leading to the server failing to open new files.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "storage/disk.js",
+          "line": 50,
+          "quote": "outStream.once('close', function () { openStreams.delete(file) })"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "storage/disk.js",
+          "line": 50,
+          "quote": "outStream.once('close', function () { openStreams.delete(file) })"
+        }
+      ],
+      "id": "b9fee093",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Random Filename Generation",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Using crypto.randomBytes(16).toString('hex') is generally safe, but the storage/disk.js implementation allows overriding this, which could lead to predictable filenames if improperly implemented by users (storage/disk.js:13).",
+      "steps_to_exploit": [
+        "Supply custom 'filename' function in DiskStorage configuration",
+        "Ensure the user function returns predictable strings (e.g., timestamps or sequential IDs)",
+        "Perform targeted lookups on the temporary folder"
+      ],
+      "impact": "Unauthorized access to files via filename guessing.",
+      "evolved_from": [],
+      "attack_category": "crypto",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "storage/disk.js",
+          "line": 13,
+          "quote": "crypto.randomBytes(16, function (err, raw) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "storage/disk.js",
+          "line": 13,
+          "quote": "crypto.randomBytes(16, function (err, raw) {"
+        }
+      ],
+      "id": "10541d3f",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Exposure of Internals in MulterError",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The MulterError class exposes specific internal error codes (e.g., 'LIMIT_UNEXPECTED_FILE') to the client, potentially assisting in reconnaissance (lib/multer-error.js:21).",
+      "steps_to_exploit": [
+        "Send malformed or disallowed multipart requests",
+        "Inspect the JSON error response provided by the API",
+        "Identify server-side configuration limits through the error codes"
+      ],
+      "impact": "Information disclosure helping attackers tune their payloads to bypass specific security limits.",
+      "evolved_from": [],
+      "attack_category": "error_handling",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/multer-error.js",
+          "line": 21,
+          "quote": "this.code = code"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/multer-error.js",
+          "line": 21,
+          "quote": "this.code = code"
+        }
+      ],
+      "id": "f3a6cd5c",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Race Condition in indicateDone()",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The logic in lib/make-middleware.js:137 relies on multiple state booleans (readFinished, pendingWrites) to trigger 'done'. If multiple async callbacks overlap incorrectly, it may cause premature invocation of the next() middleware.",
+      "steps_to_exploit": [
+        "Send a high-concurrency request with overlapping field and file streams",
+        "Attempt to access req.files before the storage engine has fully resolved the writes"
+      ],
+      "impact": "Application-level logic errors where the middleware thinks processing is complete when it is not.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/make-middleware.js",
+          "line": 137,
+          "quote": "function indicateDone () {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/make-middleware.js",
+          "line": 137,
+          "quote": "function indicateDone () {"
+        }
+      ],
+      "id": "a8abe496",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Lack of Validation on 'destination' Path",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The DiskStorage constructor allows providing a custom 'destination' string. If this is sourced from user input, it leads to Arbitrary File Write (lib/storage/disk.js:25).",
+      "steps_to_exploit": [
+        "If the app constructs DiskStorage({ destination: userInput }), pass an absolute path outside the intended directory",
+        "Upload a file to overwrite critical system files or config"
+      ],
+      "impact": "Full system compromise (RCE).",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "storage/disk.js",
+          "line": 25,
+          "quote": "if (typeof opts.destination === 'string') {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "storage/disk.js",
+          "line": 25,
+          "quote": "if (typeof opts.destination === 'string') {"
+        }
+      ],
+      "id": "2bb2db98",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Over-reliance on 'type-is' for Middleware invocation",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The middleware uses 'type-is' (lib/make-middleware.js:68) to verify 'multipart' content type. If the application is behind a proxy that strips or manipulates headers, this could be bypassed or trigger misrouting.",
+      "steps_to_exploit": [
+        "Send a non-multipart request with a manipulated Content-Type header to confuse the middleware",
+        "Observe if the middleware incorrectly attempts to process the request as multipart"
+      ],
+      "impact": "Bypass of security checks and potential crashes in the underlying Busboy parser.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/make-middleware.js",
+          "line": 68,
+          "quote": "if (!is(req, ['multipart'])) return next()"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/make-middleware.js",
+          "line": 68,
+          "quote": "if (!is(req, ['multipart'])) return next()"
+        }
+      ],
+      "id": "e1cbb2ad",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Memory Leak in PendingFiles Queue",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "If a request fails after files are added to pendingFiles but before removal, the array may retain object references (lib/make-middleware.js:102).",
+      "steps_to_exploit": [
+        "Trigger repeated aborts during file uploads",
+        "Monitor heap usage for object retention"
+      ],
+      "impact": "Slow memory leak over time in high-traffic applications.",
+      "evolved_from": [],
+      "attack_category": "scalability",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/make-middleware.js",
+          "line": 102,
+          "quote": "var pendingFiles = []"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/make-middleware.js",
+          "line": 102,
+          "quote": "var pendingFiles = []"
+        }
+      ],
+      "id": "123f2d4c",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure 'Any' Strategy usage",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The .any() method creates a strategy that accepts everything, which is often used incorrectly by developers who forget to implement custom filters, leaving systems open to file uploads (index.js:77).",
+      "steps_to_exploit": [
+        "Identify an API endpoint utilizing multer.any()",
+        "Upload arbitrary files including sensitive executable types (e.g., .js, .php, .exe)"
+      ],
+      "impact": "Unrestricted file upload vulnerability leading to malware or shell deployment.",
+      "evolved_from": [],
+      "attack_category": "ux",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 85,
+          "quote": "fileStrategy: 'ARRAY'"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 85,
+          "quote": "fileStrategy: 'ARRAY'"
+        }
+      ],
+      "id": "46a896d7",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "proposed": [
+    {
+      "title": "Unrestricted Temporary File Creation",
+      "code_refs": [
+        {
+          "file": "storage/disk.js",
+          "line": 19,
+          "quote": "cb(null, os.tmpdir())"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Lack of Global File Count Limit",
+      "code_refs": [
+        {
+          "file": "lib/make-middleware.js",
+          "line": 341,
+          "quote": "busboy.on('partsLimit', function () { abortWithCode('LIMIT_PART_COUNT') })"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Prototype Pollution via append-field",
+      "code_refs": [
+        {
+          "file": "lib/make-middleware.js",
+          "line": 230,
+          "quote": "appendField(req.body, fieldname, value)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Denial of Service via Request Body Draining",
+      "code_refs": [
+        {
+          "file": "lib/make-middleware.js",
+          "line": 33,
+          "quote": "function drainStream (stream) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure Error Handling of File Streams",
+      "code_refs": [
+        {
+          "file": "lib/remove-uploaded-files.js",
+          "line": 18,
+          "quote": "setImmediate(function () { handleFile(idx + 1) })"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unbounded Array Index Expansion",
+      "code_refs": [
+        {
+          "file": "lib/make-middleware.js",
+          "line": 27,
+          "quote": "if (Number(match[1]) > limit) return true"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Default Use of Latin1 Encoding",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 22,
+          "quote": "this.defParamCharset = options.defParamCharset || 'latin1'"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potential File Descriptor Leakage",
+      "code_refs": [
+        {
+          "file": "storage/disk.js",
+          "line": 50,
+          "quote": "outStream.once('close', function () { openStreams.delete(file) })"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure Random Filename Generation",
+      "code_refs": [
+        {
+          "file": "storage/disk.js",
+          "line": 13,
+          "quote": "crypto.randomBytes(16, function (err, raw) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Exposure of Internals in MulterError",
+      "code_refs": [
+        {
+          "file": "lib/multer-error.js",
+          "line": 21,
+          "quote": "this.code = code"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Race Condition in indicateDone()",
+      "code_refs": [
+        {
+          "file": "lib/make-middleware.js",
+          "line": 137,
+          "quote": "function indicateDone () {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Lack of Validation on 'destination' Path",
+      "code_refs": [
+        {
+          "file": "storage/disk.js",
+          "line": 25,
+          "quote": "if (typeof opts.destination === 'string') {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Over-reliance on 'type-is' for Middleware invocation",
+      "code_refs": [
+        {
+          "file": "lib/make-middleware.js",
+          "line": 68,
+          "quote": "if (!is(req, ['multipart'])) return next()"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Memory Leak in PendingFiles Queue",
+      "code_refs": [
+        {
+          "file": "lib/make-middleware.js",
+          "line": 102,
+          "quote": "var pendingFiles = []"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure 'Any' Strategy usage",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 85,
+          "quote": "fileStrategy: 'ARRAY'"
+        }
+      ],
+      "outcome": "unchecked"
+    }
+  ],
+  "rejected": [],
+  "verification": null,
+  "arm_meta": {
+    "baseline": {
+      "model": "gemini/gemini-3.1-flash-lite",
+      "context": "code",
+      "requested": 15,
+      "returned": 15,
+      "files_shown": 16,
+      "chars_shown": 43869,
+      "files_that_did_not_fit": []
+    }
+  },
+  "seconds": {
+    "arm": 53.9,
+    "check": 0.0,
+    "total": 53.9
+  },
+  "usage": {
+    "arm": {
+      "calls": 1,
+      "failed": 0,
+      "est_tokens": 13988,
+      "seconds_in_calls": 53.8,
+      "by_task": {
+        "baseline": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 44933,
+          "completion_chars": 11019,
+          "seconds": 53.80346520000603,
+          "est_tokens": 13988
+        }
+      }
+    },
+    "check": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    }
+  }
+}

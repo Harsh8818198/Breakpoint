@@ -1,0 +1,777 @@
+{
+  "schema": 1,
+  "set": "ghsa-8x88-c5mf-7j5w",
+  "variant": "raw",
+  "arm": "plain",
+  "run": 2,
+  "commit": "e02a4e9e013c4be95302e2eb2047a942b883c27b",
+  "started_at": "2026-10-24T10:50:31+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": false,
+  "status": "ok",
+  "candidates": 15,
+  "kept": [
+    {
+      "title": "Arbitrary File Write via Zip Slip",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The extraction logic in src/unpack.ts and src/write-entry.ts fails to effectively sanitize paths containing symbolic links or '../' sequences when `preservePaths` is true, leading to potential path traversal (Zip Slip).",
+      "steps_to_exploit": [
+        "Craft a malicious tar archive containing a file with a path like '../../../../etc/passwd'.",
+        "Set the `preservePaths` option to true via the API.",
+        "The `Unpack` process will write files outside the intended destination directory."
+      ],
+      "impact": "Attackers can overwrite critical system files, potentially gaining remote code execution or privilege escalation.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/write-entry.ts",
+          "line": 114,
+          "quote": "if (!this.preservePaths) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/write-entry.ts",
+          "line": 114,
+          "quote": "if (!this.preservePaths) {"
+        }
+      ],
+      "id": "ec8a6ad2",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of Deprecated/Thread-Unsafe process.umask()",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "src/process-umask.ts exports a function that calls the deprecated and thread-unsafe `process.umask()`. This creates a global state race condition in multi-threaded or asynchronous environments.",
+      "steps_to_exploit": [
+        "Multiple concurrent extraction operations use `chmod` option.",
+        "Each process concurrently modifies the process-wide umask.",
+        "The race condition results in incorrect permissions for extracted files."
+      ],
+      "impact": "Security misconfiguration of file permissions, making sensitive files world-readable or writable.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/process-umask.ts",
+          "line": 2,
+          "quote": "export const umask = () => process.umask()"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/process-umask.ts",
+          "line": 2,
+          "quote": "export const umask = () => process.umask()"
+        }
+      ],
+      "id": "bbaa6903",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Default File Permissions",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `modeFix` function applies a fallback mode of `0o666` which, when combined with `umask`, may result in overly permissive files if not strictly controlled.",
+      "steps_to_exploit": [
+        "Archive is created with default `modeFix` settings.",
+        "Files are extracted on a system with a loose or non-standard `umask`.",
+        "Files are created with insecure permissions (e.g., group-writable)."
+      ],
+      "impact": "Unauthorized modification or unauthorized access to extracted data by other users on the host system.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/mode-fix.ts",
+          "line": 6,
+          "quote": "mode &= 0o7777"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/mode-fix.ts",
+          "line": 6,
+          "quote": "mode &= 0o7777"
+        }
+      ],
+      "id": "bdbfb13c",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Memory Exhaustion via Large Meta Entries",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The parser uses a `maxMetaEntrySize` limit but allows up to 1MB. While configurable, the internal string concatenation `this[META] += c` in `parse.ts` can lead to rapid memory pressure if multiple large entries are processed.",
+      "steps_to_exploit": [
+        "Submit a large number of entries with large PAX headers.",
+        "The parser stores these in memory via string concatenation.",
+        "The process triggers an OOM kill due to memory exhaustion."
+      ],
+      "impact": "Denial of Service (DoS) of the extraction or listing process.",
+      "evolved_from": [],
+      "attack_category": "scalability",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/parse.ts",
+          "line": 237,
+          "quote": "entry.on('data', c => (this[META] += c))"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/parse.ts",
+          "line": 237,
+          "quote": "entry.on('data', c => (this[META] += c))"
+        }
+      ],
+      "id": "21c5e763",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Handling of Symbolic Links During Extraction",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Although the code attempts to check for symlinks, the `ENSURE_NO_SYMLINK` implementation in `unpack.ts` can be bypassed due to potential TOCTOU (Time-of-Check to Time-of-Use) vulnerabilities during recursive directory creation.",
+      "steps_to_exploit": [
+        "Prepare an archive with a directory entry that is actually a symlink.",
+        "The extraction process checks the path, and finds it is a safe directory.",
+        "The symlink is created or replaced by an attacker between the check and the final extraction step."
+      ],
+      "impact": "Path traversal or directory clobbering outside the destination folder.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/unpack.ts",
+          "line": 691,
+          "quote": "if (st?.isSymbolicLink()) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/unpack.ts",
+          "line": 691,
+          "quote": "if (st?.isSymbolicLink()) {"
+        }
+      ],
+      "id": "ee51caed",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potential Integer Overflow in Large Number Parsing",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The parsing of base256 encoded numbers in `large-numbers.ts` uses `Math.pow` and standard number multiplication, which might lose precision for very large values before reaching the SafeInteger limit.",
+      "steps_to_exploit": [
+        "Craft a tarball with an entry header containing a massive size field.",
+        "The parser processes the value, potentially leading to incorrect file offsets or size calculations.",
+        "The logic fails to detect overflow correctly in certain edge cases."
+      ],
+      "impact": "Data corruption or incorrect file extraction offsets, potentially leading to security bypasses.",
+      "evolved_from": [],
+      "attack_category": "error_handling",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/large-numbers.ts",
+          "line": 81,
+          "quote": "sum -= f * Math.pow(256, len - i - 1)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/large-numbers.ts",
+          "line": 81,
+          "quote": "sum -= f * Math.pow(256, len - i - 1)"
+        }
+      ],
+      "id": "b962e015",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Improper Input Validation for Command Arguments",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `makeCommand` wrapper in `make-command.ts` attempts to dynamically determine if arguments are options or file lists by checking `Array.isArray`. This can be manipulated if an attacker can control input structure.",
+      "steps_to_exploit": [
+        "Invoke `tar` methods with user-controlled input as the first argument.",
+        "Inject an array where options are expected.",
+        "The parser switches context, potentially executing operations with unexpected default configuration."
+      ],
+      "impact": "Unexpected behavior, bypass of configuration settings (like `cwd` or `strict` mode).",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/make-command.ts",
+          "line": 170,
+          "quote": "if (Array.isArray(opt_)) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/make-command.ts",
+          "line": 170,
+          "quote": "if (Array.isArray(opt_)) {"
+        }
+      ],
+      "id": "24e9204f",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Symlink Creation in Unpack",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `Unpack` class in `unpack.ts` creates symlinks using `fs.symlink`. It doesn't strictly validate the target path against the extraction root, trusting the `linkpath` provided in the tarball metadata.",
+      "steps_to_exploit": [
+        "Create a tarball where a file entry is a symlink to '/etc/passwd'.",
+        "Execute `tar.extract` on the archive.",
+        "The system creates a symbolic link pointing to a system file."
+      ],
+      "impact": "Information disclosure or integrity compromise if the symlink is later followed by system services.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/unpack.ts",
+          "line": 872,
+          "quote": "fs[link](linkpath, String(entry.absolute), er => {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/unpack.ts",
+          "line": 872,
+          "quote": "fs[link](linkpath, String(entry.absolute), er => {"
+        }
+      ],
+      "id": "a8697927",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Cache Poisoning via NormalizeUnicode",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `normalizeUnicode` cache in `src/normalize-unicode.ts` is a simple global LRU-like set. It does not consider the source context, leading to potential path normalization collisions.",
+      "steps_to_exploit": [
+        "Use conflicting Unicode characters that normalize to the same sequence.",
+        "Force a collision in the cache.",
+        "One path's normalization metadata is reused for a different path, confusing the filesystem logic."
+      ],
+      "impact": "File system entry confusion during extraction, potentially leading to overwriting incorrect files.",
+      "evolved_from": [],
+      "attack_category": "data_privacy",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/normalize-unicode.ts",
+          "line": 5,
+          "quote": "const normalizeCache: Record<string, string> = Object.create(null)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/normalize-unicode.ts",
+          "line": 5,
+          "quote": "const normalizeCache: Record<string, string> = Object.create(null)"
+        }
+      ],
+      "id": "70125700",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Information Leak through Error Messages",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `CwdError` and `SymlinkError` objects include raw file paths and system state information which are emitted in error events.",
+      "steps_to_exploit": [
+        "Trigger an extraction failure (e.g., non-existent directory).",
+        "Listen for error events.",
+        "Receive detailed paths and system metadata in the error objects."
+      ],
+      "impact": "Exposure of server-side directory structures to the client/user, facilitating reconnaissance.",
+      "evolved_from": [],
+      "attack_category": "error_handling",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/cwd-error.ts",
+          "line": 7,
+          "quote": "super(`${code}: Cannot cd into '${path}'`)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/cwd-error.ts",
+          "line": 7,
+          "quote": "super(`${code}: Cannot cd into '${path}'`)"
+        }
+      ],
+      "id": "4cd4b0f1",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unsafe Use of Buffer.allocUnsafe",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Using `Buffer.allocUnsafe` in various parts of the library (e.g., `list.ts`) potentially exposes uninitialized memory if the subsequent read is partial.",
+      "steps_to_exploit": [
+        "Read a file where the read call returns fewer bytes than requested.",
+        "The uninitialized part of the buffer is retained.",
+        "The parser or subsequent consumer processes the sensitive data (if any was in memory)."
+      ],
+      "impact": "Potential information leakage of previously allocated memory contents.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/list.ts",
+          "line": 62,
+          "quote": "const buf = Buffer.allocUnsafe(stat.size)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/list.ts",
+          "line": 62,
+          "quote": "const buf = Buffer.allocUnsafe(stat.size)"
+        }
+      ],
+      "id": "ca7a78db",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Symlink Attack through Hardlinks",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The logic in `WriteEntry` and `Unpack` regarding hardlinks can be manipulated to link to files that were intended to be restricted.",
+      "steps_to_exploit": [
+        "Include both a file and a hardlink in a tarball.",
+        "The parser processes them, creating links on the target filesystem.",
+        "The hardlink mechanism might create links to unauthorized system files if the path sanitization is bypassed."
+      ],
+      "impact": "Integrity compromise; unintended files made accessible/writable via hardlinks.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/write-entry.ts",
+          "line": 325,
+          "quote": "if (this.stat.nlink > 1) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/write-entry.ts",
+          "line": 325,
+          "quote": "if (this.stat.nlink > 1) {"
+        }
+      ],
+      "id": "5812a4ad",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Missing Error Handling in Synchronous Close",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Several `finally` blocks swallow errors during file descriptor closure (e.g., `list.ts`).",
+      "steps_to_exploit": [
+        "Trigger an extraction that exhausts system file descriptors.",
+        "The cleanup code fails to close the FD properly.",
+        "The process remains in an inconsistent state or leaks descriptors."
+      ],
+      "impact": "Resource exhaustion and possible denial of service.",
+      "evolved_from": [],
+      "attack_category": "error_handling",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [],
+      "code_refs": [],
+      "id": "3ff20c82",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Race Condition in Path Reservations",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `PathReservations` system relies on an asynchronous queue that could potentially be reordered or have items added while processing, causing overlaps.",
+      "steps_to_exploit": [
+        "Submit highly concurrent requests for related paths.",
+        "The reservation queue logic has a race condition in the `#run` / `#clear` flow.",
+        "Two operations gain reservation for the same directory concurrently."
+      ],
+      "impact": "Filesystem race conditions, potentially allowing unauthorized file operations.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/path-reservations.ts",
+          "line": 132,
+          "quote": "#clear(fn: Handler) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/path-reservations.ts",
+          "line": 132,
+          "quote": "#clear(fn: Handler) {"
+        }
+      ],
+      "id": "40beea8f",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Temporary File Deletion (Windows)",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The logic to handle non-atomic unlinks on Windows using renaming creates a predictable temporary filename structure (`.DELETE.<random_bytes>`).",
+      "steps_to_exploit": [
+        "Predict or monitor the generation of `.DELETE` files on Windows.",
+        "Attempt to hijack the path during the rename/delete window.",
+        "This might allow a temporary file to be placed or accessed if the entropy of the random byte source is compromised."
+      ],
+      "impact": "Potential for local privilege escalation or temporary file hijacking.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/unpack.ts",
+          "line": 78,
+          "quote": "const name = path + '.DELETE.' + randomBytes(16).toString('hex')"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/unpack.ts",
+          "line": 78,
+          "quote": "const name = path + '.DELETE.' + randomBytes(16).toString('hex')"
+        }
+      ],
+      "id": "0c1c46b8",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "proposed": [
+    {
+      "title": "Arbitrary File Write via Zip Slip",
+      "code_refs": [
+        {
+          "file": "src/write-entry.ts",
+          "line": 114,
+          "quote": "if (!this.preservePaths) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of Deprecated/Thread-Unsafe process.umask()",
+      "code_refs": [
+        {
+          "file": "src/process-umask.ts",
+          "line": 2,
+          "quote": "export const umask = () => process.umask()"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure Default File Permissions",
+      "code_refs": [
+        {
+          "file": "src/mode-fix.ts",
+          "line": 6,
+          "quote": "mode &= 0o7777"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Memory Exhaustion via Large Meta Entries",
+      "code_refs": [
+        {
+          "file": "src/parse.ts",
+          "line": 237,
+          "quote": "entry.on('data', c => (this[META] += c))"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure Handling of Symbolic Links During Extraction",
+      "code_refs": [
+        {
+          "file": "src/unpack.ts",
+          "line": 691,
+          "quote": "if (st?.isSymbolicLink()) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potential Integer Overflow in Large Number Parsing",
+      "code_refs": [
+        {
+          "file": "src/large-numbers.ts",
+          "line": 81,
+          "quote": "sum -= f * Math.pow(256, len - i - 1)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Improper Input Validation for Command Arguments",
+      "code_refs": [
+        {
+          "file": "src/make-command.ts",
+          "line": 170,
+          "quote": "if (Array.isArray(opt_)) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure Symlink Creation in Unpack",
+      "code_refs": [
+        {
+          "file": "src/unpack.ts",
+          "line": 872,
+          "quote": "fs[link](linkpath, String(entry.absolute), er => {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Cache Poisoning via NormalizeUnicode",
+      "code_refs": [
+        {
+          "file": "src/normalize-unicode.ts",
+          "line": 5,
+          "quote": "const normalizeCache: Record<string, string> = Object.create(null)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Information Leak through Error Messages",
+      "code_refs": [
+        {
+          "file": "src/cwd-error.ts",
+          "line": 7,
+          "quote": "super(`${code}: Cannot cd into '${path}'`)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unsafe Use of Buffer.allocUnsafe",
+      "code_refs": [
+        {
+          "file": "src/list.ts",
+          "line": 62,
+          "quote": "const buf = Buffer.allocUnsafe(stat.size)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Symlink Attack through Hardlinks",
+      "code_refs": [
+        {
+          "file": "src/write-entry.ts",
+          "line": 325,
+          "quote": "if (this.stat.nlink > 1) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Missing Error Handling in Synchronous Close",
+      "code_refs": [],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Race Condition in Path Reservations",
+      "code_refs": [
+        {
+          "file": "src/path-reservations.ts",
+          "line": 132,
+          "quote": "#clear(fn: Handler) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure Temporary File Deletion (Windows)",
+      "code_refs": [
+        {
+          "file": "src/unpack.ts",
+          "line": 78,
+          "quote": "const name = path + '.DELETE.' + randomBytes(16).toString('hex')"
+        }
+      ],
+      "outcome": "unchecked"
+    }
+  ],
+  "rejected": [],
+  "verification": null,
+  "arm_meta": {
+    "baseline": {
+      "model": "gemini/gemini-3.1-flash-lite",
+      "context": "code",
+      "requested": 15,
+      "returned": 15,
+      "files_shown": 44,
+      "chars_shown": 246942,
+      "files_that_did_not_fit": []
+    }
+  },
+  "seconds": {
+    "arm": 15.1,
+    "check": 0.0,
+    "total": 15.1
+  },
+  "usage": {
+    "arm": {
+      "calls": 1,
+      "failed": 0,
+      "est_tokens": 65088,
+      "seconds_in_calls": 14.9,
+      "by_task": {
+        "baseline": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 248062,
+          "completion_chars": 12289,
+          "seconds": 14.920769299962558,
+          "est_tokens": 65088
+        }
+      }
+    },
+    "check": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    }
+  }
+}

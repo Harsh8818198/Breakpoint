@@ -1,0 +1,783 @@
+{
+  "schema": 1,
+  "set": "ghsa-73wf-gq98-2v4g",
+  "variant": "raw",
+  "arm": "plain",
+  "run": 2,
+  "commit": "f2931a3ff2a3a31abf84ef01a7400b270aad6405",
+  "started_at": "2026-10-24T11:04:08+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": false,
+  "status": "ok",
+  "candidates": 15,
+  "kept": [
+    {
+      "title": "Arbitrary Code Execution via insecure dynamic module loading",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The function `loadQueries` in node.js:257 uses `require.resolve` and `require` on user-controlled input (`name`) to load configuration modules from the filesystem, allowing an attacker to execute arbitrary code.",
+      "steps_to_exploit": [
+        "Craft a malicious package or file on the local filesystem.",
+        "Trigger a configuration lookup via `browserslist` that references this file.",
+        "The application will require and execute the code contained in the referenced file."
+      ],
+      "impact": "Full system compromise and arbitrary code execution.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "node.js",
+          "line": 257,
+          "quote": "var queries = require(require.resolve(name, { paths: ['.', ctx.path] }))"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "node.js",
+          "line": 257,
+          "quote": "var queries = require(require.resolve(name, { paths: ['.', ctx.path] }))"
+        }
+      ],
+      "id": "0cf9a4ab",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Path Traversal via insecure path concatenation",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "node.js:283 joins user-supplied `name` into a file path for `require.resolve`. While `path.posix.join` is used, insufficient validation of `name` allows referencing unintended locations.",
+      "steps_to_exploit": [
+        "Provide a specially crafted path string for `name` parameter.",
+        "The `require` statement loads a module from outside the expected scope.",
+        "Malicious code is executed upon loading the target file."
+      ],
+      "impact": "Arbitrary file inclusion and potential remote code execution.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "node.js",
+          "line": 283,
+          "quote": "require.resolve(path.posix.join(name, 'browserslist-stats.json'), {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "node.js",
+          "line": 283,
+          "quote": "require.resolve(path.posix.join(name, 'browserslist-stats.json'), {"
+        }
+      ],
+      "id": "a174b198",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Prototypes Pollution in merge logic",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "index.js:257 defines `DANGEROUS_KEYS` but `copyObject` is only used selectively. Similar vulnerabilities in deep merging of user-controlled configurations are common in JS ecosystems.",
+      "steps_to_exploit": [
+        "Supply a crafted JSON configuration file containing keys like '__proto__'.",
+        "The application processes the config and merges properties into the global object or prototype.",
+        "Subsequent logic is manipulated due to modified prototype behavior."
+      ],
+      "impact": "Denial of service or logic manipulation via prototype pollution.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 257,
+          "quote": "var DANGEROUS_KEYS = ['__proto__', 'constructor', 'prototype']"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 257,
+          "quote": "var DANGEROUS_KEYS = ['__proto__', 'constructor', 'prototype']"
+        }
+      ],
+      "id": "ca2f0130",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Sensitive information leakage via error messages",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "node.js:310 and node.js:405 propagate raw filesystem error messages to the user, potentially revealing directory structures or sensitive file paths.",
+      "steps_to_exploit": [
+        "Trigger a read operation on a non-existent or inaccessible file.",
+        "Observe the error message containing internal path details."
+      ],
+      "impact": "Information disclosure of internal server structure.",
+      "evolved_from": [],
+      "attack_category": "error_handling",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "node.js",
+          "line": 310,
+          "quote": "throw new BrowserslistError(\"Can't read \" + stats)"
+        },
+        {
+          "file": "node.js",
+          "line": 405,
+          "quote": "throw new BrowserslistError(\"Can't read \" + file + ' config')"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "node.js",
+          "line": 310,
+          "quote": "throw new BrowserslistError(\"Can't read \" + stats)"
+        },
+        {
+          "file": "node.js",
+          "line": 405,
+          "quote": "throw new BrowserslistError(\"Can't read \" + file + ' config')"
+        }
+      ],
+      "id": "8509107f",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Command Injection in CLI",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "cli.js:116 uses `JSON.parse(fs.readFileSync(opts.stats))` on a file path controlled by command-line arguments without verifying the file content's safety.",
+      "steps_to_exploit": [
+        "Create a malicious JSON file.",
+        "Invoke `browserslist --stats=/path/to/malicious.json`.",
+        "The application parses and processes the malicious content, potentially triggering further logic flaws."
+      ],
+      "impact": "Code execution or logic manipulation via tainted JSON input.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "cli.js",
+          "line": 116,
+          "quote": "stats = JSON.parse(fs.readFileSync(opts.stats))"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "cli.js",
+          "line": 116,
+          "quote": "stats = JSON.parse(fs.readFileSync(opts.stats))"
+        }
+      ],
+      "id": "e20539ee",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure use of legacy insecure commands in GitHub Actions",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": ".github/workflows/test.yml:66 enables `ACTIONS_ALLOW_UNSECURE_COMMANDS`, which allows workflow steps to inject commands that can modify the environment and potentially compromise the runner.",
+      "steps_to_exploit": [
+        "Submit a PR that modifies build scripts.",
+        "The runner processes these commands, allowing escalation of privilege within the CI environment."
+      ],
+      "impact": "CI/CD environment compromise.",
+      "evolved_from": [],
+      "attack_category": "supply_chain",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": ".github/workflows/test.yml",
+          "line": 66,
+          "quote": "ACTIONS_ALLOW_UNSECURE_COMMANDS: true"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": ".github/workflows/test.yml",
+          "line": 66,
+          "quote": "ACTIONS_ALLOW_UNSECURE_COMMANDS: true"
+        }
+      ],
+      "id": "7660b85f",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Denial of Service via RegEx DoS (ReDoS)",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The regular expression in grammar.w3c-ebnf:75 (`UnboundedRange`) and similar complex patterns in parse.js may be susceptible to exponential backtracking.",
+      "steps_to_exploit": [
+        "Provide an extremely long or complex string for parsing.",
+        "The RegEx engine hangs trying to match the input.",
+        "Application becomes unresponsive."
+      ],
+      "impact": "Denial of Service.",
+      "evolved_from": [],
+      "attack_category": "scalability",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "grammar.w3c-ebnf",
+          "line": 75,
+          "quote": "UnboundedRange ::= CompareOperator Space* Version"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "grammar.w3c-ebnf",
+          "line": 75,
+          "quote": "UnboundedRange ::= CompareOperator Space* Version"
+        }
+      ],
+      "id": "2b01211b",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unsafe deserialization of package.json",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "node.js:158 parses `package.json` content as JSON. If a `package.json` file is manipulated in a project directory, it can lead to configuration injection.",
+      "steps_to_exploit": [
+        "Place a malicious package.json in the working directory.",
+        "Run the tool in that directory.",
+        "The tool reads the malicious config, affecting tool behavior."
+      ],
+      "impact": "Configuration injection.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "node.js",
+          "line": 158,
+          "quote": "list = JSON.parse(text).browserslist"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "node.js",
+          "line": 158,
+          "quote": "list = JSON.parse(text).browserslist"
+        }
+      ],
+      "id": "bfc9f40a",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of unsafe `new Function` or `eval` equivalent patterns",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Though not explicit `eval`, the dynamic resolution of `require` chains (node.js:257) mimics unsafe evaluation of code paths.",
+      "steps_to_exploit": [
+        "Chain malicious configuration files via `extends`.",
+        "Execute arbitrary code during the resolution phase."
+      ],
+      "impact": "Code execution.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "node.js",
+          "line": 257,
+          "quote": "var queries = require(require.resolve(name, { paths: ['.', ctx.path] }))"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "node.js",
+          "line": 257,
+          "quote": "var queries = require(require.resolve(name, { paths: ['.', ctx.path] }))"
+        }
+      ],
+      "id": "239c444f",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Lack of input sanitization in browser names",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "node.js:330 sanitizes regional input, but other inputs like `browser` names are not strictly validated against a whitelist in all code paths.",
+      "steps_to_exploit": [
+        "Inject malicious input into a browser name field.",
+        "Bypass logic that expects standard naming conventions."
+      ],
+      "impact": "Logic bypass.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "node.js",
+          "line": 330,
+          "quote": "var code = country.replace(/[^\\w-]/g, '')"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "node.js",
+          "line": 330,
+          "quote": "var code = country.replace(/[^\\w-]/g, '')"
+        }
+      ],
+      "id": "99fbca4f",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potential sensitive data exposure in logs",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "node.js:481 prints full system information and paths to console if `BROWSERSLIST_TRACE_WARNING` is set.",
+      "steps_to_exploit": [
+        "Set environment variable `BROWSERSLIST_TRACE_WARNING`.",
+        "Trigger a warning state to dump system paths to logs."
+      ],
+      "impact": "Exposure of internal system file structure.",
+      "evolved_from": [],
+      "attack_category": "data_privacy",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "node.js",
+          "line": 481,
+          "quote": "console.info('Last browser release in DB: ' + String(new Date(latest)))"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "node.js",
+          "line": 481,
+          "quote": "console.info('Last browser release in DB: ' + String(new Date(latest)))"
+        }
+      ],
+      "id": "62ec7f5b",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure default configuration",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The reliance on `process.env` for security-sensitive configurations like `DANGEROUS_EXTEND` (node.js:254) is error-prone.",
+      "steps_to_exploit": [
+        "Find an environment where `BROWSERSLIST_DANGEROUS_EXTEND` is accidentally enabled.",
+        "Exploit modules that would otherwise be rejected."
+      ],
+      "impact": "Security bypass.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "node.js",
+          "line": 254,
+          "quote": "if (!ctx.dangerousExtend && !process.env.BROWSERSLIST_DANGEROUS_EXTEND) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "node.js",
+          "line": 254,
+          "quote": "if (!ctx.dangerousExtend && !process.env.BROWSERSLIST_DANGEROUS_EXTEND) {"
+        }
+      ],
+      "id": "8e869d1d",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Client-side vs Server-side logic discrepancy",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The library attempts to simulate a subset of features for the browser via `browser.js` by throwing errors, but the existence of two divergent codebases leads to an increased surface for logic bugs.",
+      "steps_to_exploit": [
+        "Identify features that behave differently in `index.js` vs `browser.js`.",
+        "Exploit the inconsistent state handling."
+      ],
+      "impact": "Inconsistent security enforcement across environments.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "browser.js",
+          "line": 7,
+          "quote": "throw new BrowserslistError("
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "browser.js",
+          "line": 7,
+          "quote": "throw new BrowserslistError("
+        }
+      ],
+      "id": "da2c3e2c",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure temporary file usage in tests",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Various tests rely on static files in `test/fixtures` which could be overwritten in shared CI environments.",
+      "steps_to_exploit": [
+        "Race condition in shared test environments allows overwriting fixtures.",
+        "Inject malicious logic into tests executed by CI."
+      ],
+      "impact": "Compromised CI integrity.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [],
+      "code_refs": [],
+      "id": "74f7d43a",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure dependency management (outdated dependencies)",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Multiple dependencies in `package.json` are pinned to wide ranges or older versions that may contain known CVEs.",
+      "steps_to_exploit": [
+        "Use `npm audit` to identify vulnerabilities.",
+        "Craft exploit for the vulnerable dependency."
+      ],
+      "impact": "Known vulnerability exploitation.",
+      "evolved_from": [],
+      "attack_category": "supply_chain",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "package.json",
+          "line": 43,
+          "quote": "\"baseline-browser-mapping\": \"^2.10.42\","
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "package.json",
+          "line": 43,
+          "quote": "\"baseline-browser-mapping\": \"^2.10.42\","
+        }
+      ],
+      "id": "6078eadc",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "proposed": [
+    {
+      "title": "Arbitrary Code Execution via insecure dynamic module loading",
+      "code_refs": [
+        {
+          "file": "node.js",
+          "line": 257,
+          "quote": "var queries = require(require.resolve(name, { paths: ['.', ctx.path] }))"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Path Traversal via insecure path concatenation",
+      "code_refs": [
+        {
+          "file": "node.js",
+          "line": 283,
+          "quote": "require.resolve(path.posix.join(name, 'browserslist-stats.json'), {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Prototypes Pollution in merge logic",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 257,
+          "quote": "var DANGEROUS_KEYS = ['__proto__', 'constructor', 'prototype']"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Sensitive information leakage via error messages",
+      "code_refs": [
+        {
+          "file": "node.js",
+          "line": 310,
+          "quote": "throw new BrowserslistError(\"Can't read \" + stats)"
+        },
+        {
+          "file": "node.js",
+          "line": 405,
+          "quote": "throw new BrowserslistError(\"Can't read \" + file + ' config')"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Command Injection in CLI",
+      "code_refs": [
+        {
+          "file": "cli.js",
+          "line": 116,
+          "quote": "stats = JSON.parse(fs.readFileSync(opts.stats))"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure use of legacy insecure commands in GitHub Actions",
+      "code_refs": [
+        {
+          "file": ".github/workflows/test.yml",
+          "line": 66,
+          "quote": "ACTIONS_ALLOW_UNSECURE_COMMANDS: true"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Denial of Service via RegEx DoS (ReDoS)",
+      "code_refs": [
+        {
+          "file": "grammar.w3c-ebnf",
+          "line": 75,
+          "quote": "UnboundedRange ::= CompareOperator Space* Version"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unsafe deserialization of package.json",
+      "code_refs": [
+        {
+          "file": "node.js",
+          "line": 158,
+          "quote": "list = JSON.parse(text).browserslist"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of unsafe `new Function` or `eval` equivalent patterns",
+      "code_refs": [
+        {
+          "file": "node.js",
+          "line": 257,
+          "quote": "var queries = require(require.resolve(name, { paths: ['.', ctx.path] }))"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Lack of input sanitization in browser names",
+      "code_refs": [
+        {
+          "file": "node.js",
+          "line": 330,
+          "quote": "var code = country.replace(/[^\\w-]/g, '')"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potential sensitive data exposure in logs",
+      "code_refs": [
+        {
+          "file": "node.js",
+          "line": 481,
+          "quote": "console.info('Last browser release in DB: ' + String(new Date(latest)))"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure default configuration",
+      "code_refs": [
+        {
+          "file": "node.js",
+          "line": 254,
+          "quote": "if (!ctx.dangerousExtend && !process.env.BROWSERSLIST_DANGEROUS_EXTEND) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Client-side vs Server-side logic discrepancy",
+      "code_refs": [
+        {
+          "file": "browser.js",
+          "line": 7,
+          "quote": "throw new BrowserslistError("
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure temporary file usage in tests",
+      "code_refs": [],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure dependency management (outdated dependencies)",
+      "code_refs": [
+        {
+          "file": "package.json",
+          "line": 43,
+          "quote": "\"baseline-browser-mapping\": \"^2.10.42\","
+        }
+      ],
+      "outcome": "unchecked"
+    }
+  ],
+  "rejected": [],
+  "verification": null,
+  "arm_meta": {
+    "baseline": {
+      "model": "gemini/gemini-3.1-flash-lite",
+      "context": "code",
+      "requested": 15,
+      "returned": 15,
+      "files_shown": 32,
+      "chars_shown": 98660,
+      "files_that_did_not_fit": []
+    }
+  },
+  "seconds": {
+    "arm": 10.7,
+    "check": 0.0,
+    "total": 10.7
+  },
+  "usage": {
+    "arm": {
+      "calls": 1,
+      "failed": 0,
+      "est_tokens": 27438,
+      "seconds_in_calls": 10.7,
+      "by_task": {
+        "baseline": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 99756,
+          "completion_chars": 9998,
+          "seconds": 10.677895399974659,
+          "est_tokens": 27438
+        }
+      }
+    },
+    "check": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    }
+  }
+}

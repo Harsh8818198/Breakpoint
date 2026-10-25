@@ -1,0 +1,469 @@
+{
+  "schema": 1,
+  "set": "ghsa-5gmw-xhrv-c9v3",
+  "variant": "raw",
+  "arm": "import-all_r1",
+  "run": 1,
+  "commit": "abc247f85cba0309e3f1e5655db1837a2a1c2483",
+  "started_at": "2026-10-25T05:40:29+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": true,
+  "status": "ok",
+  "candidates": 15,
+  "kept": [
+    {
+      "title": "Arbitrary Code Execution via dynamic import of user-controlled filename",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `getHandler` function in `src/entry/utils.ts` performs a dynamic `import(filename)` where `filename` is provided by the main process through inter-thread communication. Since the main thread takes this filename from user-provided input, an attacker can supply an arbitrary path to execute local code.",
+      "steps_to_exploit": [
+        "Call `tinypool.run` with a `filename` pointing to a malicious local script",
+        "The worker thread receives the message and executes `getHandler` with the malicious path",
+        "The `import(filename)` statement triggers the execution of the attacker's code"
+      ],
+      "impact": "Remote code execution within the context of the worker thread process.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "CONFIRMED",
+      "evidence": [
+        {
+          "file": "src/entry/utils.ts",
+          "line": 36,
+          "quote": "const handlerModule = await import(filename)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/entry/utils.ts",
+          "line": 36,
+          "quote": "const handlerModule = await import(filename)"
+        }
+      ],
+      "id": "84757452",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Lack of Input Sanitization for Task Function Names",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `getHandler` function expects a `name` parameter to resolve an export. This name is used in a member access chain `(handler as any)[name]`, which is vulnerable to prototype pollution.",
+      "steps_to_exploit": [
+        "Pass `constructor` or `__proto__` as the `name` argument to `runTask`",
+        "The `getHandler` function tries to access `handler['constructor']` or `handler['__proto__']`",
+        "The system behavior is altered due to access of prototype properties"
+      ],
+      "impact": "Prototype pollution resulting in privilege escalation or DoS.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "CONFIRMED",
+      "evidence": [
+        {
+          "file": "src/entry/utils.ts",
+          "line": 45,
+          "quote": "handler = await (handler as any)[name]"
+        },
+        {
+          "file": "src/entry/utils.ts",
+          "line": 53,
+          "quote": "handler = await (handler as any)[name]"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/entry/utils.ts",
+          "line": 45,
+          "quote": "handler = await (handler as any)[name]"
+        }
+      ],
+      "id": "e93efa1a",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Global state pollution in `process.__tinypool_state__`",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The pool stores internal flags in the global `process` object. This is a shared namespace and can be modified by any task running in the same process, causing unpredictable pool behavior.",
+      "steps_to_exploit": [
+        "A task modifies `process.__tinypool_state__`",
+        "The internal pool logic reads the corrupted `workerId` or `isTinypoolWorker` flag",
+        "The pool logic fails to handle tasks correctly, leading to logic flaws"
+      ],
+      "impact": "Security bypass or incorrect authorization if pool logic relies on these flags.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "CONFIRMED",
+      "evidence": [
+        {
+          "file": "src/entry/process.ts",
+          "line": 19,
+          "quote": "process.__tinypool_state__ = { isChildProcess: true, isTinypoolWorker: true, workerData: null, workerId: Number(process.env.TINYPOOL_WORKER_ID), }"
+        },
+        {
+          "file": "src/entry/worker.ts",
+          "line": 24,
+          "quote": "process.__tinypool_state__ = { isWorkerThread: true, isTinypoolWorker: true, workerData: workerData, workerId: tinypoolPrivateData.workerId, }"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/index.ts",
+          "line": 43,
+          "quote": "__tinypool_state__: { isTinypoolWorker: boolean isWorkerThread?: boolean isChildProcess?: boolean workerData: any workerId: number }"
+        }
+      ],
+      "id": "bf6e5380",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Incomplete sanitization of worker environment",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `initialize` method for `ProcessWorker` merges user-provided environment variables directly into the child process environment, potentially overriding critical system variables.",
+      "steps_to_exploit": [
+        "Provide malicious environment variables (e.g., `NODE_OPTIONS`, `LD_PRELOAD`) in the `env` config",
+        "The worker is spawned with these variables",
+        "The worker executes code with modified environment behavior"
+      ],
+      "impact": "Environment variable injection into child workers.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "CONFIRMED",
+      "evidence": [
+        {
+          "file": "src/runtime/process-worker.ts",
+          "line": 30,
+          "quote": "env: { ...options.env,"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/runtime/process-worker.ts",
+          "line": 30,
+          "quote": "env: { ...options.env,"
+        }
+      ],
+      "id": "862d01ce",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "proposed": [
+    {
+      "title": "Arbitrary Code Execution via dynamic import of user-controlled filename",
+      "code_refs": [
+        {
+          "file": "src/entry/utils.ts",
+          "line": 36,
+          "quote": "const handlerModule = await import(filename)"
+        }
+      ],
+      "outcome": "kept"
+    },
+    {
+      "title": "Insecure ESLint configuration disables critical security checks",
+      "code_refs": [
+        {
+          "file": "eslint.config.js",
+          "line": 49,
+          "quote": "'@typescript-eslint/no-unsafe-assignment': 'off'"
+        }
+      ],
+      "outcome": "REFUTED:defence_found"
+    },
+    {
+      "title": "Use of 'eval'-like constructor for import",
+      "code_refs": [
+        {
+          "file": "src/entry/utils.ts",
+          "line": 12,
+          "quote": "importESMCached = new Function( 'specifier', 'return import(specifier)' ) as typeof importESMCached"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    },
+    {
+      "title": "Worker Process Isolation Bypass via `isolateWorkers: false`",
+      "code_refs": [
+        {
+          "file": "src/index.ts",
+          "line": 1058,
+          "quote": "if ( !this.options.isolateWorkers && this.options.maxMemoryLimitBeforeRecycle !== undefined && (taskInfo?.workerInfo?.usedMemory || 0) > this.options.maxMemoryLimitBeforeRecycle ) {"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    },
+    {
+      "title": "Lack of Input Sanitization for Task Function Names",
+      "code_refs": [
+        {
+          "file": "src/entry/utils.ts",
+          "line": 45,
+          "quote": "handler = await (handler as any)[name]"
+        }
+      ],
+      "outcome": "kept"
+    },
+    {
+      "title": "Exposure of sensitive environment variables to child processes",
+      "code_refs": [
+        {
+          "file": "src/runtime/process-worker.ts",
+          "line": 30,
+          "quote": "env: { ...options.env, TINYPOOL_WORKER_ID: options.workerData[0].workerId.toString(), },"
+        }
+      ],
+      "outcome": "REFUTED:defence_found"
+    },
+    {
+      "title": "Unchecked Error Serialization leading to info disclosure",
+      "code_refs": [],
+      "outcome": "UNVERIFIED:quote_not_in_code"
+    },
+    {
+      "title": "Race condition in `Atomics` state management",
+      "code_refs": [
+        {
+          "file": "src/entry/worker.ts",
+          "line": 79,
+          "quote": "Atomics.wait(sharedBuffer, kRequestCountField, lastSeenRequestCount)"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    },
+    {
+      "title": "Over-privileged File Access in `src/index.ts`",
+      "code_refs": [
+        {
+          "file": "src/index.ts",
+          "line": 1244,
+          "quote": "readFileSync(join(__dirname, '../package.json'), 'utf-8')"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    },
+    {
+      "title": "Insecure default configuration for worker runtime",
+      "code_refs": [
+        {
+          "file": "src/runtime/thread-worker.ts",
+          "line": 13,
+          "quote": "this.thread = new Worker( fileURLToPath(import.meta.url + '/../entry/worker.js'), options )"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    },
+    {
+      "title": "Use of `SIGKILL` for forceful termination",
+      "code_refs": [
+        {
+          "file": "src/runtime/process-worker.ts",
+          "line": 57,
+          "quote": "() => this.process.kill('SIGKILL'),"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    },
+    {
+      "title": "Unsafe `process.nextTick` usage for error propagation",
+      "code_refs": [],
+      "outcome": "REFUTED:contradicted_by_code"
+    },
+    {
+      "title": "Lack of resource limiting for task queue",
+      "code_refs": [
+        {
+          "file": "src/index.ts",
+          "line": 180,
+          "quote": "maxQueue: Infinity,"
+        }
+      ],
+      "outcome": "REFUTED:defence_found"
+    },
+    {
+      "title": "Global state pollution in `process.__tinypool_state__`",
+      "code_refs": [
+        {
+          "file": "src/index.ts",
+          "line": 43,
+          "quote": "__tinypool_state__: { isTinypoolWorker: boolean isWorkerThread?: boolean isChildProcess?: boolean workerData: any workerId: number }"
+        }
+      ],
+      "outcome": "kept"
+    },
+    {
+      "title": "Incomplete sanitization of worker environment",
+      "code_refs": [
+        {
+          "file": "src/runtime/process-worker.ts",
+          "line": 30,
+          "quote": "env: { ...options.env,"
+        }
+      ],
+      "outcome": "kept"
+    }
+  ],
+  "rejected": [
+    {
+      "title": "Insecure ESLint configuration disables critical security checks",
+      "status": "REFUTED",
+      "code": "defence_found",
+      "why": "a protection enforced in the code defeats the claim"
+    },
+    {
+      "title": "Use of 'eval'-like constructor for import",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    },
+    {
+      "title": "Worker Process Isolation Bypass via `isolateWorkers: false`",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    },
+    {
+      "title": "Exposure of sensitive environment variables to child processes",
+      "status": "REFUTED",
+      "code": "defence_found",
+      "why": "a protection enforced in the code defeats the claim"
+    },
+    {
+      "title": "Unchecked Error Serialization leading to info disclosure",
+      "status": "UNVERIFIED",
+      "code": "quote_not_in_code",
+      "why": "the reviewer's quotes do not exist in the files named"
+    },
+    {
+      "title": "Race condition in `Atomics` state management",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    },
+    {
+      "title": "Over-privileged File Access in `src/index.ts`",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    },
+    {
+      "title": "Insecure default configuration for worker runtime",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    },
+    {
+      "title": "Use of `SIGKILL` for forceful termination",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    },
+    {
+      "title": "Unsafe `process.nextTick` usage for error propagation",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    },
+    {
+      "title": "Lack of resource limiting for task queue",
+      "status": "REFUTED",
+      "code": "defence_found",
+      "why": "a protection enforced in the code defeats the claim"
+    }
+  ],
+  "verification": {
+    "mode": "source-code",
+    "files_indexed": 68,
+    "checked": 15,
+    "confirmed": 4,
+    "refuted": 10,
+    "unverified": 1,
+    "errors": 0,
+    "defender_pass": true,
+    "appeal_pass": true
+  },
+  "arm_meta": {
+    "imported_from": "eval_runs_check/inputs/ghsa-5gmw-xhrv-c9v3/all_r1.json",
+    "note": "produced elsewhere; not repeatable by this harness"
+  },
+  "seconds": {
+    "arm": 0.0,
+    "check": 211.3,
+    "total": 211.3
+  },
+  "usage": {
+    "arm": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    },
+    "check": {
+      "calls": 46,
+      "failed": 0,
+      "est_tokens": 465654,
+      "seconds_in_calls": 210.7,
+      "by_task": {
+        "verify_appeal": {
+          "calls": 9,
+          "failed": 0,
+          "prompt_chars": 642387,
+          "completion_chars": 6221,
+          "seconds": 32.49603239982389,
+          "est_tokens": 162152
+        },
+        "verify_defend": {
+          "calls": 7,
+          "failed": 0,
+          "prompt_chars": 484623,
+          "completion_chars": 3917,
+          "seconds": 36.720706799882464,
+          "est_tokens": 122135
+        },
+        "verify_judge": {
+          "calls": 15,
+          "failed": 0,
+          "prompt_chars": 650744,
+          "completion_chars": 18326,
+          "seconds": 117.7991692002397,
+          "est_tokens": 167268
+        },
+        "verify_locate": {
+          "calls": 15,
+          "failed": 0,
+          "prompt_chars": 51859,
+          "completion_chars": 4537,
+          "seconds": 23.693969299900346,
+          "est_tokens": 14099
+        }
+      }
+    }
+  }
+}

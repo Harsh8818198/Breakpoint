@@ -1,0 +1,213 @@
+{
+ "_about": "The code check run on the candidates that were read as describing (Y) or approaching (P) the advisory's flaw. 'check_again' exists only for the four sets with a Y candidate. The reading was written (proposed_read.json in finder/) before the check ran.",
+ "rows": [
+  {
+   "set": "ghsa-2933-q333-qg83",
+   "finder_run": 1,
+   "candidate": "Prototype Pollution via recursive object merge",
+   "read_as": "Y",
+   "check_first": "kept",
+   "check_again": "REFUTED:defence_found"
+  },
+  {
+   "set": "ghsa-5gmw-xhrv-c9v3",
+   "finder_run": 2,
+   "candidate": "Potential Prototype Pollution via Object.assign/spread",
+   "read_as": "P",
+   "check_first": "REFUTED:contradicted_by_code",
+   "check_again": null
+  },
+  {
+   "set": "ghsa-83w8-p2f5-377r",
+   "finder_run": 1,
+   "candidate": "Lack of Strict Path Normalization",
+   "read_as": "P",
+   "check_first": "REFUTED:defence_found",
+   "check_again": "REFUTED:defence_found"
+  },
+  {
+   "set": "ghsa-83w8-p2f5-377r",
+   "finder_run": 2,
+   "candidate": "Improper Input Sanitization in `getPathnameForSend`",
+   "read_as": "Y",
+   "check_first": "UNVERIFIED:quote_is_comment",
+   "check_again": "REFUTED:contradicted_by_code"
+  },
+  {
+   "set": "ghsa-83w8-p2f5-377r",
+   "finder_run": 3,
+   "candidate": "Unsafe consumption of `req.raw.url`",
+   "read_as": "P",
+   "check_first": "REFUTED:contradicted_by_code",
+   "check_again": "REFUTED:defence_found"
+  },
+  {
+   "set": "ghsa-8r9p-f939-6h3c",
+   "finder_run": 1,
+   "candidate": "Regex Injection in Header Filter",
+   "read_as": "P",
+   "check_first": "REFUTED:contradicted_by_code",
+   "check_again": null
+  },
+  {
+   "set": "ghsa-8r9p-f939-6h3c",
+   "finder_run": 2,
+   "candidate": "Regex Injection via sensitiveHeaders",
+   "read_as": "P",
+   "check_first": "REFUTED:contradicted_by_code",
+   "check_again": null
+  },
+  {
+   "set": "ghsa-9m6g-wc8r-q59c",
+   "finder_run": 1,
+   "candidate": "Use of Prototype Pollution susceptible object assignment",
+   "read_as": "Y",
+   "check_first": "kept",
+   "check_again": "kept"
+  },
+  {
+   "set": "ghsa-9m6g-wc8r-q59c",
+   "finder_run": 2,
+   "candidate": "Use of Prototype Pollution Gadget",
+   "read_as": "Y",
+   "check_first": "kept",
+   "check_again": "kept"
+  },
+  {
+   "set": "ghsa-9m6g-wc8r-q59c",
+   "finder_run": 3,
+   "candidate": "Prototype Pollution via recursive object assignment",
+   "read_as": "Y",
+   "check_first": "kept",
+   "check_again": "kept"
+  },
+  {
+   "set": "ghsa-9v7f-9g4p-ffgj",
+   "finder_run": 1,
+   "candidate": "Potential for Arbitrary File Access via JWKS URI",
+   "read_as": "P",
+   "check_first": "REFUTED:contradicted_by_code",
+   "check_again": null
+  },
+  {
+   "set": "ghsa-9v7f-9g4p-ffgj",
+   "finder_run": 3,
+   "candidate": "JWKS URI Scheme Confusion",
+   "read_as": "P",
+   "check_first": "REFUTED:contradicted_by_code",
+   "check_again": null
+  },
+  {
+   "set": "ghsa-g3jj-5cmm-3hxx",
+   "finder_run": 2,
+   "candidate": "Potential Key Confusion in Verification",
+   "read_as": "P",
+   "check_first": "REFUTED:contradicted_by_code",
+   "check_again": null
+  },
+  {
+   "set": "ghsa-mxm6-v9r6-r94c",
+   "finder_run": 1,
+   "candidate": "Improper Validation of Link Protocols",
+   "read_as": "P",
+   "check_first": "REFUTED:defence_found",
+   "check_again": null
+  },
+  {
+   "set": "ghsa-mxm6-v9r6-r94c",
+   "finder_run": 2,
+   "candidate": "Improper Validation of Link Protocols",
+   "read_as": "P",
+   "check_first": "REFUTED:defence_found",
+   "check_again": null
+  },
+  {
+   "set": "ghsa-pqg4-j6r4-53mv",
+   "finder_run": 1,
+   "candidate": "Insecure handling of line terminators in quotes",
+   "read_as": "P",
+   "check_first": "REFUTED:contradicted_by_code",
+   "check_again": null
+  },
+  {
+   "set": "ghsa-pqg4-j6r4-53mv",
+   "finder_run": 3,
+   "candidate": "Improper Handling of Line Terminators",
+   "read_as": "P",
+   "check_first": "REFUTED:contradicted_by_code",
+   "check_again": null
+  },
+  {
+   "set": "ghsa-r9w8-h9r3-54w4",
+   "finder_run": 1,
+   "candidate": "Missing validation on `fromViewInfo` input",
+   "read_as": "P",
+   "check_first": "REFUTED:defence_found",
+   "check_again": null
+  },
+  {
+   "set": "ghsa-r9w8-h9r3-54w4",
+   "finder_run": 3,
+   "candidate": "Missing validation of `byteOffset` and `length` in View creation",
+   "read_as": "P",
+   "check_first": "REFUTED:defence_found",
+   "check_again": null
+  },
+  {
+   "set": "ghsa-wc9g-mqfw-jrwm",
+   "finder_run": 1,
+   "candidate": "Prototype Pollution via append-field",
+   "read_as": "P",
+   "check_first": "REFUTED:contradicted_by_code",
+   "check_again": null
+  },
+  {
+   "set": "ghsa-wc9g-mqfw-jrwm",
+   "finder_run": 1,
+   "candidate": "Unbounded Array Index Expansion",
+   "read_as": "P",
+   "check_first": "REFUTED:contradicted_by_code",
+   "check_again": null
+  },
+  {
+   "set": "ghsa-wc9g-mqfw-jrwm",
+   "finder_run": 2,
+   "candidate": "Prototype Pollution via append-field",
+   "read_as": "P",
+   "check_first": "REFUTED:contradicted_by_code",
+   "check_again": null
+  },
+  {
+   "set": "ghsa-wc9g-mqfw-jrwm",
+   "finder_run": 3,
+   "candidate": "Unbounded Array Indexing Vulnerability",
+   "read_as": "P",
+   "check_first": "REFUTED:contradicted_by_code",
+   "check_again": null
+  },
+  {
+   "set": "ghsa-wc9g-mqfw-jrwm",
+   "finder_run": 3,
+   "candidate": "Potential Prototype Pollution in Field Handling",
+   "read_as": "P",
+   "check_first": "REFUTED:contradicted_by_code",
+   "check_again": null
+  },
+  {
+   "set": "ghsa-xcpc-8h2w-3j85",
+   "finder_run": 3,
+   "candidate": "Lack of Memory Limits on Decompression",
+   "read_as": "Y",
+   "check_first": "kept",
+   "check_again": "kept"
+  },
+  {
+   "set": "ghsa-xcpc-8h2w-3j85",
+   "finder_run": 3,
+   "candidate": "Implicit Trust in Zip Header Metadata",
+   "read_as": "Y",
+   "check_first": "kept",
+   "check_again": "REFUTED:defence_found"
+  }
+ ]
+}

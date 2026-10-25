@@ -139,6 +139,7 @@ def _bug_ids(verdict: dict) -> set[str]:
 def _arm_summary(label: str, runs: list[dict], es: EvalSet, verdicts: dict, key_of: dict) -> dict:
     ok = [r for r in runs if r.get("status") == "ok"]
     out: dict = {"label": label, "runs": len(ok), "unsupported": [r.get("reason") for r in runs if r.get("status") == "unsupported"][:1],
+                 "errored_runs": [r["run"] for r in runs if r.get("status") == "error"],
                  "verify": all(r.get("verify") for r in ok) if ok else None, "models": sorted({r["model"] for r in ok})}
     if not ok:
         return out
@@ -230,6 +231,10 @@ def _flags(es: EvalSet, variant: str, arms: dict, adjudicated: bool, undecided: 
     short = [a["label"] for a in arms.values() if a.get("runs", 0) and a["runs"] < 3]
     if short:
         flags.append(f"Fewer than 3 runs for {', '.join(short)}: run-to-run spread is not meaningful.")
+    failed = {a["label"]: a["errored_runs"] for a in arms.values() if a.get("errored_runs")}
+    if failed:
+        flags.append("Run(s) whose model reply could not be read are not counted (not scored as misses): "
+                     + "; ".join(f"{l} run(s) {r}" for l, r in failed.items()) + ". Run the evaluation again to retry them.")
     slept = {a["label"]: a["clock_anomaly_runs"] for a in arms.values() if a.get("clock_anomaly_runs")}
     if slept:
         flags.append("Wall-clock time for " + "; ".join(f"{l} run(s) {r}" for l, r in slept.items())

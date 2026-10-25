@@ -1,0 +1,750 @@
+{
+  "schema": 1,
+  "set": "ghsa-2933-q333-qg83",
+  "variant": "raw",
+  "arm": "plain",
+  "run": 1,
+  "commit": "321916bb9afc0413277304cf209ae4fae111e5e3",
+  "started_at": "2026-10-24T10:44:42+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": false,
+  "status": "ok",
+  "candidates": 15,
+  "kept": [
+    {
+      "title": "Remote Code Execution via Eval on Untrusted Data",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `parseData` function in `lib/readFile.js` uses `evalAlias(data)` to parse '.js' or '.ts' files, which allows an attacker who can influence the content of these files to execute arbitrary code with the privileges of the Node.js process.",
+      "steps_to_exploit": [
+        "Attacker identifies a writable locale file directory or influences the locale file content.",
+        "Attacker creates or overwrites a file with a '.js' or '.ts' extension containing malicious JavaScript.",
+        "The application calls `read()` on the attacker-controlled file.",
+        "The application executes `eval(data)`, triggering the payload."
+      ],
+      "impact": "Full system compromise, data theft, and loss of service.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/readFile.js",
+          "line": 86,
+          "quote": "result = evalAlias(data)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/readFile.js",
+          "line": 86,
+          "quote": "result = evalAlias(data)"
+        }
+      ],
+      "id": "d452fc76",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Prototype Pollution via recursive object merge",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "While `defaults` attempts to block some keys, the `setPath` and `pushPath` utility functions perform property assignment without validating that the path segments do not contain '__proto__', 'constructor', or 'prototype'.",
+      "steps_to_exploit": [
+        "Attacker provides a malicious object containing `__proto__` properties in `addPath` or `loadPath` configurations.",
+        "The system merges these objects into internal state or processing structures.",
+        "Subsequent operations allow the attacker to overwrite Object prototype properties, influencing application logic."
+      ],
+      "impact": "Denial of service or privilege escalation by altering object behavior globally.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/utils.js",
+          "line": 108,
+          "quote": "obj[k] = newValue"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/utils.js",
+          "line": 108,
+          "quote": "obj[k] = newValue"
+        }
+      ],
+      "id": "e074f54d",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure File Creation via Path Traversal",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `isSafeNsSegment` function only blocks '..' and absolute path markers. It fails to account for other techniques that could allow writing to restricted directories if the environment or filename construction changes, making it brittle.",
+      "steps_to_exploit": [
+        "Attacker attempts to manipulate the 'ns' (namespace) interpolation value.",
+        "If the interpolation path is complex, the loose filtering may allow unintended directory access.",
+        "The `writeFile` function uses this unsanitized interpolation to generate the output path."
+      ],
+      "impact": "Unauthorized file overwrite leading to code execution or service disruption.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/utils.js",
+          "line": 53,
+          "quote": "export function isSafeNsSegment (v) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/utils.js",
+          "line": 53,
+          "quote": "export function isSafeNsSegment (v) {"
+        }
+      ],
+      "id": "8c4bf58e",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unsafe Use of Shell Commands in Build Script",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `build` script in `example/fastify/package.json` uses command substitution `$packageName` and `find` which may be vulnerable to shell injection if `npm pack` names can be influenced or if the environment is misconfigured.",
+      "steps_to_exploit": [
+        "Attacker compromises the build environment or a dependency that influences `npm pack` output.",
+        "Maliciously named packages are packed.",
+        "The build script executes the malicious filename in a shell context."
+      ],
+      "impact": "Code execution in the CI/CD pipeline or build environment.",
+      "evolved_from": [],
+      "attack_category": "supply_chain",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [],
+      "code_refs": [],
+      "id": "e60286e9",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of unsafe `eval` alias",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Assigning `eval` to a constant `evalAlias` is an attempt to bypass static analysis tools that flag direct calls to `eval()`, but it provides the exact same dangerous functionality.",
+      "steps_to_exploit": [
+        "Attacker finds a location where the code is passed to the parser.",
+        "Attacker provides a string that is evaluated by `evalAlias`.",
+        "Payload executes."
+      ],
+      "impact": "Reduces security visibility while maintaining high-risk vulnerability.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/readFile.js",
+          "line": 10,
+          "quote": "const evalAlias = eval"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/readFile.js",
+          "line": 10,
+          "quote": "const evalAlias = eval"
+        }
+      ],
+      "id": "50ee868d",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potential Arbitrary Path Traversal via addPath/loadPath functions",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The backend allows users to provide a function for `addPath` or `loadPath`. If the implementer of that function uses user-supplied input to generate the return string, the system does not sufficiently validate the resulting path beyond basic checks.",
+      "steps_to_exploit": [
+        "Application configuration uses a function to return `loadPath` based on user input (e.g., query params).",
+        "Attacker provides a crafted input that results in a path like '/etc/passwd'.",
+        "The backend attempts to read the file."
+      ],
+      "impact": "Information disclosure or arbitrary file access.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/index.js",
+          "line": 36,
+          "quote": "loadPath = this.options.loadPath(language, namespace)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/index.js",
+          "line": 36,
+          "quote": "loadPath = this.options.loadPath(language, namespace)"
+        }
+      ],
+      "id": "11cd821e",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Weak Input Validation on `lng` and `ns` segments",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `isSafeSegmentBase` validates `v.length > 128`. However, this is an arbitrary limit that might not protect against specific filesystem limitations or character encoding attacks depending on the host OS.",
+      "steps_to_exploit": [
+        "Attacker provides very long strings to trigger unexpected behavior in path resolution or system calls.",
+        "System attempts to process the excessively long path."
+      ],
+      "impact": "Denial of service by exhausting resources or crashing filesystem-related operations.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/utils.js",
+          "line": 27,
+          "quote": "if (v.length === 0 || v.length > 128) return false"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/utils.js",
+          "line": 27,
+          "quote": "if (v.length === 0 || v.length > 128) return false"
+        }
+      ],
+      "id": "c6b2b9db",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Improper Input Sanitization for Unicode Control Characters",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The regex `/[\\x00-\\x1F\\x7F]/` attempts to block control characters, but it might miss more complex Unicode sequences or normalization bypasses used in file path construction.",
+      "steps_to_exploit": [
+        "Attacker uses normalization forms to inject control characters that pass the regex but are treated as path separators by the filesystem."
+      ],
+      "impact": "Path traversal or unexpected filesystem manipulation.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/utils.js",
+          "line": 32,
+          "quote": "if (/[\\x00-\\x1F\\x7F]/.test(v)) return false"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/utils.js",
+          "line": 32,
+          "quote": "if (/[\\x00-\\x1F\\x7F]/.test(v)) return false"
+        }
+      ],
+      "id": "ef814bc6",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unsafe `writeFile` without atomic operations",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `writeFile` implementation does not use temporary files or atomic renaming to replace translation files. This creates a race condition where the file could be partially written, leading to a corrupt state.",
+      "steps_to_exploit": [
+        "Attacker or high-frequency process requests a read while a write is occurring.",
+        "System reads a half-written/corrupt file."
+      ],
+      "impact": "Denial of service via application-level corruption of translations.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/writeFile.js",
+          "line": 43,
+          "quote": "fs.writeFile(filename, payload, 'utf8', (err, data) => err ? reject(err) : resolve(data))"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/writeFile.js",
+          "line": 43,
+          "quote": "fs.writeFile(filename, payload, 'utf8', (err, data) => err ? reject(err) : resolve(data))"
+        }
+      ],
+      "id": "8ca0252f",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Overly Permissive Dependency Constraints",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The package uses loose or unpinned dependencies in many examples and the main manifest. This can lead to the installation of compromised versions in the future.",
+      "steps_to_exploit": [
+        "A dependency (like `i18next-http-backend`) is compromised on npm.",
+        "The application automatically upgrades to the malicious version on fresh install.",
+        "Attack is deployed."
+      ],
+      "impact": "Supply chain compromise via transitive dependencies.",
+      "evolved_from": [],
+      "attack_category": "supply_chain",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "package.json",
+          "line": 30,
+          "quote": "\"devDependencies\": {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "package.json",
+          "line": 30,
+          "quote": "\"devDependencies\": {"
+        }
+      ],
+      "id": "9480d694",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Information Disclosure via stack trace",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Some functions, particularly in custom error parsing (like `lib/readFile.js` line 141), concatenate full system paths into the error message which might be exposed to the user.",
+      "steps_to_exploit": [
+        "Attacker triggers a parsing error on a file they don't have access to.",
+        "The application returns an error message including the full absolute path."
+      ],
+      "impact": "Sensitive server path information leakage.",
+      "evolved_from": [],
+      "attack_category": "error_handling",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/readFile.js",
+          "line": 141,
+          "quote": "err.message = 'error parsing ' + filename + ': ' + err.message"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/readFile.js",
+          "line": 141,
+          "quote": "err.message = 'error parsing ' + filename + ': ' + err.message"
+        }
+      ],
+      "id": "dc1ac8d4",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of `eval` in JSON5 for identifiers",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The parser code includes structures that attempt to parse JS-like objects. Using custom parsers instead of standard libraries for complex formats like JS/TS often results in injection vulnerabilities.",
+      "steps_to_exploit": [
+        "Attacker supplies a JS-like file that exploits the specific parsing quirks of the local `json5.js` implementation."
+      ],
+      "impact": "Unexpected logic execution or parser crash.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/readFile.js",
+          "line": 86,
+          "quote": "result = evalAlias(data)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/readFile.js",
+          "line": 86,
+          "quote": "result = evalAlias(data)"
+        }
+      ],
+      "id": "ad835ebb",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Lack of Memory Limits on Read Operations",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `readFileSync` and `readFile` operations load the entire content of a file into memory without checking the size, allowing for memory exhaustion attacks.",
+      "steps_to_exploit": [
+        "Attacker causes the system to read a very large or infinite stream (if the backend supports streams) or a file designed to consume RAM.",
+        "Process crashes due to OOM."
+      ],
+      "impact": "Denial of service.",
+      "evolved_from": [],
+      "attack_category": "rate_limiting",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/readFile.js",
+          "line": 13,
+          "quote": "const data = fs.readFileSync(filename, 'utf8')"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/readFile.js",
+          "line": 13,
+          "quote": "const data = fs.readFileSync(filename, 'utf8')"
+        }
+      ],
+      "id": "558abb3c",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure `find` command in build script",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The command `find ./node_modules/* -mtime +10950` is used. If the file paths contain spaces or special characters, this command may fail or behave unpredictably.",
+      "steps_to_exploit": [
+        "An installed package name contains spaces or shell metacharacters.",
+        "The `find` command interprets these characters, potentially affecting files outside the intended scope."
+      ],
+      "impact": "Build pipeline instability or failure.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [],
+      "code_refs": [],
+      "id": "2390e24c",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unsafe directory creation in `writeFile`",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Recursive directory creation (`{ recursive: true }`) is used. If an attacker controls the namespace, they can create a deeply nested directory structure, potentially causing denial of service.",
+      "steps_to_exploit": [
+        "Attacker creates a namespace that results in extremely long or deeply nested paths.",
+        "The OS or Node.js encounters path length limits or resource exhaustion."
+      ],
+      "impact": "Denial of service.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/writeFile.js",
+          "line": 35,
+          "quote": "fs.mkdirSync(dirname(filename), { recursive: true })"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/writeFile.js",
+          "line": 35,
+          "quote": "fs.mkdirSync(dirname(filename), { recursive: true })"
+        }
+      ],
+      "id": "36b2eca9",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "proposed": [
+    {
+      "title": "Remote Code Execution via Eval on Untrusted Data",
+      "code_refs": [
+        {
+          "file": "lib/readFile.js",
+          "line": 86,
+          "quote": "result = evalAlias(data)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Prototype Pollution via recursive object merge",
+      "code_refs": [
+        {
+          "file": "lib/utils.js",
+          "line": 108,
+          "quote": "obj[k] = newValue"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure File Creation via Path Traversal",
+      "code_refs": [
+        {
+          "file": "lib/utils.js",
+          "line": 53,
+          "quote": "export function isSafeNsSegment (v) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unsafe Use of Shell Commands in Build Script",
+      "code_refs": [],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of unsafe `eval` alias",
+      "code_refs": [
+        {
+          "file": "lib/readFile.js",
+          "line": 10,
+          "quote": "const evalAlias = eval"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potential Arbitrary Path Traversal via addPath/loadPath functions",
+      "code_refs": [
+        {
+          "file": "lib/index.js",
+          "line": 36,
+          "quote": "loadPath = this.options.loadPath(language, namespace)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Weak Input Validation on `lng` and `ns` segments",
+      "code_refs": [
+        {
+          "file": "lib/utils.js",
+          "line": 27,
+          "quote": "if (v.length === 0 || v.length > 128) return false"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Improper Input Sanitization for Unicode Control Characters",
+      "code_refs": [
+        {
+          "file": "lib/utils.js",
+          "line": 32,
+          "quote": "if (/[\\x00-\\x1F\\x7F]/.test(v)) return false"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unsafe `writeFile` without atomic operations",
+      "code_refs": [
+        {
+          "file": "lib/writeFile.js",
+          "line": 43,
+          "quote": "fs.writeFile(filename, payload, 'utf8', (err, data) => err ? reject(err) : resolve(data))"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Overly Permissive Dependency Constraints",
+      "code_refs": [
+        {
+          "file": "package.json",
+          "line": 30,
+          "quote": "\"devDependencies\": {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Information Disclosure via stack trace",
+      "code_refs": [
+        {
+          "file": "lib/readFile.js",
+          "line": 141,
+          "quote": "err.message = 'error parsing ' + filename + ': ' + err.message"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of `eval` in JSON5 for identifiers",
+      "code_refs": [
+        {
+          "file": "lib/readFile.js",
+          "line": 86,
+          "quote": "result = evalAlias(data)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Lack of Memory Limits on Read Operations",
+      "code_refs": [
+        {
+          "file": "lib/readFile.js",
+          "line": 13,
+          "quote": "const data = fs.readFileSync(filename, 'utf8')"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure `find` command in build script",
+      "code_refs": [],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unsafe directory creation in `writeFile`",
+      "code_refs": [
+        {
+          "file": "lib/writeFile.js",
+          "line": 35,
+          "quote": "fs.mkdirSync(dirname(filename), { recursive: true })"
+        }
+      ],
+      "outcome": "unchecked"
+    }
+  ],
+  "rejected": [],
+  "verification": null,
+  "arm_meta": {
+    "baseline": {
+      "model": "gemini/gemini-3.1-flash-lite",
+      "context": "code",
+      "requested": 15,
+      "returned": 15,
+      "files_shown": 28,
+      "chars_shown": 281734,
+      "files_that_did_not_fit": []
+    }
+  },
+  "seconds": {
+    "arm": 12.6,
+    "check": 0.0,
+    "total": 12.6
+  },
+  "usage": {
+    "arm": {
+      "calls": 1,
+      "failed": 0,
+      "est_tokens": 73592,
+      "seconds_in_calls": 12.5,
+      "by_task": {
+        "baseline": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 282822,
+          "completion_chars": 11544,
+          "seconds": 12.50259259995073,
+          "est_tokens": 73592
+        }
+      }
+    },
+    "check": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    }
+  }
+}

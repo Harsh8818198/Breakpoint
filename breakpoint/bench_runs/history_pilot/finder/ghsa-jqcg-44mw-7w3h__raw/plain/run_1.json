@@ -1,0 +1,783 @@
+{
+  "schema": 1,
+  "set": "ghsa-jqcg-44mw-7w3h",
+  "variant": "raw",
+  "arm": "plain",
+  "run": 1,
+  "commit": "92e103e3f3ab0467c8846cacea71f27dfc81091d",
+  "started_at": "2026-10-24T10:55:43+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": false,
+  "status": "ok",
+  "candidates": 15,
+  "kept": [
+    {
+      "title": "Unsafe execution of user-controlled file paths",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The benchmark suite in benchmark/index.js executes JavaScript files from the directory using child_process.spawn. If an attacker can place a malicious file in the directory, it will be executed with the same privileges as the process.",
+      "steps_to_exploit": [
+        "Place a file named `malicious.js` in the benchmark directory.",
+        "Run `npm run bench`.",
+        "The malicious code executes via child_process.spawn."
+      ],
+      "impact": "Remote code execution within the environment running the benchmark scripts.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "benchmark/index.js",
+          "line": 21,
+          "quote": "var proc = spawn(exe, [fullPath], {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "benchmark/index.js",
+          "line": 21,
+          "quote": "var proc = spawn(exe, [fullPath], {"
+        }
+      ],
+      "id": "860a2846",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Disabling TLS strict-ssl for legacy environments",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The CI workflow forces strict-ssl to false for Node.js 0.10 environments, exposing the build pipeline to man-in-the-middle attacks when fetching dependencies.",
+      "steps_to_exploit": [
+        "Intercept network traffic during the CI pipeline for a Node 0.10 job.",
+        "Inject malicious content into the downloaded NPM package.",
+        "The build process accepts the tampered package."
+      ],
+      "impact": "Compromise of the build pipeline and potential inclusion of malicious code in the distribution.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": ".github/workflows/ci.yml",
+          "line": 178,
+          "quote": "npm config set strict-ssl false"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": ".github/workflows/ci.yml",
+          "line": 178,
+          "quote": "npm config set strict-ssl false"
+        }
+      ],
+      "id": "27da7bba",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure reliance on potentially spoofed header",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `proxy-addr` module is fundamentally designed to trust header information (`x-forwarded-for`). If `trust` is misconfigured or a proxy is misconfigured, an attacker can spoof their IP address.",
+      "steps_to_exploit": [
+        "Identify an application that trusts the proxy-addr output.",
+        "Inject a fake `X-Forwarded-For` header in the HTTP request.",
+        "The application logic uses the forged IP for security decisions (e.g., rate limiting, access control)."
+      ],
+      "impact": "Security bypasses, including circumventing IP-based firewalls or access controls.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 57,
+          "quote": "var addrs = forwarded(req)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 57,
+          "quote": "var addrs = forwarded(req)"
+        }
+      ],
+      "id": "4814995f",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unauthenticated access to sensitive system information",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The benchmark files print local paths and command arguments to the console, potentially leaking environment details or internal directory structures.",
+      "steps_to_exploit": [
+        "Execute `npm run bench`.",
+        "Observe output containing local file paths and internal execution details."
+      ],
+      "impact": "Information disclosure of the internal build environment structure.",
+      "evolved_from": [],
+      "attack_category": "data_privacy",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "benchmark/index.js",
+          "line": 19,
+          "quote": "console.log('> %s %s', exe, path.relative(cwd, fullPath))"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "benchmark/index.js",
+          "line": 19,
+          "quote": "console.log('> %s %s', exe, path.relative(cwd, fullPath))"
+        }
+      ],
+      "id": "3bebb74e",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Improper input validation in IP subnet range parsing",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The logic in `parseipNotation` allows wide ranges or invalid netmasks that could result in unexpected trust behavior.",
+      "steps_to_exploit": [
+        "Provide a malformed CIDR notation (e.g., with non-numeric masks) to the `compile` function.",
+        "Observe if the code allows unexpected IP ranges into the 'trusted' list."
+      ],
+      "impact": "Security misconfiguration leading to unintended network access.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 183,
+          "quote": "} else if (DIGIT_REGEXP.test(range)) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 183,
+          "quote": "} else if (DIGIT_REGEXP.test(range)) {"
+        }
+      ],
+      "id": "55394573",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of deprecated and vulnerable CI configuration",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The CI workflow tests against EOL (End-of-Life) Node.js versions (0.10, 0.12, io.js, etc.) which have multiple unpatched vulnerabilities and lack modern security features.",
+      "steps_to_exploit": [
+        "Trigger the CI workflow.",
+        "Dependencies may be installed in insecure environments that lack security patches or proper sandbox isolation."
+      ],
+      "impact": "Insecure testing environments leading to unreliable security verification.",
+      "evolved_from": [],
+      "attack_category": "supply_chain",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": ".github/workflows/ci.yml",
+          "line": 17,
+          "quote": "- Node.js 0.10"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": ".github/workflows/ci.yml",
+          "line": 17,
+          "quote": "- Node.js 0.10"
+        }
+      ],
+      "id": "3924d5ff",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure installation of global NPM packages",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The CI process executes `npm install -g npm@latest` and updates global binaries, which is a dangerous practice as it modifies the runner environment unexpectedly.",
+      "steps_to_exploit": [
+        "Run the CI pipeline.",
+        "The runner environment is modified by a global installation, creating a state that persists for subsequent steps."
+      ],
+      "impact": "Pollution of the build runner environment.",
+      "evolved_from": [],
+      "attack_category": "supply_chain",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": ".github/workflows/npm-publish.yml",
+          "line": 34,
+          "quote": "run: npm install -g npm@latest"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": ".github/workflows/npm-publish.yml",
+          "line": 34,
+          "quote": "run: npm install -g npm@latest"
+        }
+      ],
+      "id": "5efd9c4e",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Exposure of sensitive GitHub Actions tokens",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `npm-publish` workflow uses `id-token: write` and interacts with external registries, which could lead to unauthorized token usage if the workflow is compromised.",
+      "steps_to_exploit": [
+        "Compromise a commit or PR.",
+        "Access the `id-token` to authenticate against external services using the repository's identity."
+      ],
+      "impact": "Unauthorized impersonation of the repository in external systems.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": ".github/workflows/npm-publish.yml",
+          "line": 20,
+          "quote": "id-token: write"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": ".github/workflows/npm-publish.yml",
+          "line": 20,
+          "quote": "id-token: write"
+        }
+      ],
+      "id": "56a54750",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Inefficient error handling in type checks",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `compile` function throws a generic TypeError. Improper handling of this by callers could lead to unhandled promise rejections or process crashes.",
+      "steps_to_exploit": [
+        "Supply an invalid `trust` value to `proxyaddr`.",
+        "The function throws a `TypeError` without proper encapsulation."
+      ],
+      "impact": "Denial of Service (DoS) via unhandled exceptions if the application is not robustly structured.",
+      "evolved_from": [],
+      "attack_category": "error_handling",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 96,
+          "quote": "throw new TypeError('unsupported trust argument')"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 96,
+          "quote": "throw new TypeError('unsupported trust argument')"
+        }
+      ],
+      "id": "d44fe02b",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Lack of security focus in dependency updates",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The Dependabot configuration explicitly ignores major version updates, which are essential for security-critical bug fixes.",
+      "steps_to_exploit": [
+        "A major vulnerability is found in `ipaddr.js`.",
+        "Dependabot fails to alert for the update due to the ignore rule."
+      ],
+      "impact": "Long-term maintenance of vulnerable dependencies.",
+      "evolved_from": [],
+      "attack_category": "supply_chain",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": ".github/dependabot.yml",
+          "line": 16,
+          "quote": "- dependency-name: \"*\""
+        }
+      ],
+      "code_refs": [
+        {
+          "file": ".github/dependabot.yml",
+          "line": 16,
+          "quote": "- dependency-name: \"*\""
+        }
+      ],
+      "id": "2ccf6c62",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of mutable state in trust list generation",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `compile` function mutates the `trust` array using `splice.apply`, which is error-prone and can lead to incorrect logic if the input array is modified concurrently.",
+      "steps_to_exploit": [
+        "Pass an array to `compile` that is shared with other parts of the application.",
+        "Observe race conditions or logical errors when the array is mutated internally."
+      ],
+      "impact": "Unpredictable security filtering logic.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 108,
+          "quote": "trust.splice.apply(trust, [i, 1].concat(val))"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 108,
+          "quote": "trust.splice.apply(trust, [i, 1].concat(val))"
+        }
+      ],
+      "id": "792b9427",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potential for ReDoS (Regular Expression Denial of Service)",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `DIGIT_REGEXP` is simple, but the lack of input length limits on IP strings could lead to performance issues if large, malformed strings are processed.",
+      "steps_to_exploit": [
+        "Send an exceptionally long string as an IP address.",
+        "The parser attempts to process the string, consuming excessive CPU cycles."
+      ],
+      "impact": "Minor DoS risk via CPU exhaustion.",
+      "evolved_from": [],
+      "attack_category": "scalability",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 31,
+          "quote": "var DIGIT_REGEXP = /^[0-9]+$/"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 31,
+          "quote": "var DIGIT_REGEXP = /^[0-9]+$/"
+        }
+      ],
+      "id": "1045d380",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Over-privileged CI runner permissions",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `scorecard.yml` file uses `security-events: write` and `id-token: write` permissions which may not be necessary if not using specific dashboard features.",
+      "steps_to_exploit": [
+        "Exploit a vulnerability in the `scorecard-action` dependency.",
+        "Use the granted write permissions to tamper with repository security metadata."
+      ],
+      "impact": "Increased attack surface for the CI/CD pipeline.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": ".github/workflows/scorecard.yml",
+          "line": 26,
+          "quote": "security-events: write"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": ".github/workflows/scorecard.yml",
+          "line": 26,
+          "quote": "security-events: write"
+        }
+      ],
+      "id": "6294e306",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unrestricted usage of unsafe shell execution in build scripts",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The shell scripts in `ci.yml` utilize `bash -eo pipefail -l {0}`, which can be vulnerable if inputs are improperly sanitized, specifically when constructing paths or dynamic commands.",
+      "steps_to_exploit": [
+        "Manipulate the `matrix` variable in the CI definition.",
+        "Inject shell metacharacters into the command execution flow."
+      ],
+      "impact": "Command injection within the build CI runner.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": ".github/workflows/ci.yml",
+          "line": 174,
+          "quote": "shell: bash -eo pipefail -l {0}"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": ".github/workflows/ci.yml",
+          "line": 174,
+          "quote": "shell: bash -eo pipefail -l {0}"
+        }
+      ],
+      "id": "70539e06",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure file system cleanup in tests",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The coverage reporting relies on file patterns that could be manipulated to include files outside of intended paths if a user has write access to the workspace.",
+      "steps_to_exploit": [
+        "Create files with conflicting names in the `coverage` directory.",
+        "Observe if the merge script includes unintended files in the final report."
+      ],
+      "impact": "Potential for false coverage results or disclosure of temporary files.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": ".github/workflows/ci.yml",
+          "line": 264,
+          "quote": "find ./coverage -name lcov.info -exec printf '-a %q\\n' {} \\; | xargs lcov -o ./lcov.info"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": ".github/workflows/ci.yml",
+          "line": 264,
+          "quote": "find ./coverage -name lcov.info -exec printf '-a %q\\n' {} \\; | xargs lcov -o ./lcov.info"
+        }
+      ],
+      "id": "afe4c314",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "proposed": [
+    {
+      "title": "Unsafe execution of user-controlled file paths",
+      "code_refs": [
+        {
+          "file": "benchmark/index.js",
+          "line": 21,
+          "quote": "var proc = spawn(exe, [fullPath], {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Disabling TLS strict-ssl for legacy environments",
+      "code_refs": [
+        {
+          "file": ".github/workflows/ci.yml",
+          "line": 178,
+          "quote": "npm config set strict-ssl false"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure reliance on potentially spoofed header",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 57,
+          "quote": "var addrs = forwarded(req)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unauthenticated access to sensitive system information",
+      "code_refs": [
+        {
+          "file": "benchmark/index.js",
+          "line": 19,
+          "quote": "console.log('> %s %s', exe, path.relative(cwd, fullPath))"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Improper input validation in IP subnet range parsing",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 183,
+          "quote": "} else if (DIGIT_REGEXP.test(range)) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of deprecated and vulnerable CI configuration",
+      "code_refs": [
+        {
+          "file": ".github/workflows/ci.yml",
+          "line": 17,
+          "quote": "- Node.js 0.10"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure installation of global NPM packages",
+      "code_refs": [
+        {
+          "file": ".github/workflows/npm-publish.yml",
+          "line": 34,
+          "quote": "run: npm install -g npm@latest"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Exposure of sensitive GitHub Actions tokens",
+      "code_refs": [
+        {
+          "file": ".github/workflows/npm-publish.yml",
+          "line": 20,
+          "quote": "id-token: write"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Inefficient error handling in type checks",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 96,
+          "quote": "throw new TypeError('unsupported trust argument')"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Lack of security focus in dependency updates",
+      "code_refs": [
+        {
+          "file": ".github/dependabot.yml",
+          "line": 16,
+          "quote": "- dependency-name: \"*\""
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of mutable state in trust list generation",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 108,
+          "quote": "trust.splice.apply(trust, [i, 1].concat(val))"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potential for ReDoS (Regular Expression Denial of Service)",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 31,
+          "quote": "var DIGIT_REGEXP = /^[0-9]+$/"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Over-privileged CI runner permissions",
+      "code_refs": [
+        {
+          "file": ".github/workflows/scorecard.yml",
+          "line": 26,
+          "quote": "security-events: write"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unrestricted usage of unsafe shell execution in build scripts",
+      "code_refs": [
+        {
+          "file": ".github/workflows/ci.yml",
+          "line": 174,
+          "quote": "shell: bash -eo pipefail -l {0}"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure file system cleanup in tests",
+      "code_refs": [
+        {
+          "file": ".github/workflows/ci.yml",
+          "line": 264,
+          "quote": "find ./coverage -name lcov.info -exec printf '-a %q\\n' {} \\; | xargs lcov -o ./lcov.info"
+        }
+      ],
+      "outcome": "unchecked"
+    }
+  ],
+  "rejected": [],
+  "verification": null,
+  "arm_meta": {
+    "baseline": {
+      "model": "gemini/gemini-3.1-flash-lite",
+      "context": "code",
+      "requested": 15,
+      "returned": 15,
+      "files_shown": 14,
+      "chars_shown": 34237,
+      "files_that_did_not_fit": []
+    }
+  },
+  "seconds": {
+    "arm": 9.1,
+    "check": 0.0,
+    "total": 9.1
+  },
+  "usage": {
+    "arm": {
+      "calls": 1,
+      "failed": 0,
+      "est_tokens": 11310,
+      "seconds_in_calls": 9.0,
+      "by_task": {
+        "baseline": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 35297,
+          "completion_chars": 9942,
+          "seconds": 9.03366980003193,
+          "est_tokens": 11310
+        }
+      }
+    },
+    "check": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    }
+  }
+}

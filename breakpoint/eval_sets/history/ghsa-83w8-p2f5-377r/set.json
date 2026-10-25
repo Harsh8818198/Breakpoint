@@ -1,0 +1,91 @@
+{
+  "id": "ghsa-83w8-p2f5-377r",
+  "title": "@fastify/static: @fastify/static vulnerable to route guard bypass via path traversal",
+  "role": "heldout",
+  "repo": {
+    "url": "https://github.com/fastify/fastify-static",
+    "commit": "c68224e3067e18ee4c676cc9db66aae6b30ffb02",
+    "partial": true
+  },
+  "language": "javascript",
+  "framework": "",
+  "provenance": "Labels come from the maintainers' fix commit, not from a model: the lines it changed or removed in its parent commit (advisory GHSA-83w8-p2f5-377r). Whether the patch really addresses the advisory is recorded in history.label_review.",
+  "contamination": "Advisory published 2026-07-24 and fix committed 2026-07-22, both on or after 2026-03-10, after the 2026-03-03 release of gemini-3.1-flash-lite (knowledge cutoff January 2025): that model cannot have trained on this fix. A model with a later cutoff might have. The code may still resemble earlier public fixes of similar bugs in the same project.",
+  "bugs": [
+    {
+      "id": "ghsa-83w8-p2f5-377r",
+      "title": "@fastify/static vulnerable to route guard bypass via path traversal",
+      "class": "path-traversal",
+      "cwe": "CWE-22",
+      "locations": [
+        {
+          "file": "index.js",
+          "lines": [
+            22,
+            22
+          ]
+        },
+        {
+          "file": "index.js",
+          "lines": [
+            143,
+            143
+          ]
+        },
+        {
+          "file": "index.js",
+          "lines": [
+            254,
+            254
+          ]
+        },
+        {
+          "file": "index.js",
+          "lines": [
+            555,
+            555
+          ]
+        },
+        {
+          "file": "index.js",
+          "lines": [
+            723,
+            723
+          ]
+        },
+        {
+          "file": "index.js",
+          "lines": [
+            743,
+            743
+          ]
+        }
+      ],
+      "notes": "Judge a finding against the advisory text in `history`, not only against the lines."
+    }
+  ],
+  "variants": {},
+  "history": {
+    "advisory": "GHSA-83w8-p2f5-377r",
+    "advisory_url": "https://github.com/advisories/GHSA-83w8-p2f5-377r",
+    "severity": "high",
+    "published": "2026-07-24",
+    "package": "@fastify/static",
+    "ecosystem": "npm",
+    "vulnerable_versions": "<= 10.1.0",
+    "patched": "10.1.1",
+    "fix_commit": "db4276f846ba56b21f93768cd6636ee5e2fc58b1",
+    "fix_url": "https://github.com/fastify/fastify-static/commit/db4276f846ba56b21f93768cd6636ee5e2fc58b1",
+    "fix_date": "2026-07-22T07:53:09Z",
+    "changed_lines": 36,
+    "source_files_changed": [
+      "index.js"
+    ],
+    "other_files_changed": 1,
+    "addition_only": false,
+    "source_bytes": 47796,
+    "fits_in_one_prompt": true,
+    "description": "### Impact\n\n`@fastify/static` is vulnerable to a bypass of route-based middleware and guards via non-leading `..` and `%2E%2E` path segments. `find-my-way` does not normalize `..` when matching routes, so a request such as `/foo/../deep/secret.txt` matches the static plugin's catch-all instead of the guarded `/deep/*`. The `getPathnameForSend` helper introduced by the fix for [GHSA-x428-ghpx-8j92](https://github.com/fastify/fastify-static/security/advisories/GHSA-x428-ghpx-8j92) only guards against the `%2F` variant; `..` and `%2E%2E` survive the `decodeURI` + `encodeURI` round-trip and are then collapsed away by `@fastify/send`'s `path.normalize` before its own traversal guard runs.\n\nApplications that rely on route-based middleware or guards to protect files served by `@fastify/static` can be bypassed with non-leading dot-dot path segments.\n\n### Patches\n\nUpgrade to `@fastify/static` 10.1.1.\n\n### Workarounds\n\nDo not use route-based middlewares or guards to protect files served by `@fastify/static`.",
+    "label_review": "Claude read the fix patch against the advisory text on 2026-10-24 and found they match (one reader, not independently reviewed)."
+  }
+}

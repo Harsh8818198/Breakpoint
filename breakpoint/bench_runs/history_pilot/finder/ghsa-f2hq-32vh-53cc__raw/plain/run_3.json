@@ -1,0 +1,778 @@
+{
+  "schema": 1,
+  "set": "ghsa-f2hq-32vh-53cc",
+  "variant": "raw",
+  "arm": "plain",
+  "run": 3,
+  "commit": "abfee49e691dc1cafe0978900c132d89ab8b3595",
+  "started_at": "2026-10-24T10:54:11+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": false,
+  "status": "ok",
+  "candidates": 15,
+  "kept": [
+    {
+      "title": "Unsafe Address Extraction from Encoded Words",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The parser re-parses decoded strings from RFC 2047 encoded words if they contain angle-bracket addresses, potentially allowing an attacker to inject arbitrary email addresses or bypass validation filters using crafted encoded inputs. Located in src/address-parser.ts:600-612.",
+      "steps_to_exploit": [
+        "Craft an email header containing an encoded word, e.g., '=?utf-8?B?PGV2aWxAc2l0ZS5jb20+?='.",
+        "The parser decodes this to '<evil@site.com>'.",
+        "The function `hasAngleAddress` returns true, causing the parser to treat the decoded string as a new address list.",
+        "The attacker successfully injects a recipient not present in the original literal header."
+      ],
+      "impact": "Can lead to email spoofing, header injection, or bypassing security controls that rely on parsing email addresses.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/address-parser.ts",
+          "line": 600,
+          "quote": "if (!addressValue && isEncodedWordsOnly(text.trim())) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/address-parser.ts",
+          "line": 600,
+          "quote": "if (!addressValue && isEncodedWordsOnly(text.trim())) {"
+        }
+      ],
+      "id": "4bfe880c",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potential Path Traversal in RFC 2231 Parameter Handling",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The parser decodes RFC 2231 continuation parameters. While it attempts to handle encodings, the manual reconstruction of filenames and parameters from segments could lead to path traversal if the application later uses these filenames for file system operations without sanitization. Located in src/decode-strings.ts:799-810.",
+      "steps_to_exploit": [
+        "Create a multi-part email with a filename parameter continuation.",
+        "Craft segments that, when combined and URL-decoded, produce a string like '../etc/passwd'.",
+        "The parser concatenates these segments into the final parameter value.",
+        "The application consumes the filename without sanitization, leading to file access."
+      ],
+      "impact": "Filesystem access, unauthorized file reads or writes depending on how the application uses the filename.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/decode-strings.ts",
+          "line": 799,
+          "quote": "result += decodeURIComponentWithCharset(pending, paramVal.charset);"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/decode-strings.ts",
+          "line": 799,
+          "quote": "result += decodeURIComponentWithCharset(pending, paramVal.charset);"
+        }
+      ],
+      "id": "deaf2a3d",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Missing Sanitize on `content-id` Header",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `content-id` header is extracted and assigned to the `Attachment` object without sanitization. If this is rendered into HTML templates in a downstream application (e.g., in a mail client or web interface), it could lead to XSS. Located in src/mime-node.ts:619.",
+      "steps_to_exploit": [
+        "Craft an email containing a 'Content-ID: <script>alert(1)</script>' header.",
+        "The parser stores the value as-is in the Attachment object.",
+        "A consuming application embeds this CID in an HTML tag attribute without filtering.",
+        "The browser executes the JavaScript."
+      ],
+      "impact": "Cross-Site Scripting (XSS) in the consuming application.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/mime-node.ts",
+          "line": 619,
+          "quote": "case 'content-id':"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/mime-node.ts",
+          "line": 619,
+          "quote": "case 'content-id':"
+        }
+      ],
+      "id": "78869a13",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potential DoS via Regex Quadratic Backtracking in HTML to Text",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Despite attempts to linearize HTML tag parsing, several regexes in `src/text-format.ts` still utilize patterns that can trigger quadratic backtracking on specifically crafted malformed HTML (e.g., unclosed tags or long sequences of nested tags). Located in src/text-format.ts:180-222.",
+      "steps_to_exploit": [
+        "Generate an email with a very long HTML body.",
+        "Fill the body with thousands of unclosed or deeply nested tags (e.g., '<a><a><a>...').",
+        "The `replaceTags` function iterates repeatedly, causing the CPU to spike to 100% for an extended duration."
+      ],
+      "impact": "Denial of Service (CPU exhaustion) for the application parsing the email.",
+      "evolved_from": [],
+      "attack_category": "scalability",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/text-format.ts",
+          "line": 180,
+          "quote": "function replaceTags("
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/text-format.ts",
+          "line": 180,
+          "quote": "function replaceTags("
+        }
+      ],
+      "id": "dd9909ff",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure `Intl` usage in Date Formatting",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "If a date header is invalid, `Date.toString()` returns 'Invalid Date', and the code proceeds to return the raw header value. If this value contains control characters or is later used in unsafe contexts (e.g., reflected in an HTML header), it could lead to injection. Located in src/text-format.ts:403.",
+      "steps_to_exploit": [
+        "Provide a header with a crafted date field: 'Date: <script>...</script>'.",
+        "The code fails to parse it as a valid date.",
+        "The raw, unescaped string is returned and eventually rendered in the output interface."
+      ],
+      "impact": "Injection of malicious content into UI components.",
+      "evolved_from": [],
+      "attack_category": "error_handling",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/text-format.ts",
+          "line": 403,
+          "quote": "if (isNaN(parsed.getTime())) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/text-format.ts",
+          "line": 403,
+          "quote": "if (isNaN(parsed.getTime())) {"
+        }
+      ],
+      "id": "fc6dc2d6",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Over-permissive `isWordCode` check in `address-parser.ts`",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `isWordCode` function only checks for standard ASCII letters and numbers, excluding valid characters for internationalized email addresses (e.g., non-Latin scripts), which may lead to incorrect boundary detection and faulty address parsing. Located in src/address-parser.ts:95.",
+      "steps_to_exploit": [
+        "Send an email with an internationalized domain name or local-part.",
+        "The parser fails to recognize the word boundaries correctly due to the narrow ASCII filter.",
+        "The parser incorrectly splits the address, potentially causing email delivery failure or routing to an unintended recipient."
+      ],
+      "impact": "Degraded service, incorrect parsing of valid international email addresses.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/address-parser.ts",
+          "line": 95,
+          "quote": "function isWordCode(code: number): boolean {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/address-parser.ts",
+          "line": 95,
+          "quote": "function isWordCode(code: number): boolean {"
+        }
+      ],
+      "id": "5907a679",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Arbitrary Attachment Extension/Type Injection",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The parser reads the `Content-Type` and `filename` from headers without any validation against a whitelist. If an application uses these to save files, it may be vulnerable to file type spoofing. Located in src/mime-node.ts:629-634.",
+      "steps_to_exploit": [
+        "Send an email with a part labeled 'Content-Type: application/x-msdownload' and 'filename: malware.exe'.",
+        "The library parses these values and presents the attachment metadata.",
+        "The consumer application trusts these values and saves the file to a location where it can be executed."
+      ],
+      "impact": "Users may be tricked into downloading/executing malicious file types.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/mime-node.ts",
+          "line": 629,
+          "quote": "this.contentType.parsed = this.parseStructuredHeader(this.contentType.value);"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/mime-node.ts",
+          "line": 629,
+          "quote": "this.contentType.parsed = this.parseStructuredHeader(this.contentType.value);"
+        }
+      ],
+      "id": "d1b7041e",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Excessive Memory Consumption via Large Header Blobs",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "While there is a `maxHeadersSize` limit, the memory is allocated for header objects before strict validation of the total accumulated size for all parts occurs in some scenarios. Located in src/mime-node.ts:686.",
+      "steps_to_exploit": [
+        "Craft an email with many small MIME parts, each containing headers just under the size limit.",
+        "The total memory usage grows linearly with the number of parts until the threshold is hit.",
+        "Exhaust available heap memory before the parser successfully rejects the input."
+      ],
+      "impact": "Denial of Service (Memory exhaustion).",
+      "evolved_from": [],
+      "attack_category": "scalability",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/mime-node.ts",
+          "line": 686,
+          "quote": "if (this.postalMime.headerSize > this.options.maxHeadersSize) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/mime-node.ts",
+          "line": 686,
+          "quote": "if (this.postalMime.headerSize > this.options.maxHeadersSize) {"
+        }
+      ],
+      "id": "aadda838",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Implicit Trust in `Uint8Array` buffer sharing",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Several components, particularly `PassThroughDecoder`, share buffers and slices directly from the input `ArrayBuffer` without full validation of their state or potential mutability. Located in src/pass-through-decoder.ts:41.",
+      "steps_to_exploit": [
+        "Provide a highly crafted input buffer.",
+        "Exploit object reference sharing between the parser state and the raw input.",
+        "Modify the underlying buffer if the input source is mutable, causing the parser to process corrupted data."
+      ],
+      "impact": "Data corruption or potential logic errors in message parsing.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/pass-through-decoder.ts",
+          "line": 41,
+          "quote": "this.chunks.push(new Uint8Array(this.runBuffer, this.runStart, this.runEnd - this.runStart));"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/pass-through-decoder.ts",
+          "line": 41,
+          "quote": "this.chunks.push(new Uint8Array(this.runBuffer, this.runStart, this.runEnd - this.runStart));"
+        }
+      ],
+      "id": "e8db1a4b",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Default Charset Fallback",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "If a charset is unknown, the code falls back to `windows-1252`. While standard, this can lead to unexpected character mappings for some mail clients that assume different legacy encodings. Located in src/decode-strings.ts:351.",
+      "steps_to_exploit": [
+        "Send an email with a non-standard or missing charset.",
+        "The parser interprets the bytes using Windows-1252.",
+        "If the original encoding was actually something like KOI8-R, the text becomes unreadable or 'mojibake'."
+      ],
+      "impact": "Reduced integrity of parsed text data.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/decode-strings.ts",
+          "line": 351,
+          "quote": "return decoder ? decoder.decode(bytes) : decodeUtf8OrWindows1252(bytes);"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/decode-strings.ts",
+          "line": 351,
+          "quote": "return decoder ? decoder.decode(bytes) : decodeUtf8OrWindows1252(bytes);"
+        }
+      ],
+      "id": "aac8919c",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unbounded Recursive Address List Parsing",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The parser uses recursion for address list groups. Although `MAX_NESTED_GROUP_DEPTH` exists, the impact of recursion is high on stack space. Located in src/address-parser.ts:848.",
+      "steps_to_exploit": [
+        "Construct a deeply nested email group header exceeding 50 levels.",
+        "The parser hits the recursion limit and returns an empty list, potentially causing valid addresses to be ignored."
+      ],
+      "impact": "Silent drop of address list data for complex email configurations.",
+      "evolved_from": [],
+      "attack_category": "scalability",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/address-parser.ts",
+          "line": 848,
+          "quote": "if (depth > MAX_NESTED_GROUP_DEPTH) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/address-parser.ts",
+          "line": 848,
+          "quote": "if (depth > MAX_NESTED_GROUP_DEPTH) {"
+        }
+      ],
+      "id": "d0d4a86b",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Re-use of Parser Object",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The parser tracks `started` state, but if the object is reused, it throws an error. This is a design constraint but could lead to inconsistent states if not handled correctly in complex asynchronous loops. Located in src/postal-mime.ts:751.",
+      "steps_to_exploit": [
+        "Instantiate a PostalMime object.",
+        "Run `.parse()` twice in a rapid asynchronous sequence.",
+        "The second call crashes the process if the promise is not caught."
+      ],
+      "impact": "Uncaught errors and potential instability in calling applications.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/postal-mime.ts",
+          "line": 751,
+          "quote": "if (this.started) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/postal-mime.ts",
+          "line": 751,
+          "quote": "if (this.started) {"
+        }
+      ],
+      "id": "1b2c743e",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Lack of Validation on Content-Transfer-Encoding",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The encoding header is taken from a regex match without strict validation, potentially allowing unintended encoding labels to influence the `setupContentDecoder` logic. Located in src/mime-node.ts:657.",
+      "steps_to_exploit": [
+        "Craft an email with a header: 'Content-Transfer-Encoding: base64-extra-junk'.",
+        "The regex match will likely extract 'base64', ignoring the invalid parts, and the node will proceed with the base64 decoder."
+      ],
+      "impact": "Inconsistent parsing of email content.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/mime-node.ts",
+          "line": 657,
+          "quote": "this.contentTransferEncoding.encoding = (this.stripComments(this.contentTransferEncoding.value)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/mime-node.ts",
+          "line": 657,
+          "quote": "this.contentTransferEncoding.encoding = (this.stripComments(this.contentTransferEncoding.value)"
+        }
+      ],
+      "id": "6096ef0a",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Ignoring Language Tags in Encoded Words",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The implementation silently ignores RFC 2231 language tags in encoded words. This might be compliant but causes data loss for internationalized headers. Located in src/decode-strings.ts:483-489.",
+      "steps_to_exploit": [
+        "Send an email with RFC 2231 encoded words containing language information.",
+        "The parser discards this information, causing headers to lose semantic context."
+      ],
+      "impact": "Loss of internationalization metadata.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/decode-strings.ts",
+          "line": 486,
+          "quote": "let splitPos = charset.indexOf('*');"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/decode-strings.ts",
+          "line": 486,
+          "quote": "let splitPos = charset.indexOf('*');"
+        }
+      ],
+      "id": "2a27703f",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure handling of backslash escapes in stripComments",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The logic to handle escaped characters in `stripComments` might be incorrectly implemented relative to RFC 5322, potentially misinterpreting escaped parentheses as openers/closers. Located in src/mime-node.ts:260-267.",
+      "steps_to_exploit": [
+        "Construct a header with escaped parentheses that should be treated as text but are consumed as part of comment logic.",
+        "The parser strips characters that should be part of the header value."
+      ],
+      "impact": "Data loss or modification in header processing.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [],
+      "code_refs": [],
+      "id": "e62958cc",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "proposed": [
+    {
+      "title": "Unsafe Address Extraction from Encoded Words",
+      "code_refs": [
+        {
+          "file": "src/address-parser.ts",
+          "line": 600,
+          "quote": "if (!addressValue && isEncodedWordsOnly(text.trim())) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potential Path Traversal in RFC 2231 Parameter Handling",
+      "code_refs": [
+        {
+          "file": "src/decode-strings.ts",
+          "line": 799,
+          "quote": "result += decodeURIComponentWithCharset(pending, paramVal.charset);"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Missing Sanitize on `content-id` Header",
+      "code_refs": [
+        {
+          "file": "src/mime-node.ts",
+          "line": 619,
+          "quote": "case 'content-id':"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potential DoS via Regex Quadratic Backtracking in HTML to Text",
+      "code_refs": [
+        {
+          "file": "src/text-format.ts",
+          "line": 180,
+          "quote": "function replaceTags("
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure `Intl` usage in Date Formatting",
+      "code_refs": [
+        {
+          "file": "src/text-format.ts",
+          "line": 403,
+          "quote": "if (isNaN(parsed.getTime())) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Over-permissive `isWordCode` check in `address-parser.ts`",
+      "code_refs": [
+        {
+          "file": "src/address-parser.ts",
+          "line": 95,
+          "quote": "function isWordCode(code: number): boolean {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Arbitrary Attachment Extension/Type Injection",
+      "code_refs": [
+        {
+          "file": "src/mime-node.ts",
+          "line": 629,
+          "quote": "this.contentType.parsed = this.parseStructuredHeader(this.contentType.value);"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Excessive Memory Consumption via Large Header Blobs",
+      "code_refs": [
+        {
+          "file": "src/mime-node.ts",
+          "line": 686,
+          "quote": "if (this.postalMime.headerSize > this.options.maxHeadersSize) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Implicit Trust in `Uint8Array` buffer sharing",
+      "code_refs": [
+        {
+          "file": "src/pass-through-decoder.ts",
+          "line": 41,
+          "quote": "this.chunks.push(new Uint8Array(this.runBuffer, this.runStart, this.runEnd - this.runStart));"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure Default Charset Fallback",
+      "code_refs": [
+        {
+          "file": "src/decode-strings.ts",
+          "line": 351,
+          "quote": "return decoder ? decoder.decode(bytes) : decodeUtf8OrWindows1252(bytes);"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unbounded Recursive Address List Parsing",
+      "code_refs": [
+        {
+          "file": "src/address-parser.ts",
+          "line": 848,
+          "quote": "if (depth > MAX_NESTED_GROUP_DEPTH) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Re-use of Parser Object",
+      "code_refs": [
+        {
+          "file": "src/postal-mime.ts",
+          "line": 751,
+          "quote": "if (this.started) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Lack of Validation on Content-Transfer-Encoding",
+      "code_refs": [
+        {
+          "file": "src/mime-node.ts",
+          "line": 657,
+          "quote": "this.contentTransferEncoding.encoding = (this.stripComments(this.contentTransferEncoding.value)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Ignoring Language Tags in Encoded Words",
+      "code_refs": [
+        {
+          "file": "src/decode-strings.ts",
+          "line": 486,
+          "quote": "let splitPos = charset.indexOf('*');"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure handling of backslash escapes in stripComments",
+      "code_refs": [],
+      "outcome": "unchecked"
+    }
+  ],
+  "rejected": [],
+  "verification": null,
+  "arm_meta": {
+    "baseline": {
+      "model": "gemini/gemini-3.1-flash-lite",
+      "context": "code",
+      "requested": 15,
+      "returned": 15,
+      "files_shown": 25,
+      "chars_shown": 299621,
+      "files_that_did_not_fit": [
+        ".github/workflows/release.yaml"
+      ]
+    }
+  },
+  "seconds": {
+    "arm": 61.9,
+    "check": 0.0,
+    "total": 61.9
+  },
+  "usage": {
+    "arm": {
+      "calls": 1,
+      "failed": 0,
+      "est_tokens": 78616,
+      "seconds_in_calls": 61.7,
+      "by_task": {
+        "baseline": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 300703,
+          "completion_chars": 13763,
+          "seconds": 61.70064060005825,
+          "est_tokens": 78616
+        }
+      }
+    },
+    "check": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    }
+  }
+}

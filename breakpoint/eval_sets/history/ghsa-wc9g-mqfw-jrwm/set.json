@@ -1,0 +1,64 @@
+{
+  "id": "ghsa-wc9g-mqfw-jrwm",
+  "title": "multer: multer vulnerable to Denial of Service via crafted multipart field names",
+  "role": "heldout",
+  "repo": {
+    "url": "https://github.com/expressjs/multer",
+    "commit": "ab6aeae650328cf31799dcfa4c3e116ba8faaacc",
+    "partial": true
+  },
+  "language": "javascript",
+  "framework": "",
+  "provenance": "Labels come from the maintainers' fix commit, not from a model: the lines it changed or removed in its parent commit (advisory GHSA-wc9g-mqfw-jrwm). Whether the patch really addresses the advisory is recorded in history.label_review.",
+  "contamination": "Advisory published 2026-09-08 and fix committed 2026-08-28, both on or after 2026-03-10, after the 2026-03-03 release of gemini-3.1-flash-lite (knowledge cutoff January 2025): that model cannot have trained on this fix. A model with a later cutoff might have. The code may still resemble earlier public fixes of similar bugs in the same project.",
+  "bugs": [
+    {
+      "id": "ghsa-wc9g-mqfw-jrwm",
+      "title": "multer vulnerable to Denial of Service via crafted multipart field names",
+      "class": "other",
+      "cwe": "CWE-248",
+      "locations": [
+        {
+          "file": "lib/make-middleware.js",
+          "lines": [
+            230,
+            230
+          ]
+        },
+        {
+          "file": "lib/multer-error.js",
+          "lines": [
+            14,
+            14
+          ]
+        }
+      ],
+      "notes": "Judge a finding against the advisory text in `history`, not only against the lines."
+    }
+  ],
+  "variants": {},
+  "history": {
+    "advisory": "GHSA-wc9g-mqfw-jrwm",
+    "advisory_url": "https://github.com/advisories/GHSA-wc9g-mqfw-jrwm",
+    "severity": "high",
+    "published": "2026-09-08",
+    "package": "multer",
+    "ecosystem": "npm",
+    "vulnerable_versions": "< 2.3.0",
+    "patched": "2.3.0",
+    "fix_commit": "87a584e8c8d4da873292635fa1d8c4d78d985b76",
+    "fix_url": "https://github.com/expressjs/multer/commit/87a584e8c8d4da873292635fa1d8c4d78d985b76",
+    "fix_date": "2026-08-28T18:57:07Z",
+    "changed_lines": 9,
+    "source_files_changed": [
+      "lib/make-middleware.js",
+      "lib/multer-error.js"
+    ],
+    "other_files_changed": 1,
+    "addition_only": false,
+    "source_bytes": 34810,
+    "fits_in_one_prompt": true,
+    "description": "### Impact\n\nA vulnerability in multer allows a remote, unauthenticated attacker to crash the Node.js process with a single `multipart/form-data` request. Two specially crafted text field names cause an uncaught `RangeError: Invalid array length` inside multer's field parsing, which is not routed to the application error handler and terminates the process. All applications using multer to parse multipart requests are affected.\n\n### Patches\n\nUsers should upgrade to `2.3.0`.\n\n### Workarounds\n\nNone.",
+    "label_review": "Claude read the fix patch against the advisory text on 2026-10-24 and found they match (one reader, not independently reviewed)."
+  }
+}

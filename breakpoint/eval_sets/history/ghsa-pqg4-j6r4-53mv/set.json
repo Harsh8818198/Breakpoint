@@ -1,0 +1,71 @@
+{
+  "id": "ghsa-pqg4-j6r4-53mv",
+  "title": "shell-quote: shell-quote: `quote()` command injection via a line terminator in a token after a `{ comment }` token",
+  "role": "heldout",
+  "repo": {
+    "url": "https://github.com/ljharb/shell-quote",
+    "commit": "36f23944db50dd3f0df4da9c7cba0bb63df05f64",
+    "partial": true
+  },
+  "language": "javascript",
+  "framework": "",
+  "provenance": "Labels come from the maintainers' fix commit, not from a model: the lines it changed or removed in its parent commit (advisory GHSA-pqg4-j6r4-53mv). Whether the patch really addresses the advisory is recorded in history.label_review.",
+  "contamination": "Advisory published 2026-10-06 and fix committed 2026-09-27, both on or after 2026-03-10, after the 2026-03-03 release of gemini-3.1-flash-lite (knowledge cutoff January 2025): that model cannot have trained on this fix. A model with a later cutoff might have. The code may still resemble earlier public fixes of similar bugs in the same project.",
+  "bugs": [
+    {
+      "id": "ghsa-pqg4-j6r4-53mv",
+      "title": "shell-quote: `quote()` command injection via a line terminator in a token after a `{ comment }` token",
+      "class": "injection",
+      "cwe": "CWE-78",
+      "locations": [
+        {
+          "file": "quote.d.ts",
+          "lines": [
+            8,
+            8
+          ]
+        },
+        {
+          "file": "quote.js",
+          "lines": [
+            28,
+            29
+          ]
+        },
+        {
+          "file": "quote.js",
+          "lines": [
+            55,
+            55
+          ]
+        }
+      ],
+      "notes": "Judge a finding against the advisory text in `history`, not only against the lines."
+    }
+  ],
+  "variants": {},
+  "history": {
+    "advisory": "GHSA-pqg4-j6r4-53mv",
+    "advisory_url": "https://github.com/advisories/GHSA-pqg4-j6r4-53mv",
+    "severity": "critical",
+    "published": "2026-10-06",
+    "package": "shell-quote",
+    "ecosystem": "npm",
+    "vulnerable_versions": ">= 1.8.4, < 1.11.0",
+    "patched": "1.11.0",
+    "fix_commit": "6002b2ed90c6b83095eb272b6b0adaf3a172b0bc",
+    "fix_url": "https://github.com/ljharb/shell-quote/commit/6002b2ed90c6b83095eb272b6b0adaf3a172b0bc",
+    "fix_date": "2026-09-27T09:05:08Z",
+    "changed_lines": 8,
+    "source_files_changed": [
+      "quote.d.ts",
+      "quote.js"
+    ],
+    "other_files_changed": 2,
+    "addition_only": false,
+    "source_bytes": 23528,
+    "fits_in_one_prompt": true,
+    "description": "### Impact\n\n`quote()` emits a `{ comment }` token as `#` followed by its text, which comments out the rest of the shell line, including the opening quote of any later string token. A line terminator in that later string ends the comment, and the rest of the string is parsed as shell input:\n\n```js\nquote(['echo', 'ok', { comment: 'x' }, 'a\\nid;#']);\n// echo ok #x 'a\n// id;#'\n```\n\nPassed to `sh`, `bash`, `dash`, `ksh`, or `zsh`, this runs `id`.\n\n`parse()` emits a comment token for a `#` in the middle of a word (for example `http://example.com/#frag`), so callers that combine `parse()` output with another untrusted string, such as `quote(parse(untrustedCommand).concat(untrustedArg))`, are affected. The fix for CVE-2026-9277 rejected line terminators in the comment's own text, but not in the tokens after it.\n\nExploitation requires an attacker-controlled string containing a line terminator that follows a `{ comment }` token in the same `quote()` call.\n\n### Patches\n\nFixed in v1.11.0: `quote()` throws a `TypeError` when a string after a `{ comment }` token contains a line terminator (`\\n`, `\\r`, U+2028, or U+2029).\n\n### Workarounds\n\nDrop every token after a `{ comment }` token before calling `quote()`, or reject line terminators in untrusted strings. Separately, do not append other shell text after `quote()` output that contains a comment, since the comment swallows it.",
+    "label_review": "Claude read the fix patch against the advisory text on 2026-10-24 and found they match (one reader, not independently reviewed)."
+  }
+}

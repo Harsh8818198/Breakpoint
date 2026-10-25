@@ -1,0 +1,756 @@
+{
+  "schema": 1,
+  "set": "ghsa-5846-7qm3-r52j",
+  "variant": "raw",
+  "arm": "plain",
+  "run": 2,
+  "commit": "2eef49dc0fc3a864e566f44bf6cf9c95e4410798",
+  "started_at": "2026-10-24T10:46:36+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": false,
+  "status": "ok",
+  "candidates": 15,
+  "kept": [
+    {
+      "title": "Insufficient DNS Rebinding Mitigation",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The logic in src/helpers.ts uses a race-prone, non-authoritative DNS resolution process (resolve_all_records) which is vulnerable to DNS Rebinding attacks where the attacker serves an internal IP after the initial validation check.",
+      "steps_to_exploit": [
+        "Attacker sets up a malicious domain",
+        "First request returns a public IP",
+        "Attacker changes DNS record to 127.0.0.1",
+        "The library performs second resolution too late or with insufficient entropy to prevent the state switch"
+      ],
+      "impact": "Allows attackers to bypass SSRF protection and access internal services/metadata endpoints.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/helpers.ts",
+          "line": 310,
+          "quote": "export async function is_hostname_resolve_to_internal_ip(hostname: string): Promise<boolean> {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 310,
+          "quote": "export async function is_hostname_resolve_to_internal_ip(hostname: string): Promise<boolean> {"
+        }
+      ],
+      "id": "67f68aef",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Incomplete Blacklist for SSRF Protection",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The BAD_RANGE_USED_IN_SSRF list in src/helpers.ts is a hardcoded blacklist rather than a whitelist or a robust network-layer filter, failing to cover all private/link-local address spaces (e.g., IPv6 ULA or specific link-local ranges).",
+      "steps_to_exploit": [
+        "Identify an internal network address not in the hardcoded list",
+        "Craft a URL using that address",
+        "Library fails to identify it as internal due to missing range definitions"
+      ],
+      "impact": "Direct bypass of SSRF security controls allowing access to internal infrastructure.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/helpers.ts",
+          "line": 21,
+          "quote": "const BAD_RANGE_USED_IN_SSRF: CIDR[] = ["
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 21,
+          "quote": "const BAD_RANGE_USED_IN_SSRF: CIDR[] = ["
+        }
+      ],
+      "id": "150f47c3",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unsafe URL Protocol Validation",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The is_proto_safe function only performs regex-based string matching, failing to consider complex URI schemes or edge cases that might be interpreted differently by lower-level libraries or underlying Node.js modules.",
+      "steps_to_exploit": [
+        "Submit a URL with a malformed protocol (e.g., 'http://', 'javascript:'),",
+        "Bypass regex with non-standard characters",
+        "Trigger code execution in downstream sinks"
+      ],
+      "impact": "Potential for protocol smuggling or bypass of expected scheme restrictions.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/helpers.ts",
+          "line": 427,
+          "quote": "export function is_proto_safe(url: string): boolean {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 427,
+          "quote": "export function is_proto_safe(url: string): boolean {"
+        }
+      ],
+      "id": "628f29c1",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potential Command/Code Injection via Unsanitized Regex",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The regex used in replace_two_slashes_url_to_normal_url is vulnerable to ReDoS (Regular Expression Denial of Service) and processes input without length limits.",
+      "steps_to_exploit": [
+        "Craft a long, repetitive string input",
+        "Submit to the function",
+        "Observe increased CPU usage leading to process hang"
+      ],
+      "impact": "Denial of Service of the security utility library.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [],
+      "code_refs": [],
+      "id": "459fc4d5",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Reliance on Loose URI Parsing",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The library uses the global URL constructor for validation, which is known for inconsistent behavior across different Node.js versions and environments regarding edge cases like empty hostnames or backslashes.",
+      "steps_to_exploit": [
+        "Provide a URL like 'http://[::1]' or encoded variants",
+        "Library might normalize it differently than the underlying HTTP client (got)",
+        "Request is sent to an internal host unexpectedly"
+      ],
+      "impact": "Security bypass due to parser differential/discrepancy.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/helpers.ts",
+          "line": 509,
+          "quote": "const parsed = new URL(u);"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 509,
+          "quote": "const parsed = new URL(u);"
+        }
+      ],
+      "id": "677ec863",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Hardcoded Secret Risk in CI",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The codebase contains references to multiple tokens like LABELER_TOKEN and SNYK_TOKEN, implying management of sensitive secrets within the repository configuration files.",
+      "steps_to_exploit": [
+        "Compromise the repo",
+        "Access GitHub Action secrets variables",
+        "Use tokens to escalate privileges in Snyk or GitHub"
+      ],
+      "impact": "Unauthorized access to CI/CD pipelines and external security tooling.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": ".github/workflows/labeler.yml",
+          "line": 17,
+          "quote": "repo-token: \"${{ secrets.LABELER_TOKEN }}\""
+        }
+      ],
+      "code_refs": [
+        {
+          "file": ".github/workflows/labeler.yml",
+          "line": 17,
+          "quote": "repo-token: \"${{ secrets.LABELER_TOKEN }}\""
+        }
+      ],
+      "id": "a856069f",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Use of 'got' Dependency",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The library uses 'got' to perform HEAD requests for redirect validation without robustly configuring the Agent or explicitly disabling internal network access for the fetcher itself.",
+      "steps_to_exploit": [
+        "Redirect to an internal metadata IP (e.g., 169.254.169.254)",
+        "The validation library might accept the initial check but the fetcher reaches the endpoint"
+      ],
+      "impact": "SSRF vulnerability during the redirect handling process.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/helpers.ts",
+          "line": 468,
+          "quote": "const res = await got(current.toString(), {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 468,
+          "quote": "const res = await got(current.toString(), {"
+        }
+      ],
+      "id": "3af7cbc0",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Default Cron Configuration",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The njsscan workflow is configured to run every minute, which is excessive and could lead to unnecessary resource consumption or API rate-limiting issues.",
+      "steps_to_exploit": [
+        "Monitor CI/CD throughput",
+        "Observe high frequency of automated scans",
+        "Potential for exhausting repository action minutes"
+      ],
+      "impact": "Denial of Service on CI resources.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": ".github/workflows/njsscan.yml",
+          "line": 13,
+          "quote": "- cron: '* * * * *'"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": ".github/workflows/njsscan.yml",
+          "line": 13,
+          "quote": "- cron: '* * * * *'"
+        }
+      ],
+      "id": "628b92e1",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of 'ts-ignore' in Security Critical Logic",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The use of @ts-ignore when handling IPv6 mapping signals an attempt to suppress type-checking for logic that is likely brittle and dangerous.",
+      "steps_to_exploit": [
+        "Pass unexpected input to IPv6 parsing logic",
+        "Typescript fails to flag invalid property access",
+        "Application crashes or enters an undefined state"
+      ],
+      "impact": "Reduced security posture due to silent failure handling.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [],
+      "code_refs": [],
+      "id": "db6fa0aa",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Sensitive Information Disclosure via Debug Logging",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The is_url_safe_debug function logs full URLs, which might contain authentication tokens or PII, to the console output.",
+      "steps_to_exploit": [
+        "Call the debug function with a credentialed URL",
+        "View server logs",
+        "Extract credentials from logs"
+      ],
+      "impact": "Credential leakage in production logs.",
+      "evolved_from": [],
+      "attack_category": "data_privacy",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/helpers.ts",
+          "line": 525,
+          "quote": "export async function is_url_safe_debug(url: string): Promise<boolean> { try { console.log(\"STEP 1 input:\", url);"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 525,
+          "quote": "export async function is_url_safe_debug(url: string): Promise<boolean> { try { console.log(\"STEP 1 input:\", url);"
+        }
+      ],
+      "id": "a2521ceb",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Missing Input Sanitization for IP Converters",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Methods like bin_ip_to_normal_ip rely heavily on regex but do not strictly handle potential overflows or edge cases in numeric base conversions.",
+      "steps_to_exploit": [
+        "Submit extremely long binary strings",
+        "Cause parsing errors or unexpected logic flow",
+        "Possible memory issues or incorrect IP validation"
+      ],
+      "impact": "Logic error leading to bypass of IP-based validation.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/helpers.ts",
+          "line": 126,
+          "quote": "export function bin_ip_to_normal_ip(bin: string): string {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 126,
+          "quote": "export function bin_ip_to_normal_ip(bin: string): string {"
+        }
+      ],
+      "id": "ddb317b6",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Weak Error Handling in Redirect Logic",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The is_redirect_safe function returns false (safe) for catch blocks, which might accidentally swallow critical errors or bypass checks if a URL is malformed in a specific way.",
+      "steps_to_exploit": [
+        "Submit a specifically malformed URL that triggers a URL constructor error",
+        "The code returns 'false' (safe) instead of 'error'",
+        "Downstream processes might trust the 'false' return value"
+      ],
+      "impact": "Security logic bypass due to masking failures.",
+      "evolved_from": [],
+      "attack_category": "error_handling",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/helpers.ts",
+          "line": 482,
+          "quote": "} catch { return false; }"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 482,
+          "quote": "} catch { return false; }"
+        }
+      ],
+      "id": "1381c4b2",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Permissions on Pull Request Actions",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The workflow uses pull_request_target on untrusted code; even with limited permissions, this exposes the workflow to potential injection if any input is used unsafely.",
+      "steps_to_exploit": [
+        "Attacker submits a PR with a malicious branch name or metadata",
+        "The workflow processes the PR, potentially exposing the CI context"
+      ],
+      "impact": "CI/CD compromise.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": ".github/workflows/labeler.yml",
+          "line": 3,
+          "quote": "- pull_request_target"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": ".github/workflows/labeler.yml",
+          "line": 3,
+          "quote": "- pull_request_target"
+        }
+      ],
+      "id": "cc33df37",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Lack of Strict Input Validation for Octal IPs",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The octal converter allows octal strings which are common vectors for SSRF (e.g., 0177.0.0.1 being interpreted as 127.0.0.1).",
+      "steps_to_exploit": [
+        "Inject an octal-encoded IP address",
+        "The regex passes, and conversion logic transforms it into a bypass-friendly loopback address"
+      ],
+      "impact": "Successful SSRF using obfuscated IP notation.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/helpers.ts",
+          "line": 73,
+          "quote": "export function octal_ip_to_normal_ip(octal: string) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 73,
+          "quote": "export function octal_ip_to_normal_ip(octal: string) {"
+        }
+      ],
+      "id": "e4755952",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Inconsistent Normalization Order",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "is_url_safe performs Unicode normalization, then backslash replacement, then slash normalization. This order of operations can be manipulated to hide bypass characters.",
+      "steps_to_exploit": [
+        "Use character sequences that normalize into separators after string replacements",
+        "Bypass the URL parser security checks"
+      ],
+      "impact": "Security checks are performed on strings that don't match the final interpreted URL.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/helpers.ts",
+          "line": 505,
+          "quote": "let u = normalize_unicode(url);"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 505,
+          "quote": "let u = normalize_unicode(url);"
+        }
+      ],
+      "id": "a0c0890b",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "proposed": [
+    {
+      "title": "Insufficient DNS Rebinding Mitigation",
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 310,
+          "quote": "export async function is_hostname_resolve_to_internal_ip(hostname: string): Promise<boolean> {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Incomplete Blacklist for SSRF Protection",
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 21,
+          "quote": "const BAD_RANGE_USED_IN_SSRF: CIDR[] = ["
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unsafe URL Protocol Validation",
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 427,
+          "quote": "export function is_proto_safe(url: string): boolean {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potential Command/Code Injection via Unsanitized Regex",
+      "code_refs": [],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Reliance on Loose URI Parsing",
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 509,
+          "quote": "const parsed = new URL(u);"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Hardcoded Secret Risk in CI",
+      "code_refs": [
+        {
+          "file": ".github/workflows/labeler.yml",
+          "line": 17,
+          "quote": "repo-token: \"${{ secrets.LABELER_TOKEN }}\""
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure Use of 'got' Dependency",
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 468,
+          "quote": "const res = await got(current.toString(), {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure Default Cron Configuration",
+      "code_refs": [
+        {
+          "file": ".github/workflows/njsscan.yml",
+          "line": 13,
+          "quote": "- cron: '* * * * *'"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of 'ts-ignore' in Security Critical Logic",
+      "code_refs": [],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Sensitive Information Disclosure via Debug Logging",
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 525,
+          "quote": "export async function is_url_safe_debug(url: string): Promise<boolean> { try { console.log(\"STEP 1 input:\", url);"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Missing Input Sanitization for IP Converters",
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 126,
+          "quote": "export function bin_ip_to_normal_ip(bin: string): string {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Weak Error Handling in Redirect Logic",
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 482,
+          "quote": "} catch { return false; }"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure Permissions on Pull Request Actions",
+      "code_refs": [
+        {
+          "file": ".github/workflows/labeler.yml",
+          "line": 3,
+          "quote": "- pull_request_target"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Lack of Strict Input Validation for Octal IPs",
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 73,
+          "quote": "export function octal_ip_to_normal_ip(octal: string) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Inconsistent Normalization Order",
+      "code_refs": [
+        {
+          "file": "src/helpers.ts",
+          "line": 505,
+          "quote": "let u = normalize_unicode(url);"
+        }
+      ],
+      "outcome": "unchecked"
+    }
+  ],
+  "rejected": [],
+  "verification": null,
+  "arm_meta": {
+    "baseline": {
+      "model": "gemini/gemini-3.1-flash-lite",
+      "context": "code",
+      "requested": 15,
+      "returned": 15,
+      "files_shown": 20,
+      "chars_shown": 37387,
+      "files_that_did_not_fit": []
+    }
+  },
+  "seconds": {
+    "arm": 10.7,
+    "check": 0.0,
+    "total": 10.7
+  },
+  "usage": {
+    "arm": {
+      "calls": 1,
+      "failed": 0,
+      "est_tokens": 12128,
+      "seconds_in_calls": 10.7,
+      "by_task": {
+        "baseline": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 38459,
+          "completion_chars": 10051,
+          "seconds": 10.719151200028136,
+          "est_tokens": 12128
+        }
+      }
+    },
+    "check": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    }
+  }
+}

@@ -1,0 +1,795 @@
+{
+  "schema": 1,
+  "set": "ghsa-83w8-p2f5-377r",
+  "variant": "raw",
+  "arm": "plain",
+  "run": 1,
+  "commit": "c68224e3067e18ee4c676cc9db66aae6b30ffb02",
+  "started_at": "2026-10-24T10:49:13+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": false,
+  "status": "ok",
+  "candidates": 15,
+  "kept": [
+    {
+      "title": "Unsafe Directory Traversal in DirList",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `dirList.path` function performs a path resolution using `path.resolve(resolvedRoot, relativeRoute)` and then attempts to validate it with `isPathInsideRoot`. However, it relies on complex path manipulation and `path.dirname` before checking, which can be bypassed using specific URL encoding or malformed segments, potentially allowing access to files outside the defined root.",
+      "steps_to_exploit": [
+        "Identify an endpoint utilizing directory listing features.",
+        "Craft a URL path containing encoded traversals or platform-specific directory delimiters.",
+        "Submit the request to attempt to list directory contents outside the designated root directory."
+      ],
+      "impact": "Information disclosure of sensitive files outside the intended static serving root.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/dirList.js",
+          "line": 197,
+          "quote": "const dir = path.dirname(path.resolve(resolvedRoot, relativeRoute))"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/dirList.js",
+          "line": 197,
+          "quote": "const dir = path.dirname(path.resolve(resolvedRoot, relativeRoute))"
+        }
+      ],
+      "id": "5d745a09",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potential Path Traversal via Unvalidated `root` Option",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `normalizeRoot` function converts URL objects to paths but fails to adequately sanitize or restrict the input `root` parameter in `index.js`. If an application dynamically configures the `root` based on user input, it leads to arbitrary file system access.",
+      "steps_to_exploit": [
+        "Find an application where user input influences the 'root' configuration of the static plugin.",
+        "Provide an absolute path pointing to sensitive system directories.",
+        "Request static assets to retrieve content from the arbitrary location."
+      ],
+      "impact": "Full read access to the underlying server file system.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 40,
+          "quote": "opts.root = normalizeRoot(opts.root)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 40,
+          "quote": "opts.root = normalizeRoot(opts.root)"
+        }
+      ],
+      "id": "794d1a64",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Directory Listing Information Disclosure",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `dirList.list` function recursively calculates `extendedInfo` including `totalSize` and `lastModified` without rate limiting or restricting depth, which can be exploited for DoS (Resource Exhaustion) or metadata harvesting.",
+      "steps_to_exploit": [
+        "Configure the server with the 'list' option set to true.",
+        "Target a deep or large directory structure.",
+        "Continuously request the directory listing, forcing the server to traverse and calculate metadata for the entire sub-tree."
+      ],
+      "impact": "Denial of service via resource exhaustion or exposure of sensitive filesystem metadata.",
+      "evolved_from": [],
+      "attack_category": "data_privacy",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/dirList.js",
+          "line": 100,
+          "quote": "entry.extendedInfo = await dirList.getExtendedInfo(path.join(dir, filename))"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/dirList.js",
+          "line": 100,
+          "quote": "entry.extendedInfo = await dirList.getExtendedInfo(path.join(dir, filename))"
+        }
+      ],
+      "id": "23277599",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Redirect Handling",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `getRedirectUrl` function uses `new URL(url, 'http://localhost.com/')` to sanitize redirects. Because it blindly trusts the input `url` string after minimal prefix manipulation, it may be vulnerable to open redirect attacks or bypasses of path-based security controls.",
+      "steps_to_exploit": [
+        "Access a path that triggers an automatic directory redirect.",
+        "Inject a malformed path that, when processed, directs the browser to an external malicious domain.",
+        "The client is redirected to the controlled external site."
+      ],
+      "impact": "Open redirect attacks facilitating phishing or credential theft.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 762,
+          "quote": "const parsed = new URL(url, 'http://localhost.com/')"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 762,
+          "quote": "const parsed = new URL(url, 'http://localhost.com/')"
+        }
+      ],
+      "id": "5968c80a",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of `glob` with Unsanitized User-Controlled Input",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The plugin uses the `glob` package to pre-map files for route creation. If any part of the root path or input options are influenced by user-supplied values, it could allow for command or path injection via globbing patterns.",
+      "steps_to_exploit": [
+        "Identify if 'root' or 'globIgnore' options are influenced by external configuration.",
+        "Supply a glob-incompatible or malicious string pattern to trigger unexpected behavior in glob traversal.",
+        "Observe error or unauthorized file enumeration."
+      ],
+      "impact": "Unexpected filesystem access or potential code execution depending on glob engine behavior.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 164,
+          "quote": "const files = await glob('**/**', {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 164,
+          "quote": "const files = await glob('**/**', {"
+        }
+      ],
+      "id": "b17729f6",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potential Denial of Service in `pumpSendToReply`",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `pumpSendToReply` function calls itself recursively in specific error handling logic (e.g., when pre-compressed files fail or multiple roots are defined). An attacker could craft specific request headers and paths to trigger deep recursion.",
+      "steps_to_exploit": [
+        "Craft a request that hits the multiple-root fallback logic or the pre-compressed fallback logic.",
+        "Repeat the request to exhaust stack limits or event loop time.",
+        "The server becomes unresponsive or crashes."
+      ],
+      "impact": "Denial of service via stack overflow or event loop blocking.",
+      "evolved_from": [],
+      "attack_category": "scalability",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 348,
+          "quote": "return pumpSendToReply("
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 348,
+          "quote": "return pumpSendToReply("
+        }
+      ],
+      "id": "14120452",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Improper MIME type / Charset inclusion",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `getContentType` function appends `; charset=utf-8` to any MIME type not marked as inherently UTF-8. This is applied indiscriminately and may cause browser rendering issues or bypass security filters for file types that should not be interpreted as text.",
+      "steps_to_exploit": [
+        "Host a file type that is not typically text but might be caught by the MIME type lookup.",
+        "Request the file and observe the `Content-Type` header containing a forced charset.",
+        "Exploit potential browser confusion or filter bypasses."
+      ],
+      "impact": "Security filter bypass or cross-site scripting (XSS) via content-type confusion.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 553,
+          "quote": "return `${type}; charset=utf-8`"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 553,
+          "quote": "return `${type}; charset=utf-8`"
+        }
+      ],
+      "id": "28bcab31",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Error Handling: Information Disclosure",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `checkPath` function in `index.js` logs internal file system errors (e.g., ENOENT, permission issues) to the Fastify logger. If this output is exposed to logs visible to attackers, it reveals the directory structure of the server.",
+      "steps_to_exploit": [
+        "Trigger server errors by requesting invalid or restricted paths.",
+        "Examine server logs if exposed via log aggregation platforms.",
+        "Reconstruct the filesystem structure based on the error messages."
+      ],
+      "impact": "Exposure of internal server paths and filesystem structure.",
+      "evolved_from": [],
+      "attack_category": "error_handling",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 531,
+          "quote": "!suppressWarning && fastify.log.warn(`\"root\" path \"${rootPath}\" must exist`)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 531,
+          "quote": "!suppressWarning && fastify.log.warn(`\"root\" path \"${rootPath}\" must exist`)"
+        }
+      ],
+      "id": "bdfff7e8",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Weak Input Validation on `setHeaders` Option",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `setHeaders` option validation is insufficient, only checking if it's a function. A malicious or unintended function could be injected to manipulate response headers, including sensitive ones like `Content-Security-Policy` or `Set-Cookie`.",
+      "steps_to_exploit": [
+        "Gain control over the plugin configuration (e.g., if dynamically set).",
+        "Inject a custom `setHeaders` function that modifies security headers.",
+        "Execute requests to observe the tampered headers."
+      ],
+      "impact": "Response header injection and potential security control bypass.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 45,
+          "quote": "if (setHeaders !== undefined && typeof setHeaders !== 'function') {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 45,
+          "quote": "if (setHeaders !== undefined && typeof setHeaders !== 'function') {"
+        }
+      ],
+      "id": "389e3907",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unsafe `Vary` Header Manipulation",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `addVaryAcceptEncoding` function parses the `Vary` header by manual string manipulation. While intended to be safe, it is prone to off-by-one errors or regex bypasses, potentially failing to include `accept-encoding` when required by caches.",
+      "steps_to_exploit": [
+        "Craft a request with specific `Accept-Encoding` and `Vary` headers.",
+        "The server returns a response without the correct `Vary` header.",
+        "A proxy cache serves a compressed file to a client that does not support it, breaking the response."
+      ],
+      "impact": "Cache poisoning leading to incorrect content delivery.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 624,
+          "quote": "reply.header('vary', value + ', accept-encoding')"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 624,
+          "quote": "reply.header('vary', value + ', accept-encoding')"
+        }
+      ],
+      "id": "2d154634",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Lack of Strict Path Normalization",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The code uses `decodeURI` on pathnames before passing them to the filesystem layer via `send`. While standard, double-decoding or encoding-based attacks could potentially bypass filter checks that look for specific characters.",
+      "steps_to_exploit": [
+        "Supply a URI-encoded traversal string.",
+        "The server decodes it and performs check on the decoded result, but if it re-encodes, it might cause inconsistencies.",
+        "Bypass logic that relies on literal path strings."
+      ],
+      "impact": "Security filter bypass.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 743,
+          "quote": "return decodeURI(pathname)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 743,
+          "quote": "return decodeURI(pathname)"
+        }
+      ],
+      "id": "3556271c",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unrestricted `list.render` Option",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `list.render` option allows a user-provided function to generate HTML. If the input data is not sanitized by the user-provided function, it could lead to stored or reflected XSS within the file listing page.",
+      "steps_to_exploit": [
+        "Create a file with an XSS payload as the filename.",
+        "Trigger the directory list feature.",
+        "The XSS payload is rendered in the output HTML generated by `list.render`."
+      ],
+      "impact": "Cross-site scripting (XSS) in the context of the file listing page.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/dirList.js",
+          "line": 150,
+          "quote": "const html = options.render("
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/dirList.js",
+          "line": 150,
+          "quote": "const html = options.render("
+        }
+      ],
+      "id": "9b213644",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure `content-disposition` filename usage",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `download` method uses `content-disposition` with the `basename` of the file. If an attacker can influence the filename provided to the download method, they might perform header injection or spoofing.",
+      "steps_to_exploit": [
+        "Identify a download path controlled by user input.",
+        "Inject characters into the filename that escape the quotes in the Content-Disposition header.",
+        "Trigger the download to see injected parameters."
+      ],
+      "impact": "Header injection / Response splitting.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 33,
+          "quote": "return create(basename(filename))"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 33,
+          "quote": "return create(basename(filename))"
+        }
+      ],
+      "id": "2cae00f2",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unchecked `wildcard` configuration",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `wildcard` option, if improperly configured or misused, allows broad mapping of the root directory. If `wildcard` is true, any path under the prefix is treated as a file, significantly increasing the attack surface if the root is not strictly limited.",
+      "steps_to_exploit": [
+        "Enable `wildcard` for a root that includes sensitive configuration or system files.",
+        "Request various paths and subdirectories to probe file availability.",
+        "Access sensitive files by guessing filenames."
+      ],
+      "impact": "Information disclosure.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 132,
+          "quote": "if (opts.wildcard === undefined || opts.wildcard === true) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 132,
+          "quote": "if (opts.wildcard === undefined || opts.wildcard === true) {"
+        }
+      ],
+      "id": "c2b020de",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Incomplete `allowedPath` security check",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `allowedPath` hook provides a way to implement authorization. However, it is only called *after* some normalization and potentially *before* the final path is fully resolved, potentially leading to race conditions or bypasses if the implementation logic is flawed.",
+      "steps_to_exploit": [
+        "Implement a custom `allowedPath` hook.",
+        "Find paths that resolve to the same location but differ in representation.",
+        "Bypass the authorization logic using the un-normalized path."
+      ],
+      "impact": "Unauthorized access to files.",
+      "evolved_from": [],
+      "attack_category": "authz",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 255,
+          "quote": "if (allowedPath && !allowedPath(pathname, options.root, request)) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 255,
+          "quote": "if (allowedPath && !allowedPath(pathname, options.root, request)) {"
+        }
+      ],
+      "id": "a02faf98",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "proposed": [
+    {
+      "title": "Unsafe Directory Traversal in DirList",
+      "code_refs": [
+        {
+          "file": "lib/dirList.js",
+          "line": 197,
+          "quote": "const dir = path.dirname(path.resolve(resolvedRoot, relativeRoute))"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potential Path Traversal via Unvalidated `root` Option",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 40,
+          "quote": "opts.root = normalizeRoot(opts.root)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Directory Listing Information Disclosure",
+      "code_refs": [
+        {
+          "file": "lib/dirList.js",
+          "line": 100,
+          "quote": "entry.extendedInfo = await dirList.getExtendedInfo(path.join(dir, filename))"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure Redirect Handling",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 762,
+          "quote": "const parsed = new URL(url, 'http://localhost.com/')"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of `glob` with Unsanitized User-Controlled Input",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 164,
+          "quote": "const files = await glob('**/**', {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potential Denial of Service in `pumpSendToReply`",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 348,
+          "quote": "return pumpSendToReply("
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Improper MIME type / Charset inclusion",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 553,
+          "quote": "return `${type}; charset=utf-8`"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Error Handling: Information Disclosure",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 531,
+          "quote": "!suppressWarning && fastify.log.warn(`\"root\" path \"${rootPath}\" must exist`)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Weak Input Validation on `setHeaders` Option",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 45,
+          "quote": "if (setHeaders !== undefined && typeof setHeaders !== 'function') {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unsafe `Vary` Header Manipulation",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 624,
+          "quote": "reply.header('vary', value + ', accept-encoding')"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Lack of Strict Path Normalization",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 743,
+          "quote": "return decodeURI(pathname)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unrestricted `list.render` Option",
+      "code_refs": [
+        {
+          "file": "lib/dirList.js",
+          "line": 150,
+          "quote": "const html = options.render("
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure `content-disposition` filename usage",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 33,
+          "quote": "return create(basename(filename))"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unchecked `wildcard` configuration",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 132,
+          "quote": "if (opts.wildcard === undefined || opts.wildcard === true) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Incomplete `allowedPath` security check",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 255,
+          "quote": "if (allowedPath && !allowedPath(pathname, options.root, request)) {"
+        }
+      ],
+      "outcome": "unchecked"
+    }
+  ],
+  "rejected": [],
+  "verification": null,
+  "arm_meta": {
+    "baseline": {
+      "model": "gemini/gemini-3.1-flash-lite",
+      "context": "code",
+      "requested": 15,
+      "returned": 15,
+      "files_shown": 12,
+      "chars_shown": 60484,
+      "files_that_did_not_fit": []
+    }
+  },
+  "seconds": {
+    "arm": 11.3,
+    "check": 0.0,
+    "total": 11.3
+  },
+  "usage": {
+    "arm": {
+      "calls": 1,
+      "failed": 0,
+      "est_tokens": 18688,
+      "seconds_in_calls": 11.3,
+      "by_task": {
+        "baseline": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 61540,
+          "completion_chars": 13212,
+          "seconds": 11.267582000000402,
+          "est_tokens": 18688
+        }
+      }
+    },
+    "check": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    }
+  }
+}

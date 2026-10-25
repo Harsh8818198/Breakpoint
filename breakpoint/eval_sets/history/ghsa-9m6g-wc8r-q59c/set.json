@@ -1,0 +1,63 @@
+{
+  "id": "ghsa-9m6g-wc8r-q59c",
+  "title": "scim-patch: scimPatch vulnerable to prototype pollution via unfiltered keys in patch",
+  "role": "heldout",
+  "repo": {
+    "url": "https://github.com/thomaspoignant/scim-patch",
+    "commit": "871b1e202b0f6fb393409e8962cfdc958fb0f1c1",
+    "partial": true
+  },
+  "language": "javascript",
+  "framework": "",
+  "provenance": "Labels come from the maintainers' fix commit, not from a model: the lines it changed or removed in its parent commit (advisory GHSA-9m6g-wc8r-q59c). Whether the patch really addresses the advisory is recorded in history.label_review.",
+  "contamination": "Advisory published 2026-06-22 and fix committed 2026-05-21, both on or after 2026-03-10, after the 2026-03-03 release of gemini-3.1-flash-lite (knowledge cutoff January 2025): that model cannot have trained on this fix. A model with a later cutoff might have. The code may still resemble earlier public fixes of similar bugs in the same project.",
+  "bugs": [
+    {
+      "id": "ghsa-9m6g-wc8r-q59c",
+      "title": "scimPatch vulnerable to prototype pollution via unfiltered keys in patch",
+      "class": "prototype-pollution",
+      "cwe": "CWE-1321",
+      "locations": [
+        {
+          "file": "src/scimPatch.ts",
+          "lines": [
+            70,
+            70
+          ]
+        },
+        {
+          "file": "src/scimPatch.ts",
+          "lines": [
+            148,
+            164
+          ]
+        }
+      ],
+      "notes": "Judge a finding against the advisory text in `history`, not only against the lines."
+    }
+  ],
+  "variants": {},
+  "history": {
+    "advisory": "GHSA-9m6g-wc8r-q59c",
+    "advisory_url": "https://github.com/advisories/GHSA-9m6g-wc8r-q59c",
+    "severity": "critical",
+    "published": "2026-06-22",
+    "package": "scim-patch",
+    "ecosystem": "npm",
+    "vulnerable_versions": "<= 0.9.0",
+    "patched": "0.9.1",
+    "fix_commit": "260f9cd2ac5ceac3976978850bb47dcb391720f6",
+    "fix_url": "https://github.com/thomaspoignant/scim-patch/commit/260f9cd2ac5ceac3976978850bb47dcb391720f6",
+    "fix_date": "2026-05-21T12:55:31Z",
+    "changed_lines": 34,
+    "source_files_changed": [
+      "src/scimPatch.ts"
+    ],
+    "other_files_changed": 1,
+    "addition_only": false,
+    "source_bytes": 30905,
+    "fits_in_one_prompt": true,
+    "description": "## Summary\n\n`scim-patch` performs prototype pollution when applying a SCIM PATCH operation whose `value` object contains a key like `\"__proto__.someProp\"`. After one such patch,\n`Object.prototype.someProp` is set process-wide, affecting every plain object in the Node process.\n\nAny service that calls `scimPatch()` on attacker-controlled JSON (i.e. any SCIM endpoint accepting `PATCH` from an external IdP) is exploitable on a stock Node runtime.\n\n## Impact\n\n- **Class:** Prototype pollution ([CWE-1321](https://cwe.mitre.org/data/definitions/1321.html))\n- **Affected versions:** `<= 0.9.0` (current HEAD `871b1e2`)\n- **Attack vector:** Network \u2014 sent as part of a normal SCIM `PATCH /Users/:id` request body.\n- **Privileges required:** Whatever the SCIM endpoint requires. For most integrations that's a provisioned IdP, which is \"low\" in CVSS terms (any authenticated provisioning client).\n- **Scope:** Changed \u2014 the bug is in a SCIM library but the side effect (`Object.prototype` mutation) leaks into the entire Node process.\n\nDownstream consequences depend on what other code reads from plain objects. Realistic outcomes observed in similar bugs:\n- **Privilege escalation** if any auth/middleware code checks `actor.isAdmin` / `req.user.admin` / similar boolean flags against a plain object that *expects* the key to be absent.\n- **Logic bypass / DoS** if any code branches on `obj.name`, `obj.type`, `obj.id` etc. against plain objects (e.g. `pg`'s prepared-statement naming check \u2014 a real incident at one consumer).\n- **Persistence:** lasts until the Node process restarts, so the blast radius is *every* request that container handles after the pollution.\n\n## Root cause\n\nIn `src/scimPatch.ts:415-427`, `addOrReplaceObjectAttribute` iterates the user-supplied `patch.value` with `Object.entries` and feeds each key to `resolvePaths`, which splits on `.`:\n\n```ts\nfunction addOrReplaceObjectAttribute(property: any, patch: ScimPatchAddReplaceOperation, multiValuedPathFilter?: boolean): any {\n    if (typeof patch.value !== 'object') { ... }\n\n    // src/scimPatch.ts:423-427\n    for (const [key, value] of Object.entries(patch.value)) {\n        assign(property, resolvePaths(key), value, patch.op);\n    }\n    return property;\n}\n```\n\n`assign` then walks the resulting key path with no filtering on dangerous keys (`src/scimPatch.ts:437-445`):\n\n```ts\nfunction assign(obj: any, keyPath: Array<string>, value: any, op: string) {\n    const lastKeyIndex = keyPath.length - 1;\n    for (let i = 0; i < lastKeyIndex; ++i) {\n        const key = keyPath[i];\n        if (!(key in obj)) {\n            obj[key] = {};\n        }\n        obj = obj[key];   // \u2190 obj[\"__proto__\"] === Object.prototype\n    }\n    // ... assigns into Object.prototype\n}\n```\n\nFor `keyPath = [\"__proto__\", \"polluted\"]`:\n- `\"__proto__\" in obj` is always true, so the fresh-object branch is skipped.\n- `obj = obj[\"__proto__\"]` now points to `Object.prototype`.\n- The final write lands on `Object.prototype.polluted`.\n\nThe same shape works for `constructor.prototype` keys.\n\n## Proof of concept\n\nDrop this in `test/prototypePollution.test.ts` and run `npm run build && npx mocha lib/test/prototypePollution.test.js`. Both tests pass against HEAD `871b1e2`:\n\n```ts\nimport { scimPatch } from '../src/scimPatch';\nimport { ScimUser } from './types/types.test';\nimport { expect } from 'chai';\n\ndescribe('Prototype pollution via scim-patch', () => {\n    let scimUser: ScimUser;\n\n    beforeEach(() => {\n        scimUser = JSON.parse(`{\n          \"schemas\": [\"urn:ietf:params:scim:schemas:core:2.0:User\"],\n          \"id\": \"tea_4\",\n          \"userName\": \"spiderman\",\n          \"name\": { \"familyName\": \"Parker\", \"givenName\": \"Peter\" },\n          \"active\": true,\n          \"emails\": [{ \"value\": \"spiderman@superheroes.com\", \"primary\": true }],\n          \"roles\": [],\n          \"meta\": { \"resourceType\": \"User\", \"created\": \"x\", \"lastModified\": \"x\", \"location\": \"x\" }\n        }`);\n    });\n\n    afterEach(() => {\n        delete (Object.prototype as any",
+    "label_review": "Claude read the fix patch against the advisory text on 2026-10-24 and found they match (one reader, not independently reviewed)."
+  }
+}

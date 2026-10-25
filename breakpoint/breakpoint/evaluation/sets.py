@@ -59,6 +59,7 @@ class EvalSet:
     provenance: str = ""                     # who labelled the bugs and how
     contamination: str = ""                  # how public the repo is, whether models may have seen it
     variants: dict = field(default_factory=dict)
+    history: dict = field(default_factory=dict)          # advisory sets only: the advisory, the fix commit, whether the label was reviewed
     path: Path | None = None
 
     def bug(self, bug_id: str) -> Bug | None:
@@ -95,7 +96,7 @@ def load_set(ref: str, sets_dir: Path | None = None) -> EvalSet:
     return EvalSet(id=data["id"], title=data.get("title", data["id"]), role=data.get("role", "heldout"),
                    repo=data["repo"], bugs=bugs, language=data.get("language", ""), framework=data.get("framework", ""),
                    provenance=data.get("provenance", ""), contamination=data.get("contamination", ""),
-                   variants=data.get("variants", {}), path=p)
+                   variants=data.get("variants", {}), history=data.get("history", {}), path=p)
 
 
 def list_sets(sets_dir: Path | None = None) -> list[str]:
@@ -127,7 +128,8 @@ def fetch(es: EvalSet, cache_dir: Path) -> Path:
         shutil.rmtree(target)
     target.parent.mkdir(parents=True, exist_ok=True)
     sparse = es.repo.get("sparse")             # optional: only these paths (some repos have file names Windows cannot hold)
-    _git(["clone", "--quiet", "--no-checkout", *(["--filter=blob:none"] if sparse else []), es.repo["url"], str(target)])
+    partial = bool(sparse or es.repo.get("partial"))     # "partial": history first, file contents only for the pinned commit
+    _git(["clone", "--quiet", "--no-checkout", *(["--filter=blob:none"] if partial else []), es.repo["url"], str(target)])
     try:
         if sparse:
             _git(["sparse-checkout", "set", "--no-cone", *sparse], target)

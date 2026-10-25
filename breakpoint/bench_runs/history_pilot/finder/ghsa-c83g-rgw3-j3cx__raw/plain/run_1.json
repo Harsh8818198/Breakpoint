@@ -1,0 +1,750 @@
+{
+  "schema": 1,
+  "set": "ghsa-c83g-rgw3-j3cx",
+  "variant": "raw",
+  "arm": "plain",
+  "run": 1,
+  "commit": "49b3d72986954c73fec8bb8fb69ad1f9febf265f",
+  "started_at": "2026-10-24T10:52:09+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": false,
+  "status": "ok",
+  "candidates": 15,
+  "kept": [
+    {
+      "title": "Arbitrary Arbitrary Require/Execution (RCE)",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The loadQueries function in node.js:257 uses `require.resolve(name, ...)` on a user-provided string `name` before calling `require()`. This allows an attacker to execute arbitrary local files or modules if they can influence the Browserslist configuration.",
+      "steps_to_exploit": [
+        "Find a target project using a configurable Browserslist path.",
+        "Create a malicious file containing JS payload (e.g., /tmp/exploit.js).",
+        "Inject a Browserslist 'extends' query pointing to the file path.",
+        "Trigger the browserslist loading process."
+      ],
+      "impact": "Remote Code Execution (RCE) on the machine where browserslist is running.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "node.js",
+          "line": 257,
+          "quote": "var queries = require(require.resolve(name, { paths: ['.', ctx.path] }))"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "node.js",
+          "line": 257,
+          "quote": "var queries = require(require.resolve(name, { paths: ['.', ctx.path] }))"
+        }
+      ],
+      "id": "aeb3e3fa",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure `require` in loadStat",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The loadStat function in node.js:281 performs a `require()` on a path constructed by joining user-controllable input `name`. While path.posix.join is used, `require` can still resolve to arbitrary files if the input is crafted.",
+      "steps_to_exploit": [
+        "Specify a custom stats file through the CLI/API.",
+        "Target a path that forces `require` to load a malicious JSON or JS file.",
+        "Execute browserslist to trigger the load."
+      ],
+      "impact": "Code execution via path traversal or arbitrary module loading.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "node.js",
+          "line": 281,
+          "quote": "var stats = require("
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "node.js",
+          "line": 281,
+          "quote": "var stats = require("
+        }
+      ],
+      "id": "f88d1c53",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of unsafe `eval`-like JSON parsing",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "cli.js:116 uses `JSON.parse(fs.readFileSync(opts.stats))` on a file path provided via the `--stats` argument. If the user is tricked into pointing this to a system file, they may leak information.",
+      "steps_to_exploit": [
+        "Identify a victim command using `--stats`.",
+        "Point the stats path to a sensitive file (e.g., /etc/passwd).",
+        "Observe error messages or application behavior that may leak file content during parsing."
+      ],
+      "impact": "Information disclosure / local file read.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "cli.js",
+          "line": 116,
+          "quote": "stats = JSON.parse(fs.readFileSync(opts.stats))"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "cli.js",
+          "line": 116,
+          "quote": "stats = JSON.parse(fs.readFileSync(opts.stats))"
+        }
+      ],
+      "id": "4287f5e5",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unsafe `process.env.ACTIONS_ALLOW_UNSECURE_COMMANDS`",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": ".github/workflows/test.yml:66 explicitly enables `ACTIONS_ALLOW_UNSECURE_COMMANDS`. This exposes the GitHub Action runner to command injection via stdout processing.",
+      "steps_to_exploit": [
+        "Create a PR targeting the repository.",
+        "Add a step in a workflow or script that outputs crafted strings matching GitHub's legacy logging commands.",
+        "Use this to set environment variables or modify workflow configuration."
+      ],
+      "impact": "Compromise of the CI/CD pipeline and potential credential theft.",
+      "evolved_from": [],
+      "attack_category": "supply_chain",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": ".github/workflows/test.yml",
+          "line": 66,
+          "quote": "ACTIONS_ALLOW_UNSECURE_COMMANDS: true"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": ".github/workflows/test.yml",
+          "line": 66,
+          "quote": "ACTIONS_ALLOW_UNSECURE_COMMANDS: true"
+        }
+      ],
+      "id": "17e4f53c",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Prototype Pollution in object cloning",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "index.js:261 iterates over an object without checking for prototype property inheritance correctly in older JS environments, though `DANGEROUS_KEYS` filters exist, the pattern is prone to bypasses.",
+      "steps_to_exploit": [
+        "Craft a nested object containing `__proto__` or other prototype keys.",
+        "Ensure the filter logic in `copyObject` is bypassed through unconventional encoding.",
+        "Pollute the prototype of the global objects."
+      ],
+      "impact": "Denial of Service (DoS) or unexpected application behavior.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 261,
+          "quote": "for (var key in obj) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 261,
+          "quote": "for (var key in obj) {"
+        }
+      ],
+      "id": "1376d78f",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Dependency Management (pnpm ci)",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": ".github/workflows/test.yml:22 and similar steps lack lockfile verification in specific older test runs (e.g., using `--no-frozen-lockfile`).",
+      "steps_to_exploit": [
+        "Perform a malicious dependency update.",
+        "Bypass the lockfile protection.",
+        "Infect the build environment with malicious code during `pnpm install`."
+      ],
+      "impact": "Supply chain compromise.",
+      "evolved_from": [],
+      "attack_category": "supply_chain",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": ".github/workflows/test.yml",
+          "line": 72,
+          "quote": "run: pnpm install --no-frozen-lockfile --ignore-scripts"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": ".github/workflows/test.yml",
+          "line": 72,
+          "quote": "run: pnpm install --no-frozen-lockfile --ignore-scripts"
+        }
+      ],
+      "id": "3919b3bb",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Missing Input Sanitization for shell arguments",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "cli.js uses `process.argv` to build `opts`. While regex replacements are used, there is no robust validation against malicious shell sequences when passing options.",
+      "steps_to_exploit": [
+        "Pass command line arguments with shell metacharacters.",
+        "Attempt to break out of string context to execute shell commands if the `opts` are eventually passed to `child_process` (though not present here, it is a high-risk pattern)."
+      ],
+      "impact": "Potential command injection.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "cli.js",
+          "line": 9,
+          "quote": "var args = process.argv.slice(2)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "cli.js",
+          "line": 9,
+          "quote": "var args = process.argv.slice(2)"
+        }
+      ],
+      "id": "5145ce4e",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Information Leakage via Error Messages",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "node.js:425 and various other handlers echo internal file system paths and configuration details directly to `stderr` or `console.warn`.",
+      "steps_to_exploit": [
+        "Provide an invalid config path.",
+        "Read the error message provided by the process.",
+        "Gain knowledge about the absolute directory structure of the host."
+      ],
+      "impact": "Reconnaissance for further attacks.",
+      "evolved_from": [],
+      "attack_category": "error_handling",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [],
+      "code_refs": [],
+      "id": "47cfa21b",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure `fs.readFileSync` without validation",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "node.js:152 reads package.json without checking for file size or symbolic links, potentially leading to resource exhaustion or directory traversal.",
+      "steps_to_exploit": [
+        "Create a massive file or a symlink to a sensitive file.",
+        "Target the `browserslist` resolution to read this file."
+      ],
+      "impact": "Denial of service or local file disclosure.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "node.js",
+          "line": 408,
+          "quote": "fs.readFileSync(file)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "node.js",
+          "line": 408,
+          "quote": "fs.readFileSync(file)"
+        }
+      ],
+      "id": "93357900",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Lack of version pinning in Actions",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": ".github/workflows/release.yml:20 uses `actions/setup-node@...` which references a commit hash, but the `publish` process uses `npm stage publish` which relies on global/ambient configuration.",
+      "steps_to_exploit": [
+        "Compromise the environment where `npm` is configured.",
+        "Intercept the stage publish step."
+      ],
+      "impact": "Malicious package publication.",
+      "evolved_from": [],
+      "attack_category": "supply_chain",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": ".github/workflows/release.yml",
+          "line": 24,
+          "quote": "run: npm stage publish"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": ".github/workflows/release.yml",
+          "line": 24,
+          "quote": "run: npm stage publish"
+        }
+      ],
+      "id": "1f658c03",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Regexp in parseConfig",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "node.js:374 uses a regex `replace(/#[^\n]*/g, '')` which is insufficient for stripping comments in complex configurations, potentially leaving executable logic in comments.",
+      "steps_to_exploit": [
+        "Craft a comment-based payload that bypasses simple regex parsing logic."
+      ],
+      "impact": "Config manipulation/injection.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [],
+      "code_refs": [],
+      "id": "c47de965",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of unsafe `eval`-like behavior in `new Function` / `call`",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "index.js:337 uses `type.select.call(browserslist, context, node)`, where `select` is dynamically retrieved from `QUERIES` based on user-input strings.",
+      "steps_to_exploit": [
+        "Manipulate the input to point to an unexpected `select` function in the `QUERIES` object."
+      ],
+      "impact": "Logic hijacking.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 337,
+          "quote": "var array = type.select.call(browserslist, context, node).map(function (j) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 337,
+          "quote": "var array = type.select.call(browserslist, context, node).map(function (j) {"
+        }
+      ],
+      "id": "df9c366d",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Path Traversal in `eachParent`",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "node.js:72 `eachParent` traverses directory structures using `path.dirname(loc)`. While it checks `pathInRoot`, the logic is susceptible to symlink attacks.",
+      "steps_to_exploit": [
+        "Create symlinks to escape the intended root directory.",
+        "Force `eachParent` to evaluate files outside the project root."
+      ],
+      "impact": "Arbitrary file reading in parent directories.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "node.js",
+          "line": 95,
+          "quote": "} while (loc !== (loc = path.dirname(loc)))"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "node.js",
+          "line": 95,
+          "quote": "} while (loc !== (loc = path.dirname(loc)))"
+        }
+      ],
+      "id": "7e4c8325",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure `JSON.parse` with no error handling",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "node.js:158 calls `JSON.parse(text)` without a try-catch block in certain branches, which could cause process crashes.",
+      "steps_to_exploit": [
+        "Provide a malformed package.json file.",
+        "Trigger the `browserslist` execution to crash the application."
+      ],
+      "impact": "Denial of Service.",
+      "evolved_from": [],
+      "attack_category": "error_handling",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "node.js",
+          "line": 158,
+          "quote": "list = JSON.parse(text).browserslist"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "node.js",
+          "line": 158,
+          "quote": "list = JSON.parse(text).browserslist"
+        }
+      ],
+      "id": "b1905df5",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unauthenticated access to sensitive data",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "index.js:564 iterates over `stats[name]` and exposes it directly via the `coverage` API, which might inadvertently leak custom user statistics if not properly isolated.",
+      "steps_to_exploit": [
+        "Call the `browserslist.coverage` function with crafted stats.",
+        "Access internal usage data mapped in the stats object."
+      ],
+      "impact": "Privacy breach of custom user statistics.",
+      "evolved_from": [],
+      "attack_category": "data_privacy",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 564,
+          "quote": "for (var version in stats[name]) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 564,
+          "quote": "for (var version in stats[name]) {"
+        }
+      ],
+      "id": "b59bb546",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "proposed": [
+    {
+      "title": "Arbitrary Arbitrary Require/Execution (RCE)",
+      "code_refs": [
+        {
+          "file": "node.js",
+          "line": 257,
+          "quote": "var queries = require(require.resolve(name, { paths: ['.', ctx.path] }))"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure `require` in loadStat",
+      "code_refs": [
+        {
+          "file": "node.js",
+          "line": 281,
+          "quote": "var stats = require("
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of unsafe `eval`-like JSON parsing",
+      "code_refs": [
+        {
+          "file": "cli.js",
+          "line": 116,
+          "quote": "stats = JSON.parse(fs.readFileSync(opts.stats))"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unsafe `process.env.ACTIONS_ALLOW_UNSECURE_COMMANDS`",
+      "code_refs": [
+        {
+          "file": ".github/workflows/test.yml",
+          "line": 66,
+          "quote": "ACTIONS_ALLOW_UNSECURE_COMMANDS: true"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Prototype Pollution in object cloning",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 261,
+          "quote": "for (var key in obj) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure Dependency Management (pnpm ci)",
+      "code_refs": [
+        {
+          "file": ".github/workflows/test.yml",
+          "line": 72,
+          "quote": "run: pnpm install --no-frozen-lockfile --ignore-scripts"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Missing Input Sanitization for shell arguments",
+      "code_refs": [
+        {
+          "file": "cli.js",
+          "line": 9,
+          "quote": "var args = process.argv.slice(2)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Information Leakage via Error Messages",
+      "code_refs": [],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure `fs.readFileSync` without validation",
+      "code_refs": [
+        {
+          "file": "node.js",
+          "line": 408,
+          "quote": "fs.readFileSync(file)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Lack of version pinning in Actions",
+      "code_refs": [
+        {
+          "file": ".github/workflows/release.yml",
+          "line": 24,
+          "quote": "run: npm stage publish"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure Regexp in parseConfig",
+      "code_refs": [],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of unsafe `eval`-like behavior in `new Function` / `call`",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 337,
+          "quote": "var array = type.select.call(browserslist, context, node).map(function (j) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Path Traversal in `eachParent`",
+      "code_refs": [
+        {
+          "file": "node.js",
+          "line": 95,
+          "quote": "} while (loc !== (loc = path.dirname(loc)))"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure `JSON.parse` with no error handling",
+      "code_refs": [
+        {
+          "file": "node.js",
+          "line": 158,
+          "quote": "list = JSON.parse(text).browserslist"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unauthenticated access to sensitive data",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 564,
+          "quote": "for (var version in stats[name]) {"
+        }
+      ],
+      "outcome": "unchecked"
+    }
+  ],
+  "rejected": [],
+  "verification": null,
+  "arm_meta": {
+    "baseline": {
+      "model": "gemini/gemini-3.1-flash-lite",
+      "context": "code",
+      "requested": 15,
+      "returned": 15,
+      "files_shown": 32,
+      "chars_shown": 98356,
+      "files_that_did_not_fit": []
+    }
+  },
+  "seconds": {
+    "arm": 9.4,
+    "check": 0.0,
+    "total": 9.4
+  },
+  "usage": {
+    "arm": {
+      "calls": 1,
+      "failed": 0,
+      "est_tokens": 27394,
+      "seconds_in_calls": 9.3,
+      "by_task": {
+        "baseline": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 99452,
+          "completion_chars": 10125,
+          "seconds": 9.341549000004306,
+          "est_tokens": 27394
+        }
+      }
+    },
+    "check": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    }
+  }
+}

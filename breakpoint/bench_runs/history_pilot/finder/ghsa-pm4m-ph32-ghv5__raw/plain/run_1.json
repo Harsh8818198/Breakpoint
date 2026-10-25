@@ -1,0 +1,840 @@
+{
+  "schema": 1,
+  "set": "ghsa-pm4m-ph32-ghv5",
+  "variant": "raw",
+  "arm": "plain",
+  "run": 1,
+  "commit": "bd7ebb2b7818873407c942c6371504e427c99cba",
+  "started_at": "2026-10-24T10:57:43+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": false,
+  "status": "ok",
+  "candidates": 15,
+  "kept": [
+    {
+      "title": "Unsafe Deserialization of YAML Data",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The library lacks sufficient restrictions on the schemas and object construction, making it susceptible to prototype pollution and potentially remote code execution (RCE) if custom dangerous tags are defined or improper schemas are used. Specifically, the dynamic construction in src/parser/constructor.ts allows for object prototype mutation.",
+      "steps_to_exploit": [
+        "Attacker provides a crafted YAML payload with __proto__ keys or other dangerous path overrides.",
+        "The parser processes the input, creating or modifying JavaScript objects in the application memory space.",
+        "Application logic subsequently uses these tainted objects, leading to behavior changes or RCE via prototype pollution."
+      ],
+      "impact": "Remote Code Execution (RCE) and total compromise of the application server.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/parser/constructor.ts",
+          "line": 298,
+          "quote": "if (!state.json && frame.tag.has(frame.value, key) && !frame.overridable?.has(key)) {"
+        },
+        {
+          "file": "src/tag/mapping/map.ts",
+          "line": 21,
+          "quote": "if (normalizedKey === '__proto__') {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/parser/constructor.ts",
+          "line": 298,
+          "quote": "if (!state.json && frame.tag.has(frame.value, key) && !frame.overridable?.has(key)) {"
+        },
+        {
+          "file": "src/tag/mapping/map.ts",
+          "line": 21,
+          "quote": "if (normalizedKey === '__proto__') {"
+        }
+      ],
+      "id": "a70c26aa",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Denial of Service via Hash DoS / Excessive Recursion",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The parser does not enforce strict limits on the depth of the YAML structure or the number of anchors, allowing an attacker to exhaust memory or CPU cycles via deeply nested structures or circular references.",
+      "steps_to_exploit": [
+        "Attacker submits a YAML document with massive nesting depth or thousands of aliases.",
+        "The parser's memory usage grows exponentially due to structural depth.",
+        "The event loop is blocked, or the process crashes due to stack overflow/OOM."
+      ],
+      "impact": "Denial of Service (DoS) of the Node.js process.",
+      "evolved_from": [],
+      "attack_category": "rate_limiting",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/parser/parser.ts",
+          "line": 81,
+          "quote": "maxDepth: 100"
+        },
+        {
+          "file": "src/parser/constructor.ts",
+          "line": 443,
+          "quote": "if (state.maxAliases !== -1 && ++state.aliasCount > state.maxAliases) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/parser/parser.ts",
+          "line": 81,
+          "quote": "maxDepth: 100"
+        },
+        {
+          "file": "src/parser/constructor.ts",
+          "line": 443,
+          "quote": "if (state.maxAliases !== -1 && ++state.aliasCount > state.maxAliases) {"
+        }
+      ],
+      "id": "0012ba2c",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Base64 Decoding of Untrusted User Input",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The demo implementation at support/demo_template/index.mjs decodes base64 from a location hash, which is then used as input to the YAML parser, creating a stored XSS or injection vector via URL.",
+      "steps_to_exploit": [
+        "Attacker crafts a malicious YAML payload and converts it to base64.",
+        "Attacker constructs a URL pointing to the demo page with a crafted #yaml=... parameter.",
+        "The victim visits the URL, and the malicious code executes within the victim's browser context."
+      ],
+      "impact": "Cross-Site Scripting (XSS) allowing session hijacking or unauthorized actions in the user's browser.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "support/demo_template/index.mjs",
+          "line": 54,
+          "quote": "yaml = decodeBase64(location.hash.slice(6))"
+        },
+        {
+          "file": "support/demo_template/index.mjs",
+          "line": 40,
+          "quote": "obj = jsyaml.load(str, { schema: SEXY_SCHEMA })"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "support/demo_template/index.mjs",
+          "line": 54,
+          "quote": "yaml = decodeBase64(location.hash.slice(6))"
+        },
+        {
+          "file": "support/demo_template/index.mjs",
+          "line": 40,
+          "quote": "obj = jsyaml.load(str, { schema: SEXY_SCHEMA })"
+        }
+      ],
+      "id": "a93b47bb",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unbounded Memory Usage in Parser",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `constructFromEvents` logic in src/parser/constructor.ts builds documents into a list without explicit global limits on the total number of items, which can be exploited with large files to cause memory exhaustion.",
+      "steps_to_exploit": [
+        "Attacker submits a YAML file with a very high number of elements.",
+        "The parser creates a large array/object graph in memory.",
+        "The application reaches memory limit and fails or halts."
+      ],
+      "impact": "Denial of Service (DoS) via memory exhaustion.",
+      "evolved_from": [],
+      "attack_category": "rate_limiting",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/parser/constructor.ts",
+          "line": 355,
+          "quote": "function constructFromEvents (events: Event[], options: ConstructorOptions): unknown[] {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/parser/constructor.ts",
+          "line": 355,
+          "quote": "function constructFromEvents (events: Event[], options: ConstructorOptions): unknown[] {"
+        }
+      ],
+      "id": "4eab6fc1",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potential Prototype Poisoning in Mapping Tags",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The legacy mapping tag handling in src/tag/mapping/legacy_map.ts and map.ts tries to prevent __proto__ usage but might still be vulnerable to other object prototype key manipulations if not handled uniformly across all custom schemas.",
+      "steps_to_exploit": [
+        "Craft YAML keys that bypass basic filters (e.g., toString or constructor).",
+        "Inject keys into objects that could impact application logic when properties are looked up on prototypes.",
+        "Trigger code paths in the application that consume these objects."
+      ],
+      "impact": "Logic bugs, security control bypass, or potential code execution.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/tag/mapping/map.ts",
+          "line": 21,
+          "quote": "if (normalizedKey === '__proto__') {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/tag/mapping/map.ts",
+          "line": 21,
+          "quote": "if (normalizedKey === '__proto__') {"
+        }
+      ],
+      "id": "e207422e",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Error Handling",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "YAMLException in src/common/exception.ts constructs error messages that contain raw buffer data which might include sensitive inputs during parsing errors.",
+      "steps_to_exploit": [
+        "An attacker forces a syntax error on a document containing sensitive configuration keys or secrets.",
+        "The library returns the parsed snippet including the sensitive data in the error message.",
+        "If these errors are logged or returned to the user, sensitive information is leaked."
+      ],
+      "impact": "Information disclosure of secrets or sensitive configuration.",
+      "evolved_from": [],
+      "attack_category": "error_handling",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/common/exception.ts",
+          "line": 17,
+          "quote": "where += `\\n\\n${exception.mark.snippet}`"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/common/exception.ts",
+          "line": 17,
+          "quote": "where += `\\n\\n${exception.mark.snippet}`"
+        }
+      ],
+      "id": "2b5d8133",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Lack of Explicit Character Encoding Validation",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The parser handles UTF-8 input but does not explicitly reject invalid or malformed sequences beyond basic non-printable character checks, potentially allowing for smuggling or bypasses in downstream systems.",
+      "steps_to_exploit": [
+        "Attacker provides malformed UTF-8/unicode sequences in YAML scalars.",
+        "The parser processes these sequences into strings that might be interpreted differently by other database or backend systems.",
+        "Downstream system triggers unintended logic based on misinterpreted characters."
+      ],
+      "impact": "Potential downstream injection or data corruption.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/parser/parser.ts",
+          "line": 379,
+          "quote": "if (PATTERN_NON_PRINTABLE.test(state.input.slice(start, end))) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/parser/parser.ts",
+          "line": 379,
+          "quote": "if (PATTERN_NON_PRINTABLE.test(state.input.slice(start, end))) {"
+        }
+      ],
+      "id": "280a69e4",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Default Schema in CLI",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The CLI (bin/js-yaml.mjs) uses implicit loading which may lead to usage of overly permissive schemas for user-supplied data, exposing deserialization vulnerabilities.",
+      "steps_to_exploit": [
+        "An administrator runs the tool on untrusted user-supplied YAML.",
+        "The tool uses default settings which might resolve custom, dangerous tags.",
+        "An attacker gains control over application objects via custom tags."
+      ],
+      "impact": "Code execution when using the tool with untrusted files.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "bin/js-yaml.mjs",
+          "line": 85,
+          "quote": "loadAll(input, (doc) => { output.push(doc) }, {})"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "bin/js-yaml.mjs",
+          "line": 85,
+          "quote": "loadAll(input, (doc) => { output.push(doc) }, {})"
+        }
+      ],
+      "id": "10c53455",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unprotected External Git Repository Interaction",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The script support/get-yaml-test-suite.mjs executes git commands that might be influenced by malicious environments, potentially leaking credentials or running code if run in untrusted environments.",
+      "steps_to_exploit": [
+        " Attacker compromises an upstream dependency or the build environment.",
+        "The build script fetches code from a URL provided in the script.",
+        "Injected code is executed during the test/build phase."
+      ],
+      "impact": "Compromise of the development environment.",
+      "evolved_from": [],
+      "attack_category": "supply_chain",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "support/get-yaml-test-suite.mjs",
+          "line": 14,
+          "quote": "const result = spawnSync('git', args, {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "support/get-yaml-test-suite.mjs",
+          "line": 14,
+          "quote": "const result = spawnSync('git', args, {"
+        }
+      ],
+      "id": "fb626e89",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Re-dumping Vulnerability (Loss of Original Security Constraints)",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `dump` functionality re-serializes an AST which may lose strict security tags or validation constraints that were present in the initial load, leading to different behavior when dumped/re-parsed.",
+      "steps_to_exploit": [
+        "Parse a YAML file with specific security tags.",
+        "Dump it using a generic default schema.",
+        "The resulting file lacks the original tags, effectively bypassing security logic in later applications."
+      ],
+      "impact": "Security logic bypass in downstream applications.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/dump.ts",
+          "line": 55,
+          "quote": "function dump (input: any, options: DumpOptions = {}) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/dump.ts",
+          "line": 55,
+          "quote": "function dump (input: any, options: DumpOptions = {}) {"
+        }
+      ],
+      "id": "1d08ba0f",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potential Integer Overflow in Parser",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The custom integer parsing logic in various tags (int_core, etc.) does not always account for very large numbers before converting to JavaScript numbers, which can lead to precision loss or unexpected values.",
+      "steps_to_exploit": [
+        "Attacker provides very large integers in the YAML.",
+        "The parser converts these into JavaScript numbers (64-bit floats), causing silent precision loss.",
+        "Downstream system makes decisions based on the imprecise numbers."
+      ],
+      "impact": "Data corruption or logic errors based on integer precision loss.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/tag/scalar/int_core.ts",
+          "line": 37,
+          "quote": "return sign * parseInt(value, 10)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/tag/scalar/int_core.ts",
+          "line": 37,
+          "quote": "return sign * parseInt(value, 10)"
+        }
+      ],
+      "id": "3c6dedbb",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Usage of `atob` / `btoa` in Demo",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The demo uses non-standard base64 encoding/decoding implementations that are insecurely mapped, potentially leaking data if character mapping is inconsistent.",
+      "steps_to_exploit": [
+        "Attacker crafts non-UTF8 binary sequences in YAML.",
+        "Encoding/decoding rounds occur with invalid character conversion.",
+        "Application crashes or exhibits undefined behavior."
+      ],
+      "impact": "Unexpected application behavior or data corruption in the demo.",
+      "evolved_from": [],
+      "attack_category": "data_privacy",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "support/demo_template/index.mjs",
+          "line": 17,
+          "quote": "return btoa(String.fromCharCode(...new TextEncoder().encode(str)))"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "support/demo_template/index.mjs",
+          "line": 17,
+          "quote": "return btoa(String.fromCharCode(...new TextEncoder().encode(str)))"
+        }
+      ],
+      "id": "f0cd7380",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Incomplete Validation of YAML Tags",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The tag normalization/shortening logic in src/common/tagname.ts could be manipulated if an attacker finds a way to register or reference malformed tag names that bypass URI decoding logic.",
+      "steps_to_exploit": [
+        "Craft a URI encoded tag name that contains malicious sequences.",
+        "The tag validation logic is skipped, allowing unexpected tags into the schema.",
+        "Parser interprets these tags in unauthorized ways."
+      ],
+      "impact": "Policy bypass of security-restricted schemas.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/common/tagname.ts",
+          "line": 19,
+          "quote": "return decodeURIComponent(prefix) + decodeURIComponent(rawTag.slice(handle.length))"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/common/tagname.ts",
+          "line": 19,
+          "quote": "return decodeURIComponent(prefix) + decodeURIComponent(rawTag.slice(handle.length))"
+        }
+      ],
+      "id": "77dfc367",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potential Alias Re-usage / Reference Leakage",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The alias construction logic in src/ast/from_js.ts uses a map to deduplicate objects, which could potentially leak memory or lead to cross-document object reference leakage if the state is shared.",
+      "steps_to_exploit": [
+        "Parse multiple documents where references might inadvertently span between them.",
+        "Exploit sharing of object state across document frames.",
+        "Reference sensitive data from one document in another."
+      ],
+      "impact": "Exposure of sensitive data across document boundaries.",
+      "evolved_from": [],
+      "attack_category": "data_privacy",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/ast/from_js.ts",
+          "line": 39,
+          "quote": "refs: Map<unknown, Node>"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/ast/from_js.ts",
+          "line": 39,
+          "quote": "refs: Map<unknown, Node>"
+        }
+      ],
+      "id": "ab099913",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Missing Schema Enforcement in `loadAll`",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `loadAll` function defaults to `CORE_SCHEMA` if options are missing, which might be too permissive for some highly sensitive application environments where `FAILSAFE_SCHEMA` is required.",
+      "steps_to_exploit": [
+        "Attacker finds an implementation that relies on default settings in `loadAll`.",
+        "Attacker injects YAML constructs that are disallowed in a restricted schema but allowed in CORE_SCHEMA.",
+        "Application logic allows the construction of objects that violate security boundaries."
+      ],
+      "impact": "Security constraint violation via overly permissive default configuration.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/load.ts",
+          "line": 38,
+          "quote": "function loadAll (input: string, options?: LoadOptions): unknown[]"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/load.ts",
+          "line": 38,
+          "quote": "function loadAll (input: string, options?: LoadOptions): unknown[]"
+        }
+      ],
+      "id": "a75953ba",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "proposed": [
+    {
+      "title": "Unsafe Deserialization of YAML Data",
+      "code_refs": [
+        {
+          "file": "src/parser/constructor.ts",
+          "line": 298,
+          "quote": "if (!state.json && frame.tag.has(frame.value, key) && !frame.overridable?.has(key)) {"
+        },
+        {
+          "file": "src/tag/mapping/map.ts",
+          "line": 21,
+          "quote": "if (normalizedKey === '__proto__') {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Denial of Service via Hash DoS / Excessive Recursion",
+      "code_refs": [
+        {
+          "file": "src/parser/parser.ts",
+          "line": 81,
+          "quote": "maxDepth: 100"
+        },
+        {
+          "file": "src/parser/constructor.ts",
+          "line": 443,
+          "quote": "if (state.maxAliases !== -1 && ++state.aliasCount > state.maxAliases) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Base64 Decoding of Untrusted User Input",
+      "code_refs": [
+        {
+          "file": "support/demo_template/index.mjs",
+          "line": 54,
+          "quote": "yaml = decodeBase64(location.hash.slice(6))"
+        },
+        {
+          "file": "support/demo_template/index.mjs",
+          "line": 40,
+          "quote": "obj = jsyaml.load(str, { schema: SEXY_SCHEMA })"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unbounded Memory Usage in Parser",
+      "code_refs": [
+        {
+          "file": "src/parser/constructor.ts",
+          "line": 355,
+          "quote": "function constructFromEvents (events: Event[], options: ConstructorOptions): unknown[] {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potential Prototype Poisoning in Mapping Tags",
+      "code_refs": [
+        {
+          "file": "src/tag/mapping/map.ts",
+          "line": 21,
+          "quote": "if (normalizedKey === '__proto__') {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure Error Handling",
+      "code_refs": [
+        {
+          "file": "src/common/exception.ts",
+          "line": 17,
+          "quote": "where += `\\n\\n${exception.mark.snippet}`"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Lack of Explicit Character Encoding Validation",
+      "code_refs": [
+        {
+          "file": "src/parser/parser.ts",
+          "line": 379,
+          "quote": "if (PATTERN_NON_PRINTABLE.test(state.input.slice(start, end))) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure Default Schema in CLI",
+      "code_refs": [
+        {
+          "file": "bin/js-yaml.mjs",
+          "line": 85,
+          "quote": "loadAll(input, (doc) => { output.push(doc) }, {})"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unprotected External Git Repository Interaction",
+      "code_refs": [
+        {
+          "file": "support/get-yaml-test-suite.mjs",
+          "line": 14,
+          "quote": "const result = spawnSync('git', args, {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Re-dumping Vulnerability (Loss of Original Security Constraints)",
+      "code_refs": [
+        {
+          "file": "src/dump.ts",
+          "line": 55,
+          "quote": "function dump (input: any, options: DumpOptions = {}) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potential Integer Overflow in Parser",
+      "code_refs": [
+        {
+          "file": "src/tag/scalar/int_core.ts",
+          "line": 37,
+          "quote": "return sign * parseInt(value, 10)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure Usage of `atob` / `btoa` in Demo",
+      "code_refs": [
+        {
+          "file": "support/demo_template/index.mjs",
+          "line": 17,
+          "quote": "return btoa(String.fromCharCode(...new TextEncoder().encode(str)))"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Incomplete Validation of YAML Tags",
+      "code_refs": [
+        {
+          "file": "src/common/tagname.ts",
+          "line": 19,
+          "quote": "return decodeURIComponent(prefix) + decodeURIComponent(rawTag.slice(handle.length))"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potential Alias Re-usage / Reference Leakage",
+      "code_refs": [
+        {
+          "file": "src/ast/from_js.ts",
+          "line": 39,
+          "quote": "refs: Map<unknown, Node>"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Missing Schema Enforcement in `loadAll`",
+      "code_refs": [
+        {
+          "file": "src/load.ts",
+          "line": 38,
+          "quote": "function loadAll (input: string, options?: LoadOptions): unknown[]"
+        }
+      ],
+      "outcome": "unchecked"
+    }
+  ],
+  "rejected": [],
+  "verification": null,
+  "arm_meta": {
+    "baseline": {
+      "model": "gemini/gemini-3.1-flash-lite",
+      "context": "code",
+      "requested": 15,
+      "returned": 15,
+      "files_shown": 62,
+      "chars_shown": 261933,
+      "files_that_did_not_fit": []
+    }
+  },
+  "seconds": {
+    "arm": 19.1,
+    "check": 0.0,
+    "total": 19.1
+  },
+  "usage": {
+    "arm": {
+      "calls": 1,
+      "failed": 0,
+      "est_tokens": 69153,
+      "seconds_in_calls": 19.0,
+      "by_task": {
+        "baseline": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 263089,
+          "completion_chars": 13524,
+          "seconds": 19.005405699950643,
+          "est_tokens": 69153
+        }
+      }
+    },
+    "check": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    }
+  }
+}

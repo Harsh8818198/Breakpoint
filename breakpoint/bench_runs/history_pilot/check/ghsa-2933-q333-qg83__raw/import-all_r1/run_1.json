@@ -1,0 +1,400 @@
+{
+  "schema": 1,
+  "set": "ghsa-2933-q333-qg83",
+  "variant": "raw",
+  "arm": "import-all_r1",
+  "run": 1,
+  "commit": "321916bb9afc0413277304cf209ae4fae111e5e3",
+  "started_at": "2026-10-24T11:29:58+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": true,
+  "status": "ok",
+  "candidates": 15,
+  "kept": [
+    {
+      "title": "Remote Code Execution via Eval on Untrusted Data",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `parseData` function in `lib/readFile.js` uses `evalAlias(data)` to parse '.js' or '.ts' files, which allows an attacker who can influence the content of these files to execute arbitrary code with the privileges of the Node.js process.",
+      "steps_to_exploit": [
+        "Attacker identifies a writable locale file directory or influences the locale file content.",
+        "Attacker creates or overwrites a file with a '.js' or '.ts' extension containing malicious JavaScript.",
+        "The application calls `read()` on the attacker-controlled file.",
+        "The application executes `eval(data)`, triggering the payload."
+      ],
+      "impact": "Full system compromise, data theft, and loss of service.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "CONFIRMED",
+      "evidence": [
+        {
+          "file": "lib/readFile.js",
+          "line": 86,
+          "quote": "result = evalAlias(data)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/readFile.js",
+          "line": 86,
+          "quote": "result = evalAlias(data)"
+        }
+      ],
+      "id": "d452fc76",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Lack of Memory Limits on Read Operations",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `readFileSync` and `readFile` operations load the entire content of a file into memory without checking the size, allowing for memory exhaustion attacks.",
+      "steps_to_exploit": [
+        "Attacker causes the system to read a very large or infinite stream (if the backend supports streams) or a file designed to consume RAM.",
+        "Process crashes due to OOM."
+      ],
+      "impact": "Denial of service.",
+      "evolved_from": [],
+      "attack_category": "rate_limiting",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "CONFIRMED",
+      "evidence": [
+        {
+          "file": "lib/readFile.js",
+          "line": 13,
+          "quote": "const data = fs.readFileSync(filename, 'utf8')"
+        },
+        {
+          "file": "lib/readFile.js",
+          "line": 23,
+          "quote": "fs.readFile(filename, 'utf8', (err, data) => {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/readFile.js",
+          "line": 13,
+          "quote": "const data = fs.readFileSync(filename, 'utf8')"
+        }
+      ],
+      "id": "558abb3c",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "proposed": [
+    {
+      "title": "Remote Code Execution via Eval on Untrusted Data",
+      "code_refs": [
+        {
+          "file": "lib/readFile.js",
+          "line": 86,
+          "quote": "result = evalAlias(data)"
+        }
+      ],
+      "outcome": "kept"
+    },
+    {
+      "title": "Prototype Pollution via recursive object merge",
+      "code_refs": [
+        {
+          "file": "lib/utils.js",
+          "line": 108,
+          "quote": "obj[k] = newValue"
+        }
+      ],
+      "outcome": "REFUTED:defence_found"
+    },
+    {
+      "title": "Insecure File Creation via Path Traversal",
+      "code_refs": [
+        {
+          "file": "lib/utils.js",
+          "line": 53,
+          "quote": "export function isSafeNsSegment (v) {"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    },
+    {
+      "title": "Unsafe Use of Shell Commands in Build Script",
+      "code_refs": [],
+      "outcome": "UNVERIFIED:quote_not_in_code"
+    },
+    {
+      "title": "Use of unsafe `eval` alias",
+      "code_refs": [
+        {
+          "file": "lib/readFile.js",
+          "line": 10,
+          "quote": "const evalAlias = eval"
+        }
+      ],
+      "outcome": "UNVERIFIED:quote_not_in_code"
+    },
+    {
+      "title": "Potential Arbitrary Path Traversal via addPath/loadPath functions",
+      "code_refs": [
+        {
+          "file": "lib/index.js",
+          "line": 36,
+          "quote": "loadPath = this.options.loadPath(language, namespace)"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    },
+    {
+      "title": "Weak Input Validation on `lng` and `ns` segments",
+      "code_refs": [
+        {
+          "file": "lib/utils.js",
+          "line": 27,
+          "quote": "if (v.length === 0 || v.length > 128) return false"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    },
+    {
+      "title": "Improper Input Sanitization for Unicode Control Characters",
+      "code_refs": [
+        {
+          "file": "lib/utils.js",
+          "line": 32,
+          "quote": "if (/[\\x00-\\x1F\\x7F]/.test(v)) return false"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    },
+    {
+      "title": "Unsafe `writeFile` without atomic operations",
+      "code_refs": [
+        {
+          "file": "lib/writeFile.js",
+          "line": 43,
+          "quote": "fs.writeFile(filename, payload, 'utf8', (err, data) => err ? reject(err) : resolve(data))"
+        }
+      ],
+      "outcome": "REFUTED:defence_found"
+    },
+    {
+      "title": "Overly Permissive Dependency Constraints",
+      "code_refs": [
+        {
+          "file": "package.json",
+          "line": 30,
+          "quote": "\"devDependencies\": {"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    },
+    {
+      "title": "Information Disclosure via stack trace",
+      "code_refs": [
+        {
+          "file": "lib/readFile.js",
+          "line": 141,
+          "quote": "err.message = 'error parsing ' + filename + ': ' + err.message"
+        }
+      ],
+      "outcome": "REFUTED:defence_found"
+    },
+    {
+      "title": "Use of `eval` in JSON5 for identifiers",
+      "code_refs": [
+        {
+          "file": "lib/readFile.js",
+          "line": 86,
+          "quote": "result = evalAlias(data)"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    },
+    {
+      "title": "Lack of Memory Limits on Read Operations",
+      "code_refs": [
+        {
+          "file": "lib/readFile.js",
+          "line": 13,
+          "quote": "const data = fs.readFileSync(filename, 'utf8')"
+        }
+      ],
+      "outcome": "kept"
+    },
+    {
+      "title": "Insecure `find` command in build script",
+      "code_refs": [],
+      "outcome": "UNVERIFIED:quote_not_in_code"
+    },
+    {
+      "title": "Unsafe directory creation in `writeFile`",
+      "code_refs": [
+        {
+          "file": "lib/writeFile.js",
+          "line": 35,
+          "quote": "fs.mkdirSync(dirname(filename), { recursive: true })"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    }
+  ],
+  "rejected": [
+    {
+      "title": "Prototype Pollution via recursive object merge",
+      "status": "REFUTED",
+      "code": "defence_found",
+      "why": "a protection enforced in the code defeats the claim"
+    },
+    {
+      "title": "Insecure File Creation via Path Traversal",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    },
+    {
+      "title": "Unsafe Use of Shell Commands in Build Script",
+      "status": "UNVERIFIED",
+      "code": "quote_not_in_code",
+      "why": "the reviewer's quotes do not exist in the files named"
+    },
+    {
+      "title": "Use of unsafe `eval` alias",
+      "status": "UNVERIFIED",
+      "code": "quote_not_in_code",
+      "why": "the reviewer's quotes do not exist in the files named"
+    },
+    {
+      "title": "Potential Arbitrary Path Traversal via addPath/loadPath functions",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    },
+    {
+      "title": "Weak Input Validation on `lng` and `ns` segments",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    },
+    {
+      "title": "Improper Input Sanitization for Unicode Control Characters",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    },
+    {
+      "title": "Unsafe `writeFile` without atomic operations",
+      "status": "REFUTED",
+      "code": "defence_found",
+      "why": "a protection enforced in the code defeats the claim"
+    },
+    {
+      "title": "Overly Permissive Dependency Constraints",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    },
+    {
+      "title": "Information Disclosure via stack trace",
+      "status": "REFUTED",
+      "code": "defence_found",
+      "why": "a protection enforced in the code defeats the claim"
+    },
+    {
+      "title": "Use of `eval` in JSON5 for identifiers",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    },
+    {
+      "title": "Insecure `find` command in build script",
+      "status": "UNVERIFIED",
+      "code": "quote_not_in_code",
+      "why": "the reviewer's quotes do not exist in the files named"
+    },
+    {
+      "title": "Unsafe directory creation in `writeFile`",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    }
+  ],
+  "verification": {
+    "mode": "source-code",
+    "files_indexed": 87,
+    "checked": 15,
+    "confirmed": 2,
+    "refuted": 10,
+    "unverified": 3,
+    "errors": 0,
+    "defender_pass": true,
+    "appeal_pass": true
+  },
+  "arm_meta": {
+    "imported_from": "eval_runs_check/inputs/ghsa-2933-q333-qg83/all_r1.json",
+    "note": "produced elsewhere; not repeatable by this harness"
+  },
+  "seconds": {
+    "arm": 0.0,
+    "check": 248.7,
+    "total": 248.7
+  },
+  "usage": {
+    "arm": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    },
+    "check": {
+      "calls": 43,
+      "failed": 0,
+      "est_tokens": 388787,
+      "seconds_in_calls": 248.0,
+      "by_task": {
+        "verify_appeal": {
+          "calls": 8,
+          "failed": 0,
+          "prompt_chars": 514171,
+          "completion_chars": 5595,
+          "seconds": 47.01751579984557,
+          "est_tokens": 129942
+        },
+        "verify_defend": {
+          "calls": 5,
+          "failed": 0,
+          "prompt_chars": 308519,
+          "completion_chars": 3801,
+          "seconds": 22.75513220007997,
+          "est_tokens": 78080
+        },
+        "verify_judge": {
+          "calls": 15,
+          "failed": 0,
+          "prompt_chars": 634273,
+          "completion_chars": 19348,
+          "seconds": 107.23137180006597,
+          "est_tokens": 163405
+        },
+        "verify_locate": {
+          "calls": 15,
+          "failed": 0,
+          "prompt_chars": 65636,
+          "completion_chars": 3805,
+          "seconds": 70.96923330007121,
+          "est_tokens": 17360
+        }
+      }
+    }
+  }
+}

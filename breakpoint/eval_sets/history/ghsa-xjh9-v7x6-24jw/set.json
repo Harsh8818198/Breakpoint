@@ -1,0 +1,56 @@
+{
+  "id": "ghsa-xjh9-v7x6-24jw",
+  "title": "@fastify/busboy: @fastify/busboy vulnerable to Denial of Service via oversized multipart boundary",
+  "role": "heldout",
+  "repo": {
+    "url": "https://github.com/fastify/busboy",
+    "commit": "957a24b66d5915e6d0a6ac988c9dbcee86373e9b",
+    "partial": true
+  },
+  "language": "javascript",
+  "framework": "",
+  "provenance": "Labels come from the maintainers' fix commit, not from a model: the lines it changed or removed in its parent commit (advisory GHSA-xjh9-v7x6-24jw). Whether the patch really addresses the advisory is recorded in history.label_review.",
+  "contamination": "Advisory published 2026-10-02 and fix committed 2026-08-12, both on or after 2026-03-10, after the 2026-03-03 release of gemini-3.1-flash-lite (knowledge cutoff January 2025): that model cannot have trained on this fix. A model with a later cutoff might have. The code may still resemble earlier public fixes of similar bugs in the same project.",
+  "bugs": [
+    {
+      "id": "ghsa-xjh9-v7x6-24jw",
+      "title": "@fastify/busboy vulnerable to Denial of Service via oversized multipart boundary",
+      "class": "dos",
+      "cwe": "CWE-835",
+      "locations": [
+        {
+          "file": "deps/streamsearch/sbmh.js",
+          "lines": [
+            56,
+            56
+          ]
+        }
+      ],
+      "notes": "Judge a finding against the advisory text in `history`, not only against the lines."
+    }
+  ],
+  "variants": {},
+  "history": {
+    "advisory": "GHSA-xjh9-v7x6-24jw",
+    "advisory_url": "https://github.com/advisories/GHSA-xjh9-v7x6-24jw",
+    "severity": "high",
+    "published": "2026-10-02",
+    "package": "@fastify/busboy",
+    "ecosystem": "npm",
+    "vulnerable_versions": ">= 3.1.0, < 3.2.1",
+    "patched": "3.2.1",
+    "fix_commit": "632a237e7fb6b3b7a30e0de8fab2ee72ca5bf722",
+    "fix_url": "https://github.com/fastify/busboy/commit/632a237e7fb6b3b7a30e0de8fab2ee72ca5bf722",
+    "fix_date": "2026-08-12T19:56:33Z",
+    "changed_lines": 2,
+    "source_files_changed": [
+      "deps/streamsearch/sbmh.js"
+    ],
+    "other_files_changed": 2,
+    "addition_only": false,
+    "source_bytes": 122798,
+    "fits_in_one_prompt": true,
+    "description": "### Impact\n\nVersions of `@fastify/busboy` from 3.1.0 and prior to 3.2.1 are vulnerable to a Denial of Service. The vendored streaming multipart search stores its default skip distance in a `Uint8Array(256)`. A multipart boundary of exactly 252 bytes makes the search needle 256 bytes, and the table entry wraps to zero, so a crafted request keeps the search in a CPU-bound loop and stalls the Node.js event loop. An unauthenticated client can trigger this with a single small request. Applications that use `@fastify/busboy` to parse multipart/form-data, directly or through `@fastify/multipart`, are affected.\n\n### Patches\n\nFixed in version 3.2.1.\n\n### Workarounds\n\nValidate the multipart boundary before parsing and reject any boundary longer than the RFC 2046 limit of 70 characters (for example at a reverse proxy or in an onRequest hook). Upgrading to 3.2.1 removes the issue.",
+    "label_review": "Claude read the fix patch against the advisory text on 2026-10-24 and found they match (one reader, not independently reviewed)."
+  }
+}

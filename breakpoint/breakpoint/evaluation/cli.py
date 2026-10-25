@@ -7,6 +7,11 @@
   breakpoint-eval run dvna --arm import:claude-review.json    compare a result produced elsewhere (JSON or SARIF)
   breakpoint-eval adjudicate --set dvna                       write the issues a person must judge
   breakpoint-eval report --set dvna                           the comparison, with every caveat that applies
+
+Sets made from public security advisories (the code just before the maintainers' fix, labelled by the fix):
+  breakpoint-eval harvest --count 8 --seed 1                  choose and build sets in a fixed order, logging every skip
+  breakpoint-eval advisory GHSA-xxxx-xxxx-xxxx                build the set for one advisory
+  breakpoint-eval history --arm plain                         one table over all of them
 """
 
 from __future__ import annotations
@@ -17,12 +22,14 @@ import sys
 from pathlib import Path
 
 from ..llm import LLMFatalError
-from . import score
+from . import advisory, score
+from . import history as history_mod
 from .runner import run_dir, run_eval
 from .sets import SETS_DIR, describe, fetch, list_sets, load_set, validate_labels
 
 DEFAULT_OUT = "eval_runs"
 DEFAULT_CACHE = ".breakpoint/eval-cache"
+DEFAULT_HISTORY = str(SETS_DIR / "history")
 
 
 def _paths(args) -> tuple[Path, Path]:
@@ -33,6 +40,9 @@ def cmd_list(args) -> int:
     for sid in list_sets():
         es = load_set(sid)
         print(f"{sid:<12} {es.role:<8} {len(es.bugs):>3} bugs  variants: raw{''.join(', ' + v for v in es.variants)}   {es.title}")
+    n = len(history_mod.history_sets())
+    if n:
+        print(f"history      heldout  {n:>3} advisory sets in eval_sets/history (one known flaw each; run one with `run history/<id>`)")
     return 0
 
 
@@ -122,6 +132,42 @@ def cmd_report(args) -> int:
     return 0
 
 
+def cmd_advisory(args) -> int:
+    try:
+        data = advisory.build_set(advisory.get_advisory(args.ghsa), fixed_since=args.since, max_source_bytes=args.max_source_kb * 1000)
+    except advisory.Skip as e:
+        print(f"{args.ghsa}: not usable ({e})")
+        return 1
+    target = Path(args.sets_dir) / data["id"] / "set.json"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+    b = data["bugs"][0]
+    print(f"{target}\n  {data['title']}\n  {b['class']} {b['cwe']}; label: " + ", ".join(f"{l['file']}:{l['lines'][0]}-{l['lines'][1]}" for l in b["locations"]))
+    return 0
+
+
+def cmd_harvest(args) -> int:
+    rec = advisory.harvest(args.ecosystem or ["npm", "pip"], args.since, args.count, args.seed, Path(args.sets_dir),
+                           max_considered=args.max_considered, max_source_bytes=args.max_source_kb * 1000)
+    print(f"\n{len(rec['kept'])} sets built; {len(rec['considered'])} advisories considered. The full record is {Path(args.sets_dir) / 'selection.json'}")
+    return 0 if rec["kept"] else 1
+
+
+def cmd_history(args) -> int:
+    sets = history_mod.history_sets(Path(args.sets_dir))
+    if not sets:
+        print(f"No advisory sets in {args.sets_dir}. Run `breakpoint-eval harvest` first.")
+        return 1
+    summary = history_mod.summarize_history(sets, Path(args.out), args.variant, args.arm)
+    text = history_mod.render(summary, sets)
+    print(text)
+    out = Path(args.out)
+    out.mkdir(parents=True, exist_ok=True)
+    (out / f"history_{args.arm}.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    (out / f"history_{args.arm}.md").write_text(text + "\n", encoding="utf-8")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="breakpoint-eval", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -154,6 +200,30 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--max-calls", type=int, default=150, help="cap on route-review calls per run")
     sp.add_argument("--fresh", action="store_true", help="redo runs even if their files exist")
     sp.set_defaults(fn=cmd_run)
+    def advisory_opts(sp):
+        sp.add_argument("--sets-dir", default=DEFAULT_HISTORY, help="where advisory sets are written (default eval_sets/history)")
+        sp.add_argument("--since", default=advisory.DEFAULT_SINCE,
+                        help=f"advisory published and fix committed on or after this day (default {advisory.DEFAULT_SINCE}, a week after the model's release)")
+        sp.add_argument("--max-source-kb", type=int, default=advisory.MAX_SOURCE_BYTES // 1000,
+                        help="skip repositories whose source would not fit the plain prompt (default %(default)s KB)")
+
+    sp = sub.add_parser("advisory", help="build the evaluation set for one GitHub security advisory with a fix commit")
+    sp.add_argument("ghsa", help="advisory id, such as GHSA-xxxx-xxxx-xxxx")
+    advisory_opts(sp)
+    sp.set_defaults(fn=cmd_advisory)
+    sp = sub.add_parser("harvest", help="build several advisory sets, chosen in a fixed pseudo-random order, logging every skip")
+    sp.add_argument("--ecosystem", action="append", help="npm, pip, go, maven, composer, rubygems... (repeat; default npm and pip)")
+    sp.add_argument("--count", type=int, default=8, help="how many sets to build (default %(default)s)")
+    sp.add_argument("--seed", default="breakpoint-history-1", help="the walk order is sha1(seed|id): change it only to start a new sample")
+    sp.add_argument("--max-considered", type=int, default=120, help="stop after looking at this many advisories")
+    advisory_opts(sp)
+    sp.set_defaults(fn=cmd_harvest)
+    sp = sub.add_parser("history", help="one table over all advisory sets: proposed, kept, what else was kept")
+    sp.add_argument("--arm", default="plain")
+    sp.add_argument("--variant", default="raw")
+    sp.add_argument("--sets-dir", default=DEFAULT_HISTORY)
+    sp.add_argument("--out", default=DEFAULT_OUT)
+    sp.set_defaults(fn=cmd_history)
     for name, fn, helptext in (("adjudicate", cmd_adjudicate, "write the issues a person must judge"),
                                ("report", cmd_report, "the comparison and its caveats")):
         sp = sub.add_parser(name, help=helptext)

@@ -1,0 +1,762 @@
+{
+  "schema": 1,
+  "set": "ghsa-9m6g-wc8r-q59c",
+  "variant": "raw",
+  "arm": "plain",
+  "run": 2,
+  "commit": "871b1e202b0f6fb393409e8962cfdc958fb0f1c1",
+  "started_at": "2026-10-24T10:51:09+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": false,
+  "status": "ok",
+  "candidates": 15,
+  "kept": [
+    {
+      "title": "Use of Prototype Pollution Gadget",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `assign` function uses a recursive path traversal and object property assignment based on untrusted user input without sanitizing keys, leading to potential Prototype Pollution.",
+      "steps_to_exploit": [
+        "Craft a PATCH operation with a nested object property path like 'constructor.prototype.polluted'.",
+        "Send the malicious JSON to the scimPatch endpoint.",
+        "Observe that the base Object prototype is modified, affecting subsequent object instances."
+      ],
+      "impact": "Can lead to Remote Code Execution, Denial of Service, or bypass of security logic across the entire application runtime.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/scimPatch.ts",
+          "line": 444,
+          "quote": "obj = obj[key];"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/scimPatch.ts",
+          "line": 444,
+          "quote": "obj = obj[key];"
+        }
+      ],
+      "id": "865b986e",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Use of JSON.parse(JSON.stringify()) for Cloning",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Using stringification to clone objects can lead to data loss or unexpected behavior if the input contains special types (Dates, undefined) and may be vulnerable to DoS if input objects are deeply nested or excessively large.",
+      "steps_to_exploit": [
+        "Supply a specially crafted object to scimPatch with mutateDocument: false.",
+        "Include a deeply nested recursive structure to trigger CPU/Memory exhaustion."
+      ],
+      "impact": "Denial of service through resource exhaustion or application state corruption.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/scimPatch.ts",
+          "line": 106,
+          "quote": "scimResource = JSON.parse(JSON.stringify(scimResource));"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/scimPatch.ts",
+          "line": 106,
+          "quote": "scimResource = JSON.parse(JSON.stringify(scimResource));"
+        }
+      ],
+      "id": "360a6965",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unsafe CI/CD permissions in auto-assign workflow",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The workflow `auto-assign-pull-request.yml` uses `pull_request_target` on forks, combined with full `GITHUB_TOKEN` permissions, allowing potential exploit of malicious code in PRs to access repository secrets.",
+      "steps_to_exploit": [
+        "Fork the repository.",
+        "Submit a Pull Request with modified workflow files to attempt access to secrets.",
+        "The `pull_request_target` executes in the context of the base repo, granting access to secrets."
+      ],
+      "impact": "Unauthorized access to repository secrets, including deployment tokens.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": ".github/workflows/auto-assign-pull-request.yml",
+          "line": 3,
+          "quote": "pull_request_target:"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": ".github/workflows/auto-assign-pull-request.yml",
+          "line": 3,
+          "quote": "pull_request_target:"
+        }
+      ],
+      "id": "501e5891",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Lack of Input Validation for 'any' types",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The interface uses `any` for patch values, and the `assign` function performs direct property assignment, allowing attackers to inject arbitrary properties into the resource model.",
+      "steps_to_exploit": [
+        "Send a patch request to add a property with a key that overlaps with sensitive system metadata.",
+        "Confirm that the resource state contains unvalidated user-supplied keys."
+      ],
+      "impact": "Data integrity loss and potential logical bypass if the system relies on strict object schemas.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/types/types.ts",
+          "line": 19,
+          "quote": "readonly value?: any;"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/types/types.ts",
+          "line": 19,
+          "quote": "readonly value?: any;"
+        }
+      ],
+      "id": "65696609",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Dependency Auto-merging with minimal review",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The Kodiak configuration automerges pull requests from Dependabot without requiring manual security review, increasing the risk of accepting compromised dependencies.",
+      "steps_to_exploit": [
+        "Wait for a malicious package update that Dependabot identifies as a minor/patch upgrade.",
+        "Kodiak merges the PR automatically, introducing malicious code into the production codebase."
+      ],
+      "impact": "Automated introduction of malicious dependencies into the project.",
+      "evolved_from": [],
+      "attack_category": "supply_chain",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": ".kodiak.toml",
+          "line": 8,
+          "quote": "versions = [\"minor\", \"patch\"]"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": ".kodiak.toml",
+          "line": 8,
+          "quote": "versions = [\"minor\", \"patch\"]"
+        }
+      ],
+      "id": "1144c747",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of deprecated Node/ESLint configuration",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The project uses extremely outdated ESLint versions (10.4.0) and dependencies, which may contain known vulnerabilities or fail to catch security-relevant linting errors.",
+      "steps_to_exploit": [
+        "Research CVEs for the specific version of ESLint/dependencies defined in package.json.",
+        "Use known vulnerabilities in build tooling to compromise the CI environment."
+      ],
+      "impact": "Increased risk of supply chain attacks through compromised build tools.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "package.json",
+          "line": 35,
+          "quote": "\"eslint\": \"10.4.0\","
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "package.json",
+          "line": 35,
+          "quote": "\"eslint\": \"10.4.0\","
+        }
+      ],
+      "id": "d0abe11a",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of dangerous 'sudo' in CI workflows",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Workflows use `sudo` to install global npm packages (`typescript`, `nyc`, `mocha`), which grants arbitrary code execution privileges to the build script in the runner environment.",
+      "steps_to_exploit": [
+        "Contribute a PR that modifies the build script.",
+        "Since the runner executes with sudo, the script can modify system binaries or steal environment credentials."
+      ],
+      "impact": "Full compromise of the CI runner environment.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": ".github/workflows/ci.yml",
+          "line": 10,
+          "quote": "- run: sudo npm install -g typescript nyc mocha"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": ".github/workflows/ci.yml",
+          "line": 10,
+          "quote": "- run: sudo npm install -g typescript nyc mocha"
+        }
+      ],
+      "id": "c57bf175",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unrestricted 'no-explicit-any' linting rule",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The linting configuration explicitly disables 'no-explicit-any', facilitating the use of loose types throughout the codebase which masks security-critical type confusion vulnerabilities.",
+      "steps_to_exploit": [
+        "Identify areas where 'any' is used to bypass strict TS checking.",
+        "Insert malicious objects where specific types are expected to crash or misbehave."
+      ],
+      "impact": "Increased risk of runtime type confusion and logic bugs.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "eslint.config.js",
+          "line": 16,
+          "quote": "'@typescript-eslint/no-explicit-any': 'off',"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "eslint.config.js",
+          "line": 16,
+          "quote": "'@typescript-eslint/no-explicit-any': 'off',"
+        }
+      ],
+      "id": "1752516c",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Hardcoded email addresses and potential PII leakage",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Author information including private/personal email addresses are hardcoded in package.json, exposing contributor contact information in public repositories.",
+      "steps_to_exploit": [
+        "View the public repository source.",
+        "Extract the email addresses to conduct social engineering attacks against the author."
+      ],
+      "impact": "Privacy violation and potential exposure to targeted phishing attacks.",
+      "evolved_from": [],
+      "attack_category": "data_privacy",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "package.json",
+          "line": 24,
+          "quote": "\"author\": \"thomas.poignant@gmail.com\","
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "package.json",
+          "line": 24,
+          "quote": "\"author\": \"thomas.poignant@gmail.com\","
+        }
+      ],
+      "id": "73f3c934",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Implicit trust in input schema in `extractArray`",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `extractArray` function assumes that if a property exists, it should be an array, but doesn't handle non-array objects safely if an attacker manipulates the object structure.",
+      "steps_to_exploit": [
+        "Manipulate the input object to contain a non-array property at an expected path.",
+        "Trigger an operation that invokes `extractArray` on this path."
+      ],
+      "impact": "Application crash or unexpected behavior during resource modification.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/scimPatch.ts",
+          "line": 317,
+          "quote": "if (!Array.isArray(element))"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/scimPatch.ts",
+          "line": 317,
+          "quote": "if (!Array.isArray(element))"
+        }
+      ],
+      "id": "d04828df",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure error message construction",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Custom error classes like `InvalidScimPatchOp` concatenate input directly into the error message, potentially leading to reflected XSS or info leakage if these are ever rendered in a web UI.",
+      "steps_to_exploit": [
+        "Pass a malicious string in an error-triggering operation.",
+        "If the application catches and displays the error message to a user, the malicious script is executed."
+      ],
+      "impact": "Cross-Site Scripting (XSS) if error messages are unsafely rendered in a dashboard.",
+      "evolved_from": [],
+      "attack_category": "error_handling",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/errors/scimErrors.ts",
+          "line": 37,
+          "quote": "super(`${message}`, 'invalidSyntax');"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/errors/scimErrors.ts",
+          "line": 37,
+          "quote": "super(`${message}`, 'invalidSyntax');"
+        }
+      ],
+      "id": "925d23d0",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Missing security policies for Issue Stale bot",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The stale bot is configured to mark security-related issues as 'wontfix', which can inadvertently hide legitimate security reports without review.",
+      "steps_to_exploit": [
+        "File a security report and ignore it for 60 days.",
+        "The bot marks it as 'wontfix', potentially discarding the vulnerability report."
+      ],
+      "impact": "Security vulnerabilities may remain unpatched as their reports are automatically closed.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": ".github/stale.yml",
+          "line": 10,
+          "quote": "staleLabel: wontfix"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": ".github/stale.yml",
+          "line": 10,
+          "quote": "staleLabel: wontfix"
+        }
+      ],
+      "id": "1db26458",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unrestricted file access in repository via ignores",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The project includes broad ignores in `eslint.config.js` and `.gitignore`, which might prevent security linting of critical files.",
+      "steps_to_exploit": [
+        "Place malicious code in ignored directories like 'lib/'.",
+        "Observe that linting and security checks bypass these files."
+      ],
+      "impact": "Malicious code can be hidden from static analysis tools.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "eslint.config.js",
+          "line": 6,
+          "quote": "ignores: ['example/', 'lib/', 'eslint.config.js'],"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "eslint.config.js",
+          "line": 6,
+          "quote": "ignores: ['example/', 'lib/', 'eslint.config.js'],"
+        }
+      ],
+      "id": "a8a21cfe",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potential for ReDoS in Regex",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The regex for splitting path periods is complex and potentially prone to ReDoS if given specific long inputs.",
+      "steps_to_exploit": [
+        "Supply an extremely long string with nested quotes or brackets to trigger catastrophic backtracking."
+      ],
+      "impact": "Denial of service through CPU exhaustion.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [],
+      "code_refs": [],
+      "id": "c5ab8b05",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of unsafe `ts-node` in production-like environment",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The package includes `ts-node` in devDependencies; if misconfigured in production scripts, it can lead to arbitrary code execution by bypassing strict type checking.",
+      "steps_to_exploit": [
+        "Trigger an environment where production scripts run with `ts-node` using an user-supplied input file."
+      ],
+      "impact": "Arbitrary code execution within the build or server environment.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "package.json",
+          "line": 40,
+          "quote": "\"ts-node\": \"10.9.2\","
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "package.json",
+          "line": 40,
+          "quote": "\"ts-node\": \"10.9.2\","
+        }
+      ],
+      "id": "e345cad3",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "proposed": [
+    {
+      "title": "Use of Prototype Pollution Gadget",
+      "code_refs": [
+        {
+          "file": "src/scimPatch.ts",
+          "line": 444,
+          "quote": "obj = obj[key];"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure Use of JSON.parse(JSON.stringify()) for Cloning",
+      "code_refs": [
+        {
+          "file": "src/scimPatch.ts",
+          "line": 106,
+          "quote": "scimResource = JSON.parse(JSON.stringify(scimResource));"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unsafe CI/CD permissions in auto-assign workflow",
+      "code_refs": [
+        {
+          "file": ".github/workflows/auto-assign-pull-request.yml",
+          "line": 3,
+          "quote": "pull_request_target:"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Lack of Input Validation for 'any' types",
+      "code_refs": [
+        {
+          "file": "src/types/types.ts",
+          "line": 19,
+          "quote": "readonly value?: any;"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Dependency Auto-merging with minimal review",
+      "code_refs": [
+        {
+          "file": ".kodiak.toml",
+          "line": 8,
+          "quote": "versions = [\"minor\", \"patch\"]"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of deprecated Node/ESLint configuration",
+      "code_refs": [
+        {
+          "file": "package.json",
+          "line": 35,
+          "quote": "\"eslint\": \"10.4.0\","
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of dangerous 'sudo' in CI workflows",
+      "code_refs": [
+        {
+          "file": ".github/workflows/ci.yml",
+          "line": 10,
+          "quote": "- run: sudo npm install -g typescript nyc mocha"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unrestricted 'no-explicit-any' linting rule",
+      "code_refs": [
+        {
+          "file": "eslint.config.js",
+          "line": 16,
+          "quote": "'@typescript-eslint/no-explicit-any': 'off',"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Hardcoded email addresses and potential PII leakage",
+      "code_refs": [
+        {
+          "file": "package.json",
+          "line": 24,
+          "quote": "\"author\": \"thomas.poignant@gmail.com\","
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Implicit trust in input schema in `extractArray`",
+      "code_refs": [
+        {
+          "file": "src/scimPatch.ts",
+          "line": 317,
+          "quote": "if (!Array.isArray(element))"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure error message construction",
+      "code_refs": [
+        {
+          "file": "src/errors/scimErrors.ts",
+          "line": 37,
+          "quote": "super(`${message}`, 'invalidSyntax');"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Missing security policies for Issue Stale bot",
+      "code_refs": [
+        {
+          "file": ".github/stale.yml",
+          "line": 10,
+          "quote": "staleLabel: wontfix"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unrestricted file access in repository via ignores",
+      "code_refs": [
+        {
+          "file": "eslint.config.js",
+          "line": 6,
+          "quote": "ignores: ['example/', 'lib/', 'eslint.config.js'],"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potential for ReDoS in Regex",
+      "code_refs": [],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of unsafe `ts-node` in production-like environment",
+      "code_refs": [
+        {
+          "file": "package.json",
+          "line": 40,
+          "quote": "\"ts-node\": \"10.9.2\","
+        }
+      ],
+      "outcome": "unchecked"
+    }
+  ],
+  "rejected": [],
+  "verification": null,
+  "arm_meta": {
+    "baseline": {
+      "model": "gemini/gemini-3.1-flash-lite",
+      "context": "code",
+      "requested": 15,
+      "returned": 15,
+      "files_shown": 17,
+      "chars_shown": 37933,
+      "files_that_did_not_fit": []
+    }
+  },
+  "seconds": {
+    "arm": 10.5,
+    "check": 0.0,
+    "total": 10.5
+  },
+  "usage": {
+    "arm": {
+      "calls": 1,
+      "failed": 0,
+      "est_tokens": 12548,
+      "seconds_in_calls": 10.5,
+      "by_task": {
+        "baseline": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 38999,
+          "completion_chars": 11191,
+          "seconds": 10.464773199986666,
+          "est_tokens": 12548
+        }
+      }
+    },
+    "check": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    }
+  }
+}

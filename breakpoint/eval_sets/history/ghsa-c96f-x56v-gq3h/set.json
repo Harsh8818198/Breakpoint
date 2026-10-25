@@ -1,0 +1,63 @@
+{
+  "id": "ghsa-c96f-x56v-gq3h",
+  "title": "find-my-way: find-my-way: DDoS with HTTP2",
+  "role": "heldout",
+  "repo": {
+    "url": "https://github.com/delvedor/find-my-way",
+    "commit": "a21e332f69c82684cdd130b79164236ef7c15684",
+    "partial": true
+  },
+  "language": "javascript",
+  "framework": "",
+  "provenance": "Labels come from the maintainers' fix commit, not from a model: the lines it changed or removed in its parent commit (advisory GHSA-c96f-x56v-gq3h). Whether the patch really addresses the advisory is recorded in history.label_review.",
+  "contamination": "Advisory published 2026-07-23 and fix committed 2026-05-19, both on or after 2026-03-10, after the 2026-03-03 release of gemini-3.1-flash-lite (knowledge cutoff January 2025): that model cannot have trained on this fix. A model with a later cutoff might have. The code may still resemble earlier public fixes of similar bugs in the same project.",
+  "bugs": [
+    {
+      "id": "ghsa-c96f-x56v-gq3h",
+      "title": "find-my-way: DDoS with HTTP2",
+      "class": "prototype-pollution",
+      "cwe": "CWE-1321",
+      "locations": [
+        {
+          "file": "index.js",
+          "lines": [
+            105,
+            105
+          ]
+        },
+        {
+          "file": "index.js",
+          "lines": [
+            470,
+            470
+          ]
+        }
+      ],
+      "notes": "Judge a finding against the advisory text in `history`, not only against the lines."
+    }
+  ],
+  "variants": {},
+  "history": {
+    "advisory": "GHSA-c96f-x56v-gq3h",
+    "advisory_url": "https://github.com/advisories/GHSA-c96f-x56v-gq3h",
+    "severity": "high",
+    "published": "2026-07-23",
+    "package": "find-my-way",
+    "ecosystem": "npm",
+    "vulnerable_versions": "<= 9.6.0",
+    "patched": "9.7.0",
+    "fix_commit": "cfe3fd6168b5ac1594c0820fb83fce251a533fc1",
+    "fix_url": "https://github.com/delvedor/find-my-way/commit/cfe3fd6168b5ac1594c0820fb83fce251a533fc1",
+    "fix_date": "2026-05-19T06:40:13Z",
+    "changed_lines": 4,
+    "source_files_changed": [
+      "index.js"
+    ],
+    "other_files_changed": 2,
+    "addition_only": false,
+    "source_bytes": 81995,
+    "fits_in_one_prompt": true,
+    "description": "### Impact\nRemotely triggerable DoS in find-my-way when it is used with Node's HTTP/2 server.\n\nThe short version is that `lookup()` passes `req.method` into `find()`, and `find()` indexes `this.trees[method]`. Since `this.trees` is a normal object, HTTP/2 method values like constructor, `toString`, or `__proto__` can resolve inherited object properties instead of returning undefined. The code then treats that value like a router node and crashes when it reaches `currentNode.prefix.length`.\n\n### Patches\n\nUpgrade to v9.7.0.\n\n### Workarounds\n\nDo not use find-my-way with HTTP/2 servers, or validate that the http method is valid beforehand.",
+    "label_review": "Claude read the fix patch against the advisory text on 2026-10-24 and found they match (one reader, not independently reviewed)."
+  }
+}

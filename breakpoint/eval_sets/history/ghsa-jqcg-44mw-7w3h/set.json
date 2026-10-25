@@ -1,0 +1,91 @@
+{
+  "id": "ghsa-jqcg-44mw-7w3h",
+  "title": "proxy-addr: proxy-addr vulnerable to IP spoofing via IPv4-mapped IPv6 trust subnet",
+  "role": "heldout",
+  "repo": {
+    "url": "https://github.com/jshttp/proxy-addr",
+    "commit": "92e103e3f3ab0467c8846cacea71f27dfc81091d",
+    "partial": true
+  },
+  "language": "javascript",
+  "framework": "",
+  "provenance": "Labels come from the maintainers' fix commit, not from a model: the lines it changed or removed in its parent commit (advisory GHSA-jqcg-44mw-7w3h). Whether the patch really addresses the advisory is recorded in history.label_review.",
+  "contamination": "Advisory published 2026-10-05 and fix committed 2026-09-15, both on or after 2026-03-10, after the 2026-03-03 release of gemini-3.1-flash-lite (knowledge cutoff January 2025): that model cannot have trained on this fix. A model with a later cutoff might have. The code may still resemble earlier public fixes of similar bugs in the same project.",
+  "bugs": [
+    {
+      "id": "ghsa-jqcg-44mw-7w3h",
+      "title": "proxy-addr vulnerable to IP spoofing via IPv4-mapped IPv6 trust subnet",
+      "class": "authentication",
+      "cwe": "CWE-290",
+      "locations": [
+        {
+          "file": "index.js",
+          "lines": [
+            258,
+            258
+          ]
+        },
+        {
+          "file": "index.js",
+          "lines": [
+            274,
+            274
+          ]
+        },
+        {
+          "file": "index.js",
+          "lines": [
+            282,
+            282
+          ]
+        },
+        {
+          "file": "index.js",
+          "lines": [
+            310,
+            310
+          ]
+        },
+        {
+          "file": "index.js",
+          "lines": [
+            318,
+            318
+          ]
+        },
+        {
+          "file": "index.js",
+          "lines": [
+            322,
+            322
+          ]
+        }
+      ],
+      "notes": "The fix only adds code, so the label is the line just before the insertion; a correct finding may point at the unprotected code a few lines on, or elsewhere in the same function. Judge a finding against the advisory text in `history`, not only against the lines."
+    }
+  ],
+  "variants": {},
+  "history": {
+    "advisory": "GHSA-jqcg-44mw-7w3h",
+    "advisory_url": "https://github.com/advisories/GHSA-jqcg-44mw-7w3h",
+    "severity": "critical",
+    "published": "2026-10-05",
+    "package": "proxy-addr",
+    "ecosystem": "npm",
+    "vulnerable_versions": ">= 1.1.0, < 2.0.8",
+    "patched": "2.0.8",
+    "fix_commit": "780911d84d18e2c5fa008ed0c0d387631ec11965",
+    "fix_url": "https://github.com/jshttp/proxy-addr/commit/780911d84d18e2c5fa008ed0c0d387631ec11965",
+    "fix_date": "2026-09-15T06:02:32Z",
+    "changed_lines": 32,
+    "source_files_changed": [
+      "index.js"
+    ],
+    "other_files_changed": 1,
+    "addition_only": true,
+    "source_bytes": 26245,
+    "fits_in_one_prompt": true,
+    "description": "### Impact\n\n`proxy-addr` determines which network hops are trusted proxies so that `X-Forwarded-For` can be believed. When an application configures a trust subnet as an IPv4-mapped IPv6 address with a short prefix, such as `::ffff:10.0.0.0/8` (the correct spelling is `::ffff:10.0.0.0/104`), the subnet compiles with all-zero leading bits and matches every IPv4 address instead of the block it names. The same happens for any IPv6 trust subnet with zero leading bits, such as `::/1`.\n\nEvery unauthenticated client is then trusted as a proxy at hop 0, so `proxyaddr(req, trust)`, and therefore `req.ip` and `req.ips` in Express, returns whatever the client sends in `X-Forwarded-For`. This defeats IP-based access control, rate limiting, geolocation, and audit logging. The misconfiguration compiles without any error, and the same block written correctly behaves correctly, so the difference is not visible from the configuration.\n\n### Patches\n\nUpgrade to `proxy-addr` 2.0.8. An IPv4 address now matches an IPv6 trust subnet only when that subnet is a genuine IPv4-mapped subnet whose prefix covers the mapped marker.\n\n### Workarounds\n\nWrite IPv4 trust subnets in plain IPv4 notation (for example `10.0.0.0/8`). If IPv4-mapped IPv6 notation is required, use the full form so the prefix covers the mapped marker (for example `::ffff:10.0.0.0/104` for the `10.0.0.0/8` block).",
+    "label_review": "Claude read the fix patch against the advisory text on 2026-10-24 and found they match (one reader, not independently reviewed)."
+  }
+}

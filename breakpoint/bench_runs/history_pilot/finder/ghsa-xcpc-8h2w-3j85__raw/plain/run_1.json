@@ -1,0 +1,813 @@
+{
+  "schema": 1,
+  "set": "ghsa-xcpc-8h2w-3j85",
+  "variant": "raw",
+  "arm": "plain",
+  "run": 1,
+  "commit": "8592b1574e7e6e72d06e1afee5d7f0588d541950",
+  "started_at": "2026-10-24T11:01:12+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": false,
+  "status": "ok",
+  "candidates": 15,
+  "kept": [
+    {
+      "title": "Zip Slip Path Traversal",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The library allows extraction of files to arbitrary paths because the entry names are not sufficiently validated against path traversal characters (e.g., ../) before writing to the filesystem in adm-zip.js:711, 769.",
+      "steps_to_exploit": [
+        "Create a malicious zip file containing an entry named '../../tmp/shell.js'.",
+        "Call extractAllTo on this file pointing to a target directory.",
+        "The library uses path concatenation that escapes the intended destination directory.",
+        "Execute the written file on the target system."
+      ],
+      "impact": "Remote Code Execution (RCE) on the host machine running the extraction.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "adm-zip.js",
+          "line": 711,
+          "quote": "filetools.writeFileTo(target, content, overwrite, fileAttr);"
+        },
+        {
+          "file": "adm-zip.js",
+          "line": 769,
+          "quote": "filetools.writeFileTo(entryName, content, overwrite, fileAttr);"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "adm-zip.js",
+          "line": 711,
+          "quote": "filetools.writeFileTo(target, content, overwrite, fileAttr);"
+        },
+        {
+          "file": "adm-zip.js",
+          "line": 769,
+          "quote": "filetools.writeFileTo(entryName, content, overwrite, fileAttr);"
+        }
+      ],
+      "id": "c81745ac",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of Weak ZipCrypto Encryption",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The library utilizes traditional ZipCrypto (methods/zipcrypto.js), which is cryptographically broken and vulnerable to known-plaintext attacks.",
+      "steps_to_exploit": [
+        "Obtain a ZIP file encrypted with ZipCrypto.",
+        "Acquire at least one unencrypted version of a file contained within the archive.",
+        "Use known-plaintext attack tools (like bkcrack) to recover the internal keys.",
+        "Decrypt the entire archive."
+      ],
+      "impact": "Complete compromise of confidentiality for encrypted archives.",
+      "evolved_from": [],
+      "attack_category": "crypto",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "methods/zipcrypto.js",
+          "line": 87,
+          "quote": "result[pos++] = keys.updateKeys(c ^ keys.next()); // update keys with decoded byte"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "methods/zipcrypto.js",
+          "line": 87,
+          "quote": "result[pos++] = keys.updateKeys(c ^ keys.next()); // update keys with decoded byte"
+        }
+      ],
+      "id": "d5b6c4bb",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unsafe File Permissions Application",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The library attempts to set file permissions (chmod) using values stored within the archive without verifying if they are safe or appropriate for the host OS in adm-zip.js:698, 711, 769.",
+      "steps_to_exploit": [
+        "Craft a ZIP file where a file entry has malicious Unix attributes (e.g., 0o777).",
+        "Extract the archive on a target machine.",
+        "The library applies these permissions to the extracted file, potentially making sensitive files world-writable."
+      ],
+      "impact": "Privilege escalation or unauthorized modification of system files.",
+      "evolved_from": [],
+      "attack_category": "authz",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "adm-zip.js",
+          "line": 711,
+          "quote": "filetools.writeFileTo(target, content, overwrite, fileAttr);"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "adm-zip.js",
+          "line": 711,
+          "quote": "filetools.writeFileTo(target, content, overwrite, fileAttr);"
+        }
+      ],
+      "id": "ab6a08ce",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Integer Overflow in Buffer Size Calculation",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "In util/utils.js, readBigUInt64LE handles 64-bit integers by multiplication with floating point numbers (0x100000000), which can lead to precision loss and incorrect offsets in large ZIP files.",
+      "steps_to_exploit": [
+        "Craft a ZIP archive exceeding 4GB (Zip64).",
+        "The library reads the file offsets using double-precision float arithmetic.",
+        "The incorrect offset causes the parser to read incorrect data regions, leading to potential buffer overflows or arbitrary memory access during subsequent parsing."
+      ],
+      "impact": "Denial of Service (crash) or potentially memory corruption leading to exploitation.",
+      "evolved_from": [],
+      "attack_category": "scalability",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "util/utils.js",
+          "line": 321,
+          "quote": "return hi * 0x100000000 + lo;"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "util/utils.js",
+          "line": 321,
+          "quote": "return hi * 0x100000000 + lo;"
+        }
+      ],
+      "id": "12284ff8",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Prototype Pollution via Object Assignment",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The library uses Object.assign(Object.create(null), defaultOptions) followed by Object.assign(opts, input) in adm-zip.js:25-31, but the input filtering does not fully prevent malicious property injection if `input` is an object.",
+      "steps_to_exploit": [
+        "Call the library with an object containing __proto__ properties.",
+        "The recursive or deep assignment may overwrite prototype properties.",
+        "This affects subsequent library usage, potentially changing default behaviors or exposing sensitive internal settings."
+      ],
+      "impact": "Application-wide instability or logic bypass.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "adm-zip.js",
+          "line": 31,
+          "quote": "Object.assign(opts, input);"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "adm-zip.js",
+          "line": 31,
+          "quote": "Object.assign(opts, input);"
+        }
+      ],
+      "id": "9ccc6e35",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Fallback Randomness",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The salt generator (methods/zipcrypto.js:42) falls back to Math.random() if cryptographically secure functions fail, which is predictable and insufficient for cryptographic keys.",
+      "steps_to_exploit": [
+        "Force the library into a state where secure crypto APIs are unavailable.",
+        "Predict the generated salt using the non-secure PRNG sequence.",
+        "Generate keys that match the encryption used by the library."
+      ],
+      "impact": "Weakening of encryption keys used for ZIP protection.",
+      "evolved_from": [],
+      "attack_category": "crypto",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "methods/zipcrypto.js",
+          "line": 42,
+          "quote": "for (let i = 0; i < len; i++) salt[i] = (Math.random() * 256) & 0xff;"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "methods/zipcrypto.js",
+          "line": 42,
+          "quote": "for (let i = 0; i < len; i++) salt[i] = (Math.random() * 256) & 0xff;"
+        }
+      ],
+      "id": "7605bd90",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Improper Validation of Local Header Signatures",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The library performs minimal validation on LOC signatures and offsets in headers/entryHeader.js, which can be manipulated to trigger out-of-bounds reads during extraction.",
+      "steps_to_exploit": [
+        "Construct a malformed ZIP with an incorrect LOC header offset.",
+        "The library reads the invalid offset, leading to an attempt to slice out-of-bounds memory.",
+        "This may lead to a crash or unexpected behavior if handled incorrectly."
+      ],
+      "impact": "Denial of Service.",
+      "evolved_from": [],
+      "attack_category": "error_handling",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "headers/entryHeader.js",
+          "line": 218,
+          "quote": "throw Utils.Errors.INVALID_LOC();"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "headers/entryHeader.js",
+          "line": 218,
+          "quote": "throw Utils.Errors.INVALID_LOC();"
+        }
+      ],
+      "id": "8e52f96b",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Directory Traversal via Symlink Manipulation",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The library does not prevent the extraction of files that might resolve to paths outside the destination if an attacker uses symlinks or hardlinks in the archive (if supported by OS logic).",
+      "steps_to_exploit": [
+        "Create a ZIP entry that tries to create a file over a critical system path.",
+        "The library's `sanitize` function relies on `path.normalize`, which can be bypassed if the environment allows relative links or directory structures to be abused.",
+        "The file is written to the system location."
+      ],
+      "impact": "Arbitrary file write/overwrite on the server filesystem.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "util/utils.js",
+          "line": 298,
+          "quote": "var path = pth.normalize(pth.join(prefix, parts.slice(i, l).join(pth.sep)));"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "util/utils.js",
+          "line": 298,
+          "quote": "var path = pth.normalize(pth.join(prefix, parts.slice(i, l).join(pth.sep)));"
+        }
+      ],
+      "id": "32886fe0",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Denial of Service via Compressed Data Expansion",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The inflater implementation (methods/inflater.js) does not check for zip bombs or decompression ratios beyond optional `maxOutputLength` which may not be enforced properly across all Node.js versions.",
+      "steps_to_exploit": [
+        "Create a highly compressed 'zip bomb' (e.g., 1MB compressed to several GBs).",
+        "Pass the archive to the library.",
+        "The library attempts to inflate the content, exhausting system memory."
+      ],
+      "impact": "Application crash due to Out-Of-Memory (OOM) errors.",
+      "evolved_from": [],
+      "attack_category": "scalability",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "methods/inflater.js",
+          "line": 9,
+          "quote": "return zlib.inflateRawSync(inbuf, option);"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "methods/inflater.js",
+          "line": 9,
+          "quote": "return zlib.inflateRawSync(inbuf, option);"
+        }
+      ],
+      "id": "58b84270",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Implicit Trust of Extra Fields",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The parsing of 'Extra' fields in zipEntry.js (lines 203-206) is performed without validating the field contents, allowing malicious extra field data to influence internal state (like ZIP64 sizes).",
+      "steps_to_exploit": [
+        "Craft a ZIP entry with a malicious ZIP64 extra field signature.",
+        "The parser reads this field and updates the entry's header metadata.",
+        "This causes the library to use incorrect sizes for subsequent data extraction operations."
+      ],
+      "impact": "Buffer corruption during processing of ZIP entries.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "zipEntry.js",
+          "line": 204,
+          "quote": "parseZip64ExtendedInformation(part);"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "zipEntry.js",
+          "line": 204,
+          "quote": "parseZip64ExtendedInformation(part);"
+        }
+      ],
+      "id": "e6799e94",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Lack of Memory Limits for Async Operations",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Methods like `inflateAsync` in methods/inflater.js buffer all output into memory (lines 13-28) without checking if the cumulative memory exceeds safe limits.",
+      "steps_to_exploit": [
+        "Send a large archive containing many files.",
+        "Call an async extraction method.",
+        "The library will create many `Buffer.alloc` chunks, causing high memory pressure."
+      ],
+      "impact": "Denial of Service due to memory exhaustion.",
+      "evolved_from": [],
+      "attack_category": "scalability",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "methods/inflater.js",
+          "line": 21,
+          "quote": "var buf = Buffer.alloc(total),"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "methods/inflater.js",
+          "line": 21,
+          "quote": "var buf = Buffer.alloc(total),"
+        }
+      ],
+      "id": "afd6765e",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of Synchronous I/O in Async Contexts",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `extractAllToAsync` method (adm-zip.js:826) performs directory creation synchronously using `filetools.makeDir` inside the loop, blocking the event loop.",
+      "steps_to_exploit": [
+        "Run the library in a web server environment.",
+        "Trigger `extractAllToAsync` on a directory-heavy ZIP file.",
+        "The event loop is blocked while performing disk I/O, freezing all other server operations."
+      ],
+      "impact": "Significant performance degradation for the server application.",
+      "evolved_from": [],
+      "attack_category": "scalability",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "adm-zip.js",
+          "line": 831,
+          "quote": "filetools.makeDir(dirPath);"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "adm-zip.js",
+          "line": 831,
+          "quote": "filetools.makeDir(dirPath);"
+        }
+      ],
+      "id": "5568921c",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Incomplete Path Sanitization",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `sanitize` function (util/utils.js:294) uses path splitting and re-joining that can be bypassed by specific platform-specific path separators or encoding tricks.",
+      "steps_to_exploit": [
+        "Use backslashes or other directory delimiters on non-Windows systems.",
+        "The `sanitize` check for `path.startsWith(prefix)` might return true if the paths resolve uniquely.",
+        "Allows files to be written outside the target directory."
+      ],
+      "impact": "Arbitrary file writing.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "util/utils.js",
+          "line": 299,
+          "quote": "if (path === prefix || path.startsWith(prefix + pth.sep)) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "util/utils.js",
+          "line": 299,
+          "quote": "if (path === prefix || path.startsWith(prefix + pth.sep)) {"
+        }
+      ],
+      "id": "522d091f",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Overwrite Handling",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The logic to handle file overwriting in `writeFileTo` (util/utils.js:67) does not atomicly check file existence and perform the write, creating a Time-of-Check to Time-of-Use (TOCTOU) vulnerability.",
+      "steps_to_exploit": [
+        "A malicious process monitors the target folder.",
+        "The library calls `fs.existsSync` to check if it's safe to write.",
+        "The attacker replaces a non-existent path with a symlink before `fs.openSync` is called.",
+        "The library writes the extracted file to the attacker-defined location."
+      ],
+      "impact": "Arbitrary file overwriting by a local user.",
+      "evolved_from": [],
+      "attack_category": "data_privacy",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "util/utils.js",
+          "line": 67,
+          "quote": "if (self.fs.existsSync(path)) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "util/utils.js",
+          "line": 67,
+          "quote": "if (self.fs.existsSync(path)) {"
+        }
+      ],
+      "id": "73f832e7",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of unsafe file permissions 0666",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Files created by `writeFileTo` default to `0666` permissions, making them world-readable/writable depending on system umask.",
+      "steps_to_exploit": [
+        "Extract a sensitive file containing secrets.",
+        "The library creates it with broad permissions.",
+        "A local attacker reads the sensitive content."
+      ],
+      "impact": "Exposure of sensitive data extracted from an archive.",
+      "evolved_from": [],
+      "attack_category": "authz",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "util/utils.js",
+          "line": 82,
+          "quote": "fd = self.fs.openSync(path, \"w\", 0o666); // 0666"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "util/utils.js",
+          "line": 82,
+          "quote": "fd = self.fs.openSync(path, \"w\", 0o666); // 0666"
+        }
+      ],
+      "id": "f93b0f9b",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "proposed": [
+    {
+      "title": "Zip Slip Path Traversal",
+      "code_refs": [
+        {
+          "file": "adm-zip.js",
+          "line": 711,
+          "quote": "filetools.writeFileTo(target, content, overwrite, fileAttr);"
+        },
+        {
+          "file": "adm-zip.js",
+          "line": 769,
+          "quote": "filetools.writeFileTo(entryName, content, overwrite, fileAttr);"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of Weak ZipCrypto Encryption",
+      "code_refs": [
+        {
+          "file": "methods/zipcrypto.js",
+          "line": 87,
+          "quote": "result[pos++] = keys.updateKeys(c ^ keys.next()); // update keys with decoded byte"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unsafe File Permissions Application",
+      "code_refs": [
+        {
+          "file": "adm-zip.js",
+          "line": 711,
+          "quote": "filetools.writeFileTo(target, content, overwrite, fileAttr);"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Integer Overflow in Buffer Size Calculation",
+      "code_refs": [
+        {
+          "file": "util/utils.js",
+          "line": 321,
+          "quote": "return hi * 0x100000000 + lo;"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Prototype Pollution via Object Assignment",
+      "code_refs": [
+        {
+          "file": "adm-zip.js",
+          "line": 31,
+          "quote": "Object.assign(opts, input);"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure Fallback Randomness",
+      "code_refs": [
+        {
+          "file": "methods/zipcrypto.js",
+          "line": 42,
+          "quote": "for (let i = 0; i < len; i++) salt[i] = (Math.random() * 256) & 0xff;"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Improper Validation of Local Header Signatures",
+      "code_refs": [
+        {
+          "file": "headers/entryHeader.js",
+          "line": 218,
+          "quote": "throw Utils.Errors.INVALID_LOC();"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Directory Traversal via Symlink Manipulation",
+      "code_refs": [
+        {
+          "file": "util/utils.js",
+          "line": 298,
+          "quote": "var path = pth.normalize(pth.join(prefix, parts.slice(i, l).join(pth.sep)));"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Denial of Service via Compressed Data Expansion",
+      "code_refs": [
+        {
+          "file": "methods/inflater.js",
+          "line": 9,
+          "quote": "return zlib.inflateRawSync(inbuf, option);"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Implicit Trust of Extra Fields",
+      "code_refs": [
+        {
+          "file": "zipEntry.js",
+          "line": 204,
+          "quote": "parseZip64ExtendedInformation(part);"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Lack of Memory Limits for Async Operations",
+      "code_refs": [
+        {
+          "file": "methods/inflater.js",
+          "line": 21,
+          "quote": "var buf = Buffer.alloc(total),"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of Synchronous I/O in Async Contexts",
+      "code_refs": [
+        {
+          "file": "adm-zip.js",
+          "line": 831,
+          "quote": "filetools.makeDir(dirPath);"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Incomplete Path Sanitization",
+      "code_refs": [
+        {
+          "file": "util/utils.js",
+          "line": 299,
+          "quote": "if (path === prefix || path.startsWith(prefix + pth.sep)) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure Overwrite Handling",
+      "code_refs": [
+        {
+          "file": "util/utils.js",
+          "line": 67,
+          "quote": "if (self.fs.existsSync(path)) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of unsafe file permissions 0666",
+      "code_refs": [
+        {
+          "file": "util/utils.js",
+          "line": 82,
+          "quote": "fd = self.fs.openSync(path, \"w\", 0o666); // 0666"
+        }
+      ],
+      "outcome": "unchecked"
+    }
+  ],
+  "rejected": [],
+  "verification": null,
+  "arm_meta": {
+    "baseline": {
+      "model": "gemini/gemini-3.1-flash-lite",
+      "context": "code",
+      "requested": 15,
+      "returned": 15,
+      "files_shown": 26,
+      "chars_shown": 154024,
+      "files_that_did_not_fit": []
+    }
+  },
+  "seconds": {
+    "arm": 14.9,
+    "check": 0.0,
+    "total": 14.9
+  },
+  "usage": {
+    "arm": {
+      "calls": 1,
+      "failed": 0,
+      "est_tokens": 41892,
+      "seconds_in_calls": 14.8,
+      "by_task": {
+        "baseline": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 155108,
+          "completion_chars": 12462,
+          "seconds": 14.833736500004306,
+          "est_tokens": 41892
+        }
+      }
+    },
+    "check": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    }
+  }
+}

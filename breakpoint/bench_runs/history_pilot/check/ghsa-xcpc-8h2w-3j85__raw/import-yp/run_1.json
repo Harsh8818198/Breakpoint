@@ -1,0 +1,185 @@
+{
+  "schema": 1,
+  "set": "ghsa-xcpc-8h2w-3j85",
+  "variant": "raw",
+  "arm": "import-yp",
+  "run": 1,
+  "commit": "8592b1574e7e6e72d06e1afee5d7f0588d541950",
+  "started_at": "2026-10-24T11:28:55+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": true,
+  "status": "ok",
+  "candidates": 2,
+  "kept": [
+    {
+      "title": "Lack of Memory Limits on Decompression",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "When decompressing, the library allocates a buffer based on the `size` field in the central header without verifying if the available system memory is sufficient, leading to potential out-of-memory errors.",
+      "steps_to_exploit": [
+        "Create a zip archive with an entry reporting an extremely large `size` (e.g., several GBs).",
+        "Call the decompression method on that entry.",
+        "The library attempts to allocate the requested size in RAM, crashing the process."
+      ],
+      "impact": "Denial of Service (DoS) via memory exhaustion.",
+      "evolved_from": [],
+      "attack_category": "scalability",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "CONFIRMED",
+      "evidence": [
+        {
+          "file": "zipEntry.js",
+          "line": 103,
+          "quote": "var data = Buffer.alloc(_centralHeader.size);"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "zipEntry.js",
+          "line": 103,
+          "quote": "var data = Buffer.alloc(_centralHeader.size);"
+        }
+      ],
+      "id": "c9674cc0",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Implicit Trust in Zip Header Metadata",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The library relies heavily on metadata provided within the zip file (like `size` and `compressedSize`) to perform memory allocations and file operations without secondary verification.",
+      "steps_to_exploit": [
+        "Craft a zip file with conflicting header information (e.g., local header size vs central directory size).",
+        "The library may attempt to read past buffer bounds or allocate incorrect memory blocks during extraction.",
+        "Potential for buffer overflow or out-of-bounds read vulnerabilities in underlying Node.js calls."
+      ],
+      "impact": "Potential memory corruption or process crash.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "CONFIRMED",
+      "evidence": [
+        {
+          "file": "zipEntry.js",
+          "line": 28,
+          "quote": "return input.slice(_centralHeader.realDataOffset, _centralHeader.realDataOffset + _centralHeader.compressedSize);"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "zipEntry.js",
+          "line": 28,
+          "quote": "return input.slice(_centralHeader.realDataOffset, _centralHeader.realDataOffset + _centralHeader.compressedSize);"
+        }
+      ],
+      "id": "4db2d542",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "proposed": [
+    {
+      "title": "Lack of Memory Limits on Decompression",
+      "code_refs": [
+        {
+          "file": "zipEntry.js",
+          "line": 103,
+          "quote": "var data = Buffer.alloc(_centralHeader.size);"
+        }
+      ],
+      "outcome": "kept"
+    },
+    {
+      "title": "Implicit Trust in Zip Header Metadata",
+      "code_refs": [
+        {
+          "file": "zipEntry.js",
+          "line": 28,
+          "quote": "return input.slice(_centralHeader.realDataOffset, _centralHeader.realDataOffset + _centralHeader.compressedSize);"
+        }
+      ],
+      "outcome": "kept"
+    }
+  ],
+  "rejected": [],
+  "verification": {
+    "mode": "source-code",
+    "files_indexed": 47,
+    "checked": 2,
+    "confirmed": 2,
+    "refuted": 0,
+    "unverified": 0,
+    "errors": 0,
+    "defender_pass": true,
+    "appeal_pass": true
+  },
+  "arm_meta": {
+    "imported_from": "eval_runs_check/inputs/ghsa-xcpc-8h2w-3j85/yp.json",
+    "note": "produced elsewhere; not repeatable by this harness"
+  },
+  "seconds": {
+    "arm": 0.0,
+    "check": 33.1,
+    "total": 33.1
+  },
+  "usage": {
+    "arm": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    },
+    "check": {
+      "calls": 8,
+      "failed": 0,
+      "est_tokens": 104744,
+      "seconds_in_calls": 32.9,
+      "by_task": {
+        "verify_appeal": {
+          "calls": 2,
+          "failed": 0,
+          "prompt_chars": 163368,
+          "completion_chars": 2138,
+          "seconds": 9.24943369999528,
+          "est_tokens": 41376
+        },
+        "verify_defend": {
+          "calls": 2,
+          "failed": 0,
+          "prompt_chars": 161837,
+          "completion_chars": 783,
+          "seconds": 6.215234799892642,
+          "est_tokens": 40655
+        },
+        "verify_judge": {
+          "calls": 2,
+          "failed": 0,
+          "prompt_chars": 82617,
+          "completion_chars": 2290,
+          "seconds": 12.984539299970493,
+          "est_tokens": 21227
+        },
+        "verify_locate": {
+          "calls": 2,
+          "failed": 0,
+          "prompt_chars": 5316,
+          "completion_chars": 625,
+          "seconds": 4.46825630008243,
+          "est_tokens": 1485
+        }
+      }
+    }
+  }
+}

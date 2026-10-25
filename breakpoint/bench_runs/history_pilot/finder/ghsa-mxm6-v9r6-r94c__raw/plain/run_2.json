@@ -1,0 +1,790 @@
+{
+  "schema": 1,
+  "set": "ghsa-mxm6-v9r6-r94c",
+  "variant": "raw",
+  "arm": "plain",
+  "run": 2,
+  "commit": "d6e5fc6001085f2d34b905ba0407a2f7392de388",
+  "started_at": "2026-10-24T11:08:42+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": false,
+  "status": "ok",
+  "candidates": 15,
+  "kept": [
+    {
+      "title": "Remote Code Execution via Dynamic Import Injection",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `mdcConfigs` template function generates code that performs dynamic imports using user-controlled `options.configs` array values, allowing an attacker to load arbitrary files or modules.",
+      "steps_to_exploit": [
+        "Identify a way to influence `options.configs` through module configuration.",
+        "Inject a path to a malicious local or remote file (if supported by the environment).",
+        "Trigger the `getMdcConfigs()` function to execute the import."
+      ],
+      "impact": "Full system compromise via arbitrary code execution on the server.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/templates/mdc-configs.ts",
+          "line": 7,
+          "quote": "...options.configs.map((item: string) => ` import('${item}').then(m => m.default),`),"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/templates/mdc-configs.ts",
+          "line": 7,
+          "quote": "...options.configs.map((item: string) => ` import('${item}').then(m => m.default),`),"
+        }
+      ],
+      "id": "8efe1c9a",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Prototype Pollution via Unsafe `evalInContext`",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `evalInContext` utility and its usage in `MDCRenderer.vue` evaluate property strings without sufficient path validation, potentially allowing access to `__proto__` or other dangerous object prototypes.",
+      "steps_to_exploit": [
+        "Craft a malicious component attribute string using `v-bind` or similar directives.",
+        "Include a path like `__proto__.toString` or other sensitive keys.",
+        "The application evaluates this against the `runtimeData` object."
+      ],
+      "impact": "Information disclosure or potential denial of service by modifying object prototypes.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/runtime/components/MDCRenderer.vue",
+          "line": 440,
+          "quote": ".reduce((o: any, k) => typeof o === 'object' ? o[k] : undefined, context)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/runtime/components/MDCRenderer.vue",
+          "line": 440,
+          "quote": ".reduce((o: any, k) => typeof o === 'object' ? o[k] : undefined, context)"
+        }
+      ],
+      "id": "59d91b08",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Arbitrary File Read via SSR/WASM Plugin configuration",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `addWasmSupport` utility and build configuration allow arbitrary files ending in `.wasm` to be inlined, and `src/templates/mdc-highlighter.ts` reads files based on path parameters.",
+      "steps_to_exploit": [
+        "Control the `shikiPath` variable during the module setup process.",
+        "Point the path to an sensitive system file that the process has permission to read.",
+        "The application will read and include the contents of this file in the build bundle."
+      ],
+      "impact": "Exposure of sensitive server files during the build process.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/templates/mdc-highlighter.ts",
+          "line": 32,
+          "quote": "let code = await fs.readFile(file, 'utf-8')"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/templates/mdc-highlighter.ts",
+          "line": 32,
+          "quote": "let code = await fs.readFile(file, 'utf-8')"
+        }
+      ],
+      "id": "5c1e1cd9",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Cross-Site Scripting (XSS) via `rehype-raw`",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The parser configuration enables `rehype-raw` with `allowDangerousHtml: true` and passes through arbitrary elements, failing to sanitize potential malicious script tags inside HTML blocks.",
+      "steps_to_exploit": [
+        "Include raw HTML tags like `<img src=x onerror=alert(1)>` within markdown content.",
+        "The `rehype-raw` plugin parses this into the AST.",
+        "The rendered output executes the payload in the user's browser."
+      ],
+      "impact": "Execution of arbitrary JavaScript in the context of the user's browser.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/runtime/parser/options.ts",
+          "line": 36,
+          "quote": "'rehype-raw': {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/runtime/parser/options.ts",
+          "line": 36,
+          "quote": "'rehype-raw': {"
+        }
+      ],
+      "id": "e4609202",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure `JSON.parse` of User-Controlled Input",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The highlighter event handler parses theme and options strings from query parameters directly using `JSON.parse` without validation.",
+      "steps_to_exploit": [
+        "Craft a URL to `/api/_mdc/highlight` with a specially crafted JSON string in the `theme` query parameter.",
+        "The handler parses the input immediately, potentially crashing the server or exhausting resources.",
+        "While JSON.parse is not typically an execution vector, it can trigger massive object creation/CPU load."
+      ],
+      "impact": "Denial of service through malformed JSON input or resource exhaustion.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/runtime/highlighter/event-handler.ts",
+          "line": 5,
+          "quote": "const theme = JSON.parse(themeString as string)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/runtime/highlighter/event-handler.ts",
+          "line": 5,
+          "quote": "const theme = JSON.parse(themeString as string)"
+        }
+      ],
+      "id": "a4bf0048",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Improper Validation of Link Protocols",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `isAnchorLinkAllowed` function attempts to sanitize URIs but may be bypassed by various encoding tricks or path manipulations, allowing restricted protocols.",
+      "steps_to_exploit": [
+        "Use obfuscated URI schemes or complex URL structures not caught by the `new URL()` constructor.",
+        "Target restricted protocols like `javascript:` or `vbscript:`.",
+        "The link is rendered as an `<a>` tag, allowing XSS upon user click."
+      ],
+      "impact": "Cross-Site Scripting (XSS) when clicking malicious links.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/runtime/parser/utils/props.ts",
+          "line": 33,
+          "quote": "if (unsafeLinkPrefix.some(prefix => url.protocol.toLowerCase().startsWith(prefix))) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/runtime/parser/utils/props.ts",
+          "line": 33,
+          "quote": "if (unsafeLinkPrefix.some(prefix => url.protocol.toLowerCase().startsWith(prefix))) {"
+        }
+      ],
+      "id": "71908694",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Information Leak via Default Export of Sensitive Configuration",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "`build.config.ts` forces a `defineConfig` export that leaks the provided configuration object into the global scope in CommonJS environments.",
+      "steps_to_exploit": [
+        "Access the `dist/config.cjs` file in a server environment where this config is loaded.",
+        "Inspect the exported `defineConfig` or the module exports to see the configuration details."
+      ],
+      "impact": "Exposure of server-side configuration data.",
+      "evolved_from": [],
+      "attack_category": "data_privacy",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "build.config.ts",
+          "line": 10,
+          "quote": "fs.writeFileSync('dist/config.cjs', 'module.exports = {}; module.exports.defineConfig = configs => configs', 'utf-8')"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "build.config.ts",
+          "line": 10,
+          "quote": "fs.writeFileSync('dist/config.cjs', 'module.exports = {}; module.exports.defineConfig = configs => configs', 'utf-8')"
+        }
+      ],
+      "id": "010f68c5",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unsafe `eval`-like behavior in `evalInContext`",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The logic in `evalInContext` can traverse objects and potentially expose non-exported or internal properties based on input strings.",
+      "steps_to_exploit": [
+        "Provide a custom component that binds attributes to `documentMeta` or other internal context objects.",
+        "The `reduce` function allows reaching into nested objects potentially outside intended scope."
+      ],
+      "impact": "Unauthorized access to internal application state and data structures.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/runtime/components/MDCRenderer.vue",
+          "line": 440,
+          "quote": ".reduce((o: any, k) => typeof o === 'object' ? o[k] : undefined, context)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/runtime/components/MDCRenderer.vue",
+          "line": 440,
+          "quote": ".reduce((o: any, k) => typeof o === 'object' ? o[k] : undefined, context)"
+        }
+      ],
+      "id": "ff68ae24",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unbounded Regex Complexity in Highlighting",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The highlighter uses `oniguruma` or `javascript` regex engines to process code snippets, which are vulnerable to ReDoS (Regular Expression Denial of Service) if crafted code inputs are provided.",
+      "steps_to_exploit": [
+        "Provide a specially crafted, deeply nested code snippet as input to the markdown parser.",
+        "The Shiki highlighter attempts to tokenize the input, leading to catastrophic backtracking.",
+        "The server process becomes unresponsive."
+      ],
+      "impact": "Denial of Service (DoS) of the server rendering service.",
+      "evolved_from": [],
+      "attack_category": "scalability",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/runtime/highlighter/shiki.ts",
+          "line": 148,
+          "quote": "const root = shiki.codeToHast(code.trimEnd(), {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/runtime/highlighter/shiki.ts",
+          "line": 148,
+          "quote": "const root = shiki.codeToHast(code.trimEnd(), {"
+        }
+      ],
+      "id": "5e14c663",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insufficient Validation of `inlineCode` Attributes",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `inlineCode` handler processes `attributes` directly and applies them to properties, allowing injection of arbitrary attributes (e.g., event handlers).",
+      "steps_to_exploit": [
+        "Inject an attribute like `onmouseover=alert(1)` into the markdown code block syntax.",
+        "The handler assigns `node.attributes || {}` to the `properties` object.",
+        "The resulting HTML tag contains an event handler."
+      ],
+      "impact": "Stored Cross-Site Scripting (XSS).",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/runtime/parser/handlers/inlineCode.ts",
+          "line": 13,
+          "quote": "properties: node.attributes || {},"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/runtime/parser/handlers/inlineCode.ts",
+          "line": 13,
+          "quote": "properties: node.attributes || {},"
+        }
+      ],
+      "id": "51f707ed",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Broken Access Control in `removeInvalidSnippets`",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `removeInvalidSnippets` logic in `PageSnippet.vue` relies on `snippetParentNodes` to filter snippets, which could be bypassed by manipulating the AST structure or nested snippet requests.",
+      "steps_to_exploit": [
+        "Create a malicious nested snippet that attempts to shadow or override parent snippet validation.",
+        "The recursive `removeInvalidSnippets` function might fail to account for the specific injection context of the parent."
+      ],
+      "impact": "Unauthorized rendering of prohibited snippets.",
+      "evolved_from": [],
+      "attack_category": "authz",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "playground/app/components/global/PageSnippet.vue",
+          "line": 76,
+          "quote": "const removeInvalidSnippets = (obj: Record<string, any>): Record<string, any> | null => {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "playground/app/components/global/PageSnippet.vue",
+          "line": 76,
+          "quote": "const removeInvalidSnippets = (obj: Record<string, any>): Record<string, any> | null => {"
+        }
+      ],
+      "id": "a2e48f62",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Component Resolution",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `resolveComponentInstance` in `MDCRenderer.vue` resolves components globally, potentially allowing an attacker to render restricted internal components by name.",
+      "steps_to_exploit": [
+        "Find the name of sensitive internal components.",
+        "Inject a component tag into the markdown, e.g., `<InternalAdminComponent />`.",
+        "The renderer attempts to resolve and render it."
+      ],
+      "impact": "Unauthorized component rendering potentially leading to UI spoofing or data leakage.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/runtime/components/MDCRenderer.vue",
+          "line": 414,
+          "quote": "const _component = vueResolveComponent(pascalCase(component), false) as any"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/runtime/components/MDCRenderer.vue",
+          "line": 414,
+          "quote": "const _component = vueResolveComponent(pascalCase(component), false) as any"
+        }
+      ],
+      "id": "e707782f",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of `unsafe-eval` by default",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The application relies on dynamic evaluation of string inputs within the `MDCRenderer` context for attribute binding, which violates CSP best practices and allows execution of unintended code.",
+      "steps_to_exploit": [
+        "The system is architected to evaluate user-supplied strings as object accessors.",
+        "While primarily for data access, this design pattern is prone to injection when the input source is untrusted."
+      ],
+      "impact": "Weakened security posture and risk of code injection.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/runtime/components/MDCRenderer.vue",
+          "line": 436,
+          "quote": "function evalInContext(code: string, context: any) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/runtime/components/MDCRenderer.vue",
+          "line": 436,
+          "quote": "function evalInContext(code: string, context: any) {"
+        }
+      ],
+      "id": "61221619",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Lack of Rate Limiting on Markdown API",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `api/markdown.ts` endpoint and the `_mdc/highlight` handler do not implement rate limiting, allowing rapid-fire requests to consume server resources.",
+      "steps_to_exploit": [
+        "Use an automated script to flood the server with markdown parsing requests.",
+        "The server spends significant CPU resources repeatedly parsing and highlighting.",
+        "Legitimate requests are denied due to server load."
+      ],
+      "impact": "Denial of Service (DoS) via resource exhaustion.",
+      "evolved_from": [],
+      "attack_category": "rate_limiting",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "playground/server/api/markdown.ts",
+          "line": 3,
+          "quote": "export default defineEventHandler(async (event) => {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "playground/server/api/markdown.ts",
+          "line": 3,
+          "quote": "export default defineEventHandler(async (event) => {"
+        }
+      ],
+      "id": "0b55cc15",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Dependency Risk: Use of Unmaintained/Vulnerable Plugins",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The project uses various markdown processing plugins that are frequently updated and have a large transitive dependency surface.",
+      "steps_to_exploit": [
+        "Identify a known vulnerability in a transitive dependency (e.g., `unist`, `hast`, or `remark` plugins).",
+        "The application bundles these as part of its rendering pipeline."
+      ],
+      "impact": "Inheritance of vulnerabilities from the extensive dependency tree.",
+      "evolved_from": [],
+      "attack_category": "supply_chain",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "package.json",
+          "line": 70,
+          "quote": "\"dependencies\": {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "package.json",
+          "line": 70,
+          "quote": "\"dependencies\": {"
+        }
+      ],
+      "id": "5cda3b99",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "proposed": [
+    {
+      "title": "Remote Code Execution via Dynamic Import Injection",
+      "code_refs": [
+        {
+          "file": "src/templates/mdc-configs.ts",
+          "line": 7,
+          "quote": "...options.configs.map((item: string) => ` import('${item}').then(m => m.default),`),"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Prototype Pollution via Unsafe `evalInContext`",
+      "code_refs": [
+        {
+          "file": "src/runtime/components/MDCRenderer.vue",
+          "line": 440,
+          "quote": ".reduce((o: any, k) => typeof o === 'object' ? o[k] : undefined, context)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Arbitrary File Read via SSR/WASM Plugin configuration",
+      "code_refs": [
+        {
+          "file": "src/templates/mdc-highlighter.ts",
+          "line": 32,
+          "quote": "let code = await fs.readFile(file, 'utf-8')"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Cross-Site Scripting (XSS) via `rehype-raw`",
+      "code_refs": [
+        {
+          "file": "src/runtime/parser/options.ts",
+          "line": 36,
+          "quote": "'rehype-raw': {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure `JSON.parse` of User-Controlled Input",
+      "code_refs": [
+        {
+          "file": "src/runtime/highlighter/event-handler.ts",
+          "line": 5,
+          "quote": "const theme = JSON.parse(themeString as string)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Improper Validation of Link Protocols",
+      "code_refs": [
+        {
+          "file": "src/runtime/parser/utils/props.ts",
+          "line": 33,
+          "quote": "if (unsafeLinkPrefix.some(prefix => url.protocol.toLowerCase().startsWith(prefix))) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Information Leak via Default Export of Sensitive Configuration",
+      "code_refs": [
+        {
+          "file": "build.config.ts",
+          "line": 10,
+          "quote": "fs.writeFileSync('dist/config.cjs', 'module.exports = {}; module.exports.defineConfig = configs => configs', 'utf-8')"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unsafe `eval`-like behavior in `evalInContext`",
+      "code_refs": [
+        {
+          "file": "src/runtime/components/MDCRenderer.vue",
+          "line": 440,
+          "quote": ".reduce((o: any, k) => typeof o === 'object' ? o[k] : undefined, context)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unbounded Regex Complexity in Highlighting",
+      "code_refs": [
+        {
+          "file": "src/runtime/highlighter/shiki.ts",
+          "line": 148,
+          "quote": "const root = shiki.codeToHast(code.trimEnd(), {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insufficient Validation of `inlineCode` Attributes",
+      "code_refs": [
+        {
+          "file": "src/runtime/parser/handlers/inlineCode.ts",
+          "line": 13,
+          "quote": "properties: node.attributes || {},"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Broken Access Control in `removeInvalidSnippets`",
+      "code_refs": [
+        {
+          "file": "playground/app/components/global/PageSnippet.vue",
+          "line": 76,
+          "quote": "const removeInvalidSnippets = (obj: Record<string, any>): Record<string, any> | null => {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure Component Resolution",
+      "code_refs": [
+        {
+          "file": "src/runtime/components/MDCRenderer.vue",
+          "line": 414,
+          "quote": "const _component = vueResolveComponent(pascalCase(component), false) as any"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of `unsafe-eval` by default",
+      "code_refs": [
+        {
+          "file": "src/runtime/components/MDCRenderer.vue",
+          "line": 436,
+          "quote": "function evalInContext(code: string, context: any) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Lack of Rate Limiting on Markdown API",
+      "code_refs": [
+        {
+          "file": "playground/server/api/markdown.ts",
+          "line": 3,
+          "quote": "export default defineEventHandler(async (event) => {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Dependency Risk: Use of Unmaintained/Vulnerable Plugins",
+      "code_refs": [
+        {
+          "file": "package.json",
+          "line": 70,
+          "quote": "\"dependencies\": {"
+        }
+      ],
+      "outcome": "unchecked"
+    }
+  ],
+  "rejected": [],
+  "verification": null,
+  "arm_meta": {
+    "baseline": {
+      "model": "gemini/gemini-3.1-flash-lite",
+      "context": "code",
+      "requested": 15,
+      "returned": 15,
+      "files_shown": 114,
+      "chars_shown": 210848,
+      "files_that_did_not_fit": []
+    }
+  },
+  "seconds": {
+    "arm": 11.3,
+    "check": 0.0,
+    "total": 11.3
+  },
+  "usage": {
+    "arm": {
+      "calls": 1,
+      "failed": 0,
+      "est_tokens": 56172,
+      "seconds_in_calls": 11.2,
+      "by_task": {
+        "baseline": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 212108,
+          "completion_chars": 12581,
+          "seconds": 11.165045199915767,
+          "est_tokens": 56172
+        }
+      }
+    },
+    "check": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    }
+  }
+}

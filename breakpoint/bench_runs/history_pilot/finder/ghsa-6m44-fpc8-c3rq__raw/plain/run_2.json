@@ -1,0 +1,757 @@
+{
+  "schema": 1,
+  "set": "ghsa-6m44-fpc8-c3rq",
+  "variant": "raw",
+  "arm": "plain",
+  "run": 2,
+  "commit": "9946c9207d74a55eed872483ab3c9cdc698b89cc",
+  "started_at": "2026-10-24T10:47:52+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": false,
+  "status": "ok",
+  "candidates": 15,
+  "kept": [
+    {
+      "title": "Arbitrary File Disclosure via Include Directive",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `Include` directive in `src/mistune/directives/include.py` allows arbitrary file inclusion from the filesystem. While it attempts to check common path roots, it relies on `os.path.realpath` and `os.path.commonpath`, which can be bypassed via symlink attacks or specific OS-level path configurations to access sensitive files outside the intended directory.",
+      "steps_to_exploit": [
+        "Create a malicious markdown file that uses the .. include:: directive.",
+        "Target a sensitive file (e.g., /etc/passwd or configuration files) using path traversal.",
+        "The parser reads and includes the content of the file directly into the rendered output."
+      ],
+      "impact": "An attacker can read any file on the server accessible by the process running the application.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/mistune/directives/include.py",
+          "line": 70,
+          "quote": "with open(dest, \"rb\") as f:"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/mistune/directives/include.py",
+          "line": 70,
+          "quote": "with open(dest, \"rb\") as f:"
+        }
+      ],
+      "id": "6cfc0820",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unsafe Output Handling in CLI Tool",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The command line interface in `src/mistune/__main__.py` accepts an `--output` argument and opens that file for writing. This allows an attacker to overwrite any file on the system that the current user has write access to.",
+      "steps_to_exploit": [
+        "Run the mistune CLI tool.",
+        "Use the --output flag with a path to a critical system file (e.g., ~/.bashrc or a config file).",
+        "The tool writes rendered Markdown content into the target file, potentially leading to command injection or system instability."
+      ],
+      "impact": "Arbitrary file write leading to privilege escalation or service disruption.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/mistune/__main__.py",
+          "line": 38,
+          "quote": "with open(args.output, \"w\", encoding=\"utf-8\") as f:"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/mistune/__main__.py",
+          "line": 38,
+          "quote": "with open(args.output, \"w\", encoding=\"utf-8\") as f:"
+        }
+      ],
+      "id": "2176000c",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Reflected Cross-Site Scripting (XSS) in HTML Rendering",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `HTMLRenderer` in `src/mistune/renderers/html.py` has an `escape` flag that, if disabled (which is common in many configurations), allows arbitrary HTML tags. Combined with custom directives like `Admonition`, user-provided input can inject scripts.",
+      "steps_to_exploit": [
+        "Identify a site using mistune where `escape=false` is enabled.",
+        "Submit a markdown snippet containing malicious HTML/JS (e.g., `<script>alert(1)</script>`).",
+        "The script executes in the victim's browser context."
+      ],
+      "impact": "Unauthorized script execution, session hijacking, or defacement of the application.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/mistune/renderers/html.py",
+          "line": 76,
+          "quote": "if self._escape:"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/mistune/renderers/html.py",
+          "line": 76,
+          "quote": "if self._escape:"
+        }
+      ],
+      "id": "1b91a53d",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potential Path Traversal in Image Directive",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The Image directive in `src/mistune/directives/image.py` does not perform sufficient validation on the `target` parameter provided in the directive, which is then passed to `escape_url` and subsequently used in rendered HTML.",
+      "steps_to_exploit": [
+        "Craft a directive containing a `target` attribute that points to a malicious URL.",
+        "The rendered HTML creates a link pointing to this destination.",
+        "This facilitates phishing or open redirect vulnerabilities if the target is external."
+      ],
+      "impact": "Open redirect or phishing attacks targeting users.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [],
+      "code_refs": [],
+      "id": "fd004c9f",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Plugin Import Injection",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `import_plugin` function in `src/mistune/plugins/__init__.py` uses `import_module` with a string derived from the user input. If an attacker can influence the plugin list passed to `create_markdown`, they can force the loading of arbitrary python modules.",
+      "steps_to_exploit": [
+        "Find an entry point where an attacker-controlled string is used to specify plugins.",
+        "Pass a path to a different python module (e.g., `os` or `subprocess`).",
+        "The application imports the specified module."
+      ],
+      "impact": "Arbitrary code execution if an attacker can load a module with side-effect code.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/mistune/plugins/__init__.py",
+          "line": 47,
+          "quote": "module = import_module(module_path)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/mistune/plugins/__init__.py",
+          "line": 47,
+          "quote": "module = import_module(module_path)"
+        }
+      ],
+      "id": "6daf0288",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "ReDoS in URL Pattern",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `URL_LINK_PATTERN` in `src/mistune/plugins/url.py` is susceptible to catastrophic backtracking if it encounters a specially crafted URL, as it does not bound the search or validate the input effectively.",
+      "steps_to_exploit": [
+        "Submit a string consisting of thousands of characters that trigger exponential backtracking.",
+        "The CPU spikes to 100% processing the regex.",
+        "The service becomes unresponsive to other users."
+      ],
+      "impact": "Denial of Service (DoS) via resource exhaustion.",
+      "evolved_from": [],
+      "attack_category": "rate_limiting",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/mistune/plugins/url.py",
+          "line": 12,
+          "quote": "URL_LINK_PATTERN = r\"\"\"https?:\\/\\/[^\\s<]+[^<.,:;\"')\\]\\s]\"\"\""
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/mistune/plugins/url.py",
+          "line": 12,
+          "quote": "URL_LINK_PATTERN = r\"\"\"https?:\\/\\/[^\\s<]+[^<.,:;\"')\\]\\s]\"\"\""
+        }
+      ],
+      "id": "2e41d379",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "ReDoS in Math Directive Pattern",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `BLOCK_MATH_PATTERN` in `src/mistune/plugins/math.py` uses non-greedy matching on large inputs that could lead to regex engine timeout or performance degradation.",
+      "steps_to_exploit": [
+        "Provide a large block of text starting with `$$` but lacking a closing `$$`.",
+        "The parser consumes excessive memory and CPU time trying to find the end match.",
+        "The application performance degrades."
+      ],
+      "impact": "Denial of Service (DoS).",
+      "evolved_from": [],
+      "attack_category": "rate_limiting",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/mistune/plugins/math.py",
+          "line": 14,
+          "quote": "r\"^ {0,3}\\$\\$[ \\t]*\\n(?P<math_text_multi>[\\s\\S]*?)\\n\\$\\$[ \\t]*(?:\\n|$)\""
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/mistune/plugins/math.py",
+          "line": 14,
+          "quote": "r\"^ {0,3}\\$\\$[ \\t]*\\n(?P<math_text_multi>[\\s\\S]*?)\\n\\$\\$[ \\t]*(?:\\n|$)\""
+        }
+      ],
+      "id": "52ca1625",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of unsafe `pickle` alternative (Logic)",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The caching mechanism in `src/mistune/__init__.py` caches the `Markdown` instance keyed by the `plugins` argument. This cache uses in-memory dicts, but if the plugin list contains complex or non-hashable types, it might cause runtime errors or unexpected behavior.",
+      "steps_to_exploit": [
+        "Provide a complex, mutable object or non-hashable list as a plugin argument.",
+        "The application crashes due to a `TypeError` during cache lookup.",
+        "Service failure."
+      ],
+      "impact": "Application denial of service or unexpected runtime state.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/mistune/__init__.py",
+          "line": 61,
+          "quote": "__cached_parsers: Dict[Tuple[bool, Optional[RendererRef], Optional[Iterable[Any]]], Markdown] = {}"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/mistune/__init__.py",
+          "line": 61,
+          "quote": "__cached_parsers: Dict[Tuple[bool, Optional[RendererRef], Optional[Iterable[Any]]], Markdown] = {}"
+        }
+      ],
+      "id": "f765753a",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Missing Input Sanitization in Admonition Title",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "In `src/mistune/directives/admonition.py`, the `render_admonition_title` function does not sanitize the `text` attribute before rendering, potentially leading to XSS if the title is user-controlled.",
+      "steps_to_exploit": [
+        "Create an admonition with a malicious title string containing HTML tags.",
+        "Render the document as HTML.",
+        "The malicious script is injected into the HTML title."
+      ],
+      "impact": "Stored XSS.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/mistune/directives/admonition.py",
+          "line": 73,
+          "quote": "return '<p class=\"admonition-title\">' + text + \"</p>\\n\""
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/mistune/directives/admonition.py",
+          "line": 73,
+          "quote": "return '<p class=\"admonition-title\">' + text + \"</p>\\n\""
+        }
+      ],
+      "id": "b16aea57",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Protocol Handling",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `HTMLRenderer.safe_url` in `src/mistune/renderers/html.py` uses `_unquote_url` to decode input before checking against `SAFE_PROTOCOLS`. If an attacker double-encodes a forbidden protocol, the security check might be bypassed.",
+      "steps_to_exploit": [
+        "Craft a URL using double-encoded malicious protocol (e.g., `javascript:alert(1)` encoded).",
+        "Pass this URL to a link or image directive.",
+        "The check `_unquote_url` potentially decodes it after the check or confuses the logic."
+      ],
+      "impact": "Bypassing protocol white-lists, enabling XSS.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/mistune/renderers/html.py",
+          "line": 67,
+          "quote": "_url = _unquote_url(url).lower().lstrip()"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/mistune/renderers/html.py",
+          "line": 67,
+          "quote": "_url = _unquote_url(url).lower().lstrip()"
+        }
+      ],
+      "id": "168a551b",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unbounded Recursion in List Parser",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The list parser in `src/mistune/list_parser.py` lacks strict recursion depth control when parsing deeply nested lists, leading to potential `RecursionError`.",
+      "steps_to_exploit": [
+        "Create a markdown file with hundreds of levels of nested list items.",
+        "The recursive parser consumes all stack space.",
+        "The application crashes."
+      ],
+      "impact": "Denial of Service (DoS) via crash.",
+      "evolved_from": [],
+      "attack_category": "scalability",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [],
+      "code_refs": [],
+      "id": "f5080f71",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure File Read with Uncontrolled Encoding",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `Include` directive in `src/mistune/directives/include.py` allows the user to specify an encoding for the included file. Providing an unexpected encoding can lead to misinterpretation of content.",
+      "steps_to_exploit": [
+        "Define an include directive with an exotic encoding attribute.",
+        "The file is read and decoded using the specified encoding, potentially misinterpreting content or revealing info based on character conversion errors."
+      ],
+      "impact": "Information disclosure or bypass of downstream security filters.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/mistune/directives/include.py",
+          "line": 71,
+          "quote": "content = f.read().decode(encoding)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/mistune/directives/include.py",
+          "line": 71,
+          "quote": "content = f.read().decode(encoding)"
+        }
+      ],
+      "id": "23b077ee",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "XSS in Block Error Rendering",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `block_error` renderer in `src/mistune/renderers/html.py` renders error messages. If these messages contain unescaped user-input content, an attacker might inject malicious HTML.",
+      "steps_to_exploit": [
+        "Force a parsing error that displays part of the input in the error message.",
+        "The error message reflects the malicious HTML back to the page.",
+        "Script executes."
+      ],
+      "impact": "XSS.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/mistune/renderers/html.py",
+          "line": 152,
+          "quote": "return '<div class=\"error\"><pre>' + escape_text(text) + \"</pre></div>\\n\""
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/mistune/renderers/html.py",
+          "line": 152,
+          "quote": "return '<div class=\"error\"><pre>' + escape_text(text) + \"</pre></div>\\n\""
+        }
+      ],
+      "id": "4f837616",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unvalidated `attrs` in Figure Renderer",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `render_figure` function in `src/mistune/directives/image.py` accepts custom CSS classes and widths without strict sanitization.",
+      "steps_to_exploit": [
+        "Inject a malicious CSS class name into the directive attribute.",
+        "The rendered HTML contains the malicious attribute, which may impact style or facilitate further injection if combined with other vulnerabilities."
+      ],
+      "impact": "CSS injection/defacement.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/mistune/directives/image.py",
+          "line": 165,
+          "quote": "_cls += \" \" + escape_text(figclass)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/mistune/directives/image.py",
+          "line": 165,
+          "quote": "_cls += \" \" + escape_text(figclass)"
+        }
+      ],
+      "id": "805554e2",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Information Leak via Debug Error Messages",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The TableOfContents directive in `src/mistune/directives/toc.py` raises `ValueError` with specific information about the user input. In some production configurations, these exceptions might be displayed directly to the end-user.",
+      "steps_to_exploit": [
+        "Provide invalid levels (e.g., non-integers) in the TOC directive.",
+        "Observe the error message containing internal application constraints.",
+        "Use this information to fingerprint the application's configuration or logic."
+      ],
+      "impact": "Information disclosure about system constraints.",
+      "evolved_from": [],
+      "attack_category": "error_handling",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/mistune/directives/toc.py",
+          "line": 111,
+          "quote": "raise ValueError(f'\"{name}\" option MUST be integer')"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/mistune/directives/toc.py",
+          "line": 111,
+          "quote": "raise ValueError(f'\"{name}\" option MUST be integer')"
+        }
+      ],
+      "id": "7bdcdf72",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "proposed": [
+    {
+      "title": "Arbitrary File Disclosure via Include Directive",
+      "code_refs": [
+        {
+          "file": "src/mistune/directives/include.py",
+          "line": 70,
+          "quote": "with open(dest, \"rb\") as f:"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unsafe Output Handling in CLI Tool",
+      "code_refs": [
+        {
+          "file": "src/mistune/__main__.py",
+          "line": 38,
+          "quote": "with open(args.output, \"w\", encoding=\"utf-8\") as f:"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Reflected Cross-Site Scripting (XSS) in HTML Rendering",
+      "code_refs": [
+        {
+          "file": "src/mistune/renderers/html.py",
+          "line": 76,
+          "quote": "if self._escape:"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potential Path Traversal in Image Directive",
+      "code_refs": [],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Plugin Import Injection",
+      "code_refs": [
+        {
+          "file": "src/mistune/plugins/__init__.py",
+          "line": 47,
+          "quote": "module = import_module(module_path)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "ReDoS in URL Pattern",
+      "code_refs": [
+        {
+          "file": "src/mistune/plugins/url.py",
+          "line": 12,
+          "quote": "URL_LINK_PATTERN = r\"\"\"https?:\\/\\/[^\\s<]+[^<.,:;\"')\\]\\s]\"\"\""
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "ReDoS in Math Directive Pattern",
+      "code_refs": [
+        {
+          "file": "src/mistune/plugins/math.py",
+          "line": 14,
+          "quote": "r\"^ {0,3}\\$\\$[ \\t]*\\n(?P<math_text_multi>[\\s\\S]*?)\\n\\$\\$[ \\t]*(?:\\n|$)\""
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of unsafe `pickle` alternative (Logic)",
+      "code_refs": [
+        {
+          "file": "src/mistune/__init__.py",
+          "line": 61,
+          "quote": "__cached_parsers: Dict[Tuple[bool, Optional[RendererRef], Optional[Iterable[Any]]], Markdown] = {}"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Missing Input Sanitization in Admonition Title",
+      "code_refs": [
+        {
+          "file": "src/mistune/directives/admonition.py",
+          "line": 73,
+          "quote": "return '<p class=\"admonition-title\">' + text + \"</p>\\n\""
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure Protocol Handling",
+      "code_refs": [
+        {
+          "file": "src/mistune/renderers/html.py",
+          "line": 67,
+          "quote": "_url = _unquote_url(url).lower().lstrip()"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unbounded Recursion in List Parser",
+      "code_refs": [],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure File Read with Uncontrolled Encoding",
+      "code_refs": [
+        {
+          "file": "src/mistune/directives/include.py",
+          "line": 71,
+          "quote": "content = f.read().decode(encoding)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "XSS in Block Error Rendering",
+      "code_refs": [
+        {
+          "file": "src/mistune/renderers/html.py",
+          "line": 152,
+          "quote": "return '<div class=\"error\"><pre>' + escape_text(text) + \"</pre></div>\\n\""
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unvalidated `attrs` in Figure Renderer",
+      "code_refs": [
+        {
+          "file": "src/mistune/directives/image.py",
+          "line": 165,
+          "quote": "_cls += \" \" + escape_text(figclass)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Information Leak via Debug Error Messages",
+      "code_refs": [
+        {
+          "file": "src/mistune/directives/toc.py",
+          "line": 111,
+          "quote": "raise ValueError(f'\"{name}\" option MUST be integer')"
+        }
+      ],
+      "outcome": "unchecked"
+    }
+  ],
+  "rejected": [],
+  "verification": null,
+  "arm_meta": {
+    "baseline": {
+      "model": "gemini/gemini-3.1-flash-lite",
+      "context": "code",
+      "requested": 15,
+      "returned": 15,
+      "files_shown": 50,
+      "chars_shown": 244796,
+      "files_that_did_not_fit": []
+    }
+  },
+  "seconds": {
+    "arm": 16.6,
+    "check": 0.0,
+    "total": 16.6
+  },
+  "usage": {
+    "arm": {
+      "calls": 1,
+      "failed": 0,
+      "est_tokens": 64667,
+      "seconds_in_calls": 16.5,
+      "by_task": {
+        "baseline": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 245928,
+          "completion_chars": 12740,
+          "seconds": 16.546848100028,
+          "est_tokens": 64667
+        }
+      }
+    },
+    "check": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    }
+  }
+}

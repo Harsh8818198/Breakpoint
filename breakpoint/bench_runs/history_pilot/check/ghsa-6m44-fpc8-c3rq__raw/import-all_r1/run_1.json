@@ -1,0 +1,394 @@
+{
+  "schema": 1,
+  "set": "ghsa-6m44-fpc8-c3rq",
+  "variant": "raw",
+  "arm": "import-all_r1",
+  "run": 1,
+  "commit": "9946c9207d74a55eed872483ab3c9cdc698b89cc",
+  "started_at": "2026-10-25T05:44:13+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": true,
+  "status": "ok",
+  "candidates": 15,
+  "kept": [
+    {
+      "title": "Insecure Input Handling in `read_stdin`",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Reading from `stdin` without enforcing size limits allows attackers to pipe massive amounts of data into the parser, potentially leading to memory exhaustion (OOM).",
+      "steps_to_exploit": [
+        "Pipe a multi-gigabyte file into the standard input of the application.",
+        "The application reads the full input into memory for parsing."
+      ],
+      "impact": "Denial of service via OOM (Out Of Memory).",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "CONFIRMED",
+      "evidence": [
+        {
+          "file": "src/mistune/__main__.py",
+          "line": 136,
+          "quote": "return sys.stdin.read()"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/mistune/__main__.py",
+          "line": 136,
+          "quote": "return sys.stdin.read()"
+        }
+      ],
+      "id": "064007ad",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Temporary Files in `Makefile`",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `Makefile` uses `rm -fr` on directories like `build/` and `dist/`. If these directories were created with weak permissions or exist in a shared environment, it could lead to race conditions or file deletion attacks.",
+      "steps_to_exploit": [
+        "Create a symlink in the `build/` directory pointing to a sensitive location.",
+        "Wait for the developer or a CI process to run `make clean`.",
+        "The `rm -fr` command follows the symlink and deletes the target."
+      ],
+      "impact": "Arbitrary file deletion with the privileges of the user running `make`.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "CONFIRMED",
+      "evidence": [
+        {
+          "file": "Makefile",
+          "line": 6,
+          "quote": "@rm -fr build/ @rm -fr dist/"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "Makefile",
+          "line": 6,
+          "quote": "@rm -fr build/"
+        }
+      ],
+      "id": "c8957973",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "proposed": [
+    {
+      "title": "Unrestricted Local File Inclusion via Include Directive",
+      "code_refs": [
+        {
+          "file": "src/mistune/directives/include.py",
+          "line": 33,
+          "quote": "dest = os.path.realpath(os.path.join(source_dir, relpath))"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    },
+    {
+      "title": "Potential Arbitrary Code Execution in `serve-doc.py`",
+      "code_refs": [
+        {
+          "file": "serve-doc.py",
+          "line": 4,
+          "quote": "app.watch(\"docs\", shell(\"make build-docs\"), delay=2)"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    },
+    {
+      "title": "Cross-Site Scripting (XSS) via Unsafe URL Handling",
+      "code_refs": [],
+      "outcome": "REFUTED:contradicted_by_code"
+    },
+    {
+      "title": "Insecure `open()` in Command Line Tool",
+      "code_refs": [
+        {
+          "file": "src/mistune/__main__.py",
+          "line": 38,
+          "quote": "with open(args.output, \"w\", encoding=\"utf-8\") as f:"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    },
+    {
+      "title": "ReDoS (Regular Expression Denial of Service) in Inline Parsing",
+      "code_refs": [
+        {
+          "file": "src/mistune/inline_parser.py",
+          "line": 348,
+          "quote": "m = sc.search(state.src, pos)"
+        }
+      ],
+      "outcome": "REFUTED:defence_found"
+    },
+    {
+      "title": "Insecure Default Configuration for HTML Rendering",
+      "code_refs": [],
+      "outcome": "REFUTED:contradicted_by_code"
+    },
+    {
+      "title": "Information Leakage via Unvalidated Directive Content",
+      "code_refs": [
+        {
+          "file": "src/mistune/directives/admonition.py",
+          "line": 68,
+          "quote": "html += \" \" + escape_text(_cls)"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    },
+    {
+      "title": "Circular Reference in `Include` Directive",
+      "code_refs": [
+        {
+          "file": "src/mistune/directives/include.py",
+          "line": 49,
+          "quote": "if source_file not in include_stack:"
+        }
+      ],
+      "outcome": "REFUTED:defence_found"
+    },
+    {
+      "title": "Insecure Input Handling in `read_stdin`",
+      "code_refs": [
+        {
+          "file": "src/mistune/__main__.py",
+          "line": 136,
+          "quote": "return sys.stdin.read()"
+        }
+      ],
+      "outcome": "kept"
+    },
+    {
+      "title": "Bypass of `_is_safe_url` via multiple decoding",
+      "code_refs": [
+        {
+          "file": "src/mistune/renderers/html.py",
+          "line": 169,
+          "quote": "decoded = unquote(url)"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    },
+    {
+      "title": "Insecure Method Assignment for `process_text`",
+      "code_refs": [
+        {
+          "file": "src/mistune/plugins/abbr.py",
+          "line": 141,
+          "quote": "md.inline.process_text = types.MethodType(process_text, md.inline)"
+        }
+      ],
+      "outcome": "REFUTED:defence_found"
+    },
+    {
+      "title": "Improper escaping in `render_html_include`",
+      "code_refs": [
+        {
+          "file": "src/mistune/directives/include.py",
+          "line": 110,
+          "quote": "text = escape_text(text)"
+        }
+      ],
+      "outcome": "UNVERIFIED:quote_not_in_code"
+    },
+    {
+      "title": "Use of Assertions for Logic Flow",
+      "code_refs": [
+        {
+          "file": "src/mistune/__main__.py",
+          "line": 115,
+          "quote": "assert isinstance(text, str)"
+        }
+      ],
+      "outcome": "UNVERIFIED:quote_not_in_code"
+    },
+    {
+      "title": "Sensitive Information in `_cached_parsers`",
+      "code_refs": [
+        {
+          "file": "src/mistune/__init__.py",
+          "line": 61,
+          "quote": "__cached_parsers: Dict[Tuple[bool, Optional[RendererRef], Optional[Iterable[Any]]], Markdown] = {}"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    },
+    {
+      "title": "Insecure Temporary Files in `Makefile`",
+      "code_refs": [
+        {
+          "file": "Makefile",
+          "line": 6,
+          "quote": "@rm -fr build/"
+        }
+      ],
+      "outcome": "kept"
+    }
+  ],
+  "rejected": [
+    {
+      "title": "Unrestricted Local File Inclusion via Include Directive",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    },
+    {
+      "title": "Potential Arbitrary Code Execution in `serve-doc.py`",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    },
+    {
+      "title": "Cross-Site Scripting (XSS) via Unsafe URL Handling",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    },
+    {
+      "title": "Insecure `open()` in Command Line Tool",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    },
+    {
+      "title": "ReDoS (Regular Expression Denial of Service) in Inline Parsing",
+      "status": "REFUTED",
+      "code": "defence_found",
+      "why": "a protection enforced in the code defeats the claim"
+    },
+    {
+      "title": "Insecure Default Configuration for HTML Rendering",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    },
+    {
+      "title": "Information Leakage via Unvalidated Directive Content",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    },
+    {
+      "title": "Circular Reference in `Include` Directive",
+      "status": "REFUTED",
+      "code": "defence_found",
+      "why": "a protection enforced in the code defeats the claim"
+    },
+    {
+      "title": "Bypass of `_is_safe_url` via multiple decoding",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    },
+    {
+      "title": "Insecure Method Assignment for `process_text`",
+      "status": "REFUTED",
+      "code": "defence_found",
+      "why": "a protection enforced in the code defeats the claim"
+    },
+    {
+      "title": "Improper escaping in `render_html_include`",
+      "status": "UNVERIFIED",
+      "code": "quote_not_in_code",
+      "why": "the reviewer's quotes do not exist in the files named"
+    },
+    {
+      "title": "Use of Assertions for Logic Flow",
+      "status": "UNVERIFIED",
+      "code": "quote_not_in_code",
+      "why": "the reviewer's quotes do not exist in the files named"
+    },
+    {
+      "title": "Sensitive Information in `_cached_parsers`",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    }
+  ],
+  "verification": {
+    "mode": "source-code",
+    "files_indexed": 133,
+    "checked": 15,
+    "confirmed": 2,
+    "refuted": 11,
+    "unverified": 2,
+    "errors": 0,
+    "defender_pass": true,
+    "appeal_pass": true
+  },
+  "arm_meta": {
+    "imported_from": "eval_runs_check/inputs/ghsa-6m44-fpc8-c3rq/all_r1.json",
+    "note": "produced elsewhere; not repeatable by this harness"
+  },
+  "seconds": {
+    "arm": 0.0,
+    "check": 248.3,
+    "total": 248.3
+  },
+  "usage": {
+    "arm": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    },
+    "check": {
+      "calls": 45,
+      "failed": 0,
+      "est_tokens": 449520,
+      "seconds_in_calls": 246.9,
+      "by_task": {
+        "verify_appeal": {
+          "calls": 10,
+          "failed": 0,
+          "prompt_chars": 713671,
+          "completion_chars": 6461,
+          "seconds": 36.5525767999934,
+          "est_tokens": 180033
+        },
+        "verify_defend": {
+          "calls": 5,
+          "failed": 0,
+          "prompt_chars": 339407,
+          "completion_chars": 3088,
+          "seconds": 51.42437679995783,
+          "est_tokens": 85624
+        },
+        "verify_judge": {
+          "calls": 15,
+          "failed": 0,
+          "prompt_chars": 622653,
+          "completion_chars": 17611,
+          "seconds": 111.53166129963938,
+          "est_tokens": 160066
+        },
+        "verify_locate": {
+          "calls": 15,
+          "failed": 0,
+          "prompt_chars": 91216,
+          "completion_chars": 3974,
+          "seconds": 47.34554430004209,
+          "est_tokens": 23798
+        }
+      }
+    }
+  }
+}

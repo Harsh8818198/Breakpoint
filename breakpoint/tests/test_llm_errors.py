@@ -100,6 +100,13 @@ class ATransient403(unittest.TestCase):
         out, calls, sleeps = self.send([http_error(401, "bad key")] * 5)
         self.assertEqual((out, calls, sleeps), ("fatal", 1, 0))
 
+    def test_a_connection_that_drops_while_the_reply_is_being_read_is_retried(self):
+        import http.client
+        import ssl
+        out, calls, sleeps = self.send([ssl.SSLError("read error"), ConnectionResetError("reset"),
+                                        http.client.IncompleteRead(b"par"), self.Ok()])
+        self.assertEqual((out, calls, sleeps), ({"ok": True}, 4, 3))
+
 
 class VerifierDoesNotHideIt(unittest.TestCase):
     def test_fatal_errors_propagate_out_of_the_verifier(self):

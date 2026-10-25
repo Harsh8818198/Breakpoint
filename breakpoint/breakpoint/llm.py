@@ -11,6 +11,7 @@ No external dependencies required (stdlib urllib only).
 
 from __future__ import annotations
 
+import http.client
 import json
 import os
 import pathlib
@@ -256,7 +257,9 @@ class LLMClient:
                     time.sleep(wait)
                     continue
                 raise RuntimeError(f"LLM HTTP {e.code}: {body[:500]}") from e
-            except (urllib.error.URLError, socket.timeout, TimeoutError) as e:
+            except (OSError, http.client.HTTPException) as e:
+                # Covers a refused or reset connection, a timeout, and a connection that drops while the reply is still being read
+                # (ssl.SSLError, ConnectionResetError, IncompleteRead). HTTPError is handled above.
                 wait = (2 ** attempt) + random.uniform(0.1, 0.5)
                 if attempt < 5:
                     last_err = RuntimeError(f"LLM connection/timeout error: {e}")
@@ -279,9 +282,15 @@ _PY_BOOL_NONE = (
 )
 
 
+_ESCAPE_OR_LONE_BACKSLASH = re.compile(r'(\\["\\/bfnrt]|\\u[0-9a-fA-F]{4})|\\')
+
+
 def _sanitize(s: str) -> str:
     """Repair the most common LLM JSON formatting mistakes before parsing."""
     s = _TRAIL_COMMA.sub(r"\1", s)
+    # A model quoting a regex or a Windows path writes `\.` or `\d` inside a string, which JSON rejects. Valid escapes stay as they
+    # are (matched as a unit, so the second backslash of `\\` is not looked at again); any other backslash becomes a literal one.
+    s = _ESCAPE_OR_LONE_BACKSLASH.sub(lambda m: m.group(1) or "\\\\", s)
     for pattern, replacement in _PY_BOOL_NONE:
         s = pattern.sub(replacement, s)
     return s
@@ -309,8 +318,8 @@ def extract_json(text: str):
         i, j = t.find(open_c), t.rfind(close_c)
         if i != -1 and j != -1 and j > i:
             try:
-                return json.loads(_sanitize(t[i:j + 1]))
+                return json.loads(_sanitize(t[i:j + 1]), strict=False)       # strict=False: a raw line break inside a string is fine
             except json.JSONDecodeError:
                 continue
 
-    return json.loads(_sanitize(t))   # last resort — raises with a clear message
+    return json.loads(_sanitize(t), strict=False)   # last resort — raises with a clear message

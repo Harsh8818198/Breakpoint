@@ -1,0 +1,791 @@
+{
+  "schema": 1,
+  "set": "ghsa-xjh9-v7x6-24jw",
+  "variant": "raw",
+  "arm": "plain",
+  "run": 1,
+  "commit": "957a24b66d5915e6d0a6ac988c9dbcee86373e9b",
+  "started_at": "2026-10-24T11:01:50+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": false,
+  "status": "ok",
+  "candidates": 15,
+  "kept": [
+    {
+      "title": "Unbounded Buffer Accumulation via `Buffer.concat`",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "In `bench/createMultipartBufferForEncodingBench.js`, the `createMultipartBufferForEncodingBench` function fills an array with `amount` copies of a buffer and performs `Buffer.concat`. An attacker providing a large `amount` via benchmark parameters can cause a heap memory exhaustion.",
+      "steps_to_exploit": [
+        "Identify an endpoint or process using `createMultipartBufferForEncodingBench`.",
+        "Submit a request with an extremely large `amount` argument.",
+        "Monitor process memory usage until OOM crash."
+      ],
+      "impact": "Denial of Service (DoS) via uncontrolled memory consumption.",
+      "evolved_from": [],
+      "attack_category": "rate_limiting",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "bench/createMultipartBufferForEncodingBench.js",
+          "line": 22,
+          "quote": "return Buffer.concat(buffers)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "bench/createMultipartBufferForEncodingBench.js",
+          "line": 22,
+          "quote": "return Buffer.concat(buffers)"
+        }
+      ],
+      "id": "2e221ca3",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of Potentially Insecure `Buffer.allocUnsafe`",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The codebase frequently uses `Buffer.allocUnsafe` (e.g., in `bench/dicer/dicer-bench-multipart-parser.js`). If this memory is not explicitly overwritten before being exposed or used in network responses, it may leak sensitive data from previous allocations.",
+      "steps_to_exploit": [
+        "Trigger the code path that uses `Buffer.allocUnsafe`.",
+        "Observe if the buffer is sent directly to an output stream without being fully initialized.",
+        "Analyze the returned binary data for memory leaks."
+      ],
+      "impact": "Information disclosure of previously handled sensitive process memory.",
+      "evolved_from": [],
+      "attack_category": "data_privacy",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "bench/dicer/dicer-bench-multipart-parser.js",
+          "line": 11,
+          "quote": "const buffer = Buffer.allocUnsafe(size)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "bench/dicer/dicer-bench-multipart-parser.js",
+          "line": 11,
+          "quote": "const buffer = Buffer.allocUnsafe(size)"
+        }
+      ],
+      "id": "1fdc0f0d",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potential Path Traversal in filename handling",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "While `basename.js` exists, `lib/types/multipart.js` conditionally uses `basename`. If `preservePath` is set to true, the input filename from the multipart header is used directly, which may allow path traversal if not handled carefully in the downstream application.",
+      "steps_to_exploit": [
+        "Configure Busboy with `preservePath: true`.",
+        "Craft a multipart request where the `filename` header contains directory traversal sequences like `../../etc/passwd`.",
+        "Observe if the application writes files to unauthorized locations."
+      ],
+      "impact": "Arbitrary file write/overwrite on the server.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/types/multipart.js",
+          "line": 149,
+          "quote": "if (!preservePath) { filename = basename(filename) }"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/types/multipart.js",
+          "line": 149,
+          "quote": "if (!preservePath) { filename = basename(filename) }"
+        }
+      ],
+      "id": "d2f04696",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unbounded Header Accumulation",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `HeaderParser` relies on `maxHeaderPairs` and `maxHeaderSize`, but if the configuration is missing or malformed, it defaults to values that might still be too large for some environments, potentially leading to memory pressure.",
+      "steps_to_exploit": [
+        "Submit a request with thousands of small headers.",
+        "Observe if the server buffers the entire header block in memory.",
+        "Exhaust memory to force a crash."
+      ],
+      "impact": "Denial of Service (DoS) by memory exhaustion.",
+      "evolved_from": [],
+      "attack_category": "rate_limiting",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "deps/dicer/lib/HeaderParser.js",
+          "line": 17,
+          "quote": "this.maxHeaderPairs = getLimit(cfg, 'maxHeaderPairs', 2000)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "deps/dicer/lib/HeaderParser.js",
+          "line": 17,
+          "quote": "this.maxHeaderPairs = getLimit(cfg, 'maxHeaderPairs', 2000)"
+        }
+      ],
+      "id": "feba454f",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Lack of Explicit Character Set Sanitization",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "In `lib/utils/decodeText.js`, the `other` decoder uses `.bind(charset)`. If `charset` is user-controlled via a `Content-Type` header, it could lead to unexpected behavior in string conversion or potential prototype pollution in some JS environments.",
+      "steps_to_exploit": [
+        "Inject a malicious string into the charset parameter of the Content-Type header.",
+        "Observe if the application attempts to use this string as a function or object property.",
+        "Trigger potential logic errors or crash."
+      ],
+      "impact": "Application logic corruption or DoS.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/utils/decodeText.js",
+          "line": 42,
+          "quote": "return decoders.other.bind(charset)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/utils/decodeText.js",
+          "line": 42,
+          "quote": "return decoders.other.bind(charset)"
+        }
+      ],
+      "id": "3e3f12c8",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Prototype Pollution via object creation",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "In `HeaderParser.js`, `this.header = Object.create(null)` is used correctly, but other parts of the parser logic operate on object properties which could be vulnerable if deep merged or assigned from untrusted sources.",
+      "steps_to_exploit": [
+        "Craft a multipart header payload that mimics internal object properties (e.g., `__proto__`).",
+        "Pass this through the parsing logic.",
+        "Observe if the application state is altered by the injected property."
+      ],
+      "impact": "Unexpected application state modification or remote code execution (RCE) in specific contexts.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "deps/dicer/lib/HeaderParser.js",
+          "line": 20,
+          "quote": "this.header = Object.create(null)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "deps/dicer/lib/HeaderParser.js",
+          "line": 20,
+          "quote": "this.header = Object.create(null)"
+        }
+      ],
+      "id": "408d62e4",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure `npm` script usage",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `benchmarks/regenerate.cmd` script and `package.json` scripts encourage running code as Administrator and installing multiple node versions locally, which introduces a high attack surface for local environment compromise.",
+      "steps_to_exploit": [
+        "Attacker gains local access.",
+        "Uses the script to install malicious Node versions.",
+        "Executes the benchmark to trigger local system-level actions."
+      ],
+      "impact": "Privilege escalation and persistence on the development or build machine.",
+      "evolved_from": [],
+      "attack_category": "supply_chain",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "benchmarks/busboy/regenerate.cmd",
+          "line": 1,
+          "quote": "rem Make sure to run this in Admin account"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "benchmarks/busboy/regenerate.cmd",
+          "line": 1,
+          "quote": "rem Make sure to run this in Admin account"
+        }
+      ],
+      "id": "17c009d8",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Sensitive data in console output",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "In `bench/parse-params.js`, any errors encountered during benchmarking are logged to the console using `console.error(e)`. This could include sensitive payload data if the benchmarked function fails.",
+      "steps_to_exploit": [
+        "Trigger an error in the parser.",
+        "Observe `console.error` output.",
+        "Extract sensitive data from the logs."
+      ],
+      "impact": "Sensitive information disclosure through log files.",
+      "evolved_from": [],
+      "attack_category": "data_privacy",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "bench/parse-params.js",
+          "line": 17,
+          "quote": "errors.map((e) => console.error(e))"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "bench/parse-params.js",
+          "line": 17,
+          "quote": "errors.map((e) => console.error(e))"
+        }
+      ],
+      "id": "6352b422",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Weak Randomness in file naming",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "In `lib/utils/basename.js` (and the `parted` dependency), file renaming uses `Math.random().toString(36)`. This is not cryptographically secure and can be predicted, potentially allowing an attacker to guess uploaded filenames.",
+      "steps_to_exploit": [
+        "Determine the predictable pattern of the file naming algorithm.",
+        "Upload a file.",
+        "Predict the resulting path and attempt to access it before the legitimate user."
+      ],
+      "impact": "Unauthorized access to sensitive user uploads.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "bench/dicer/parted-multipart.js",
+          "line": 459,
+          "quote": "tag = Math.random().toString(36).substring(2)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "bench/dicer/parted-multipart.js",
+          "line": 459,
+          "quote": "tag = Math.random().toString(36).substring(2)"
+        }
+      ],
+      "id": "df04297f",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potential Integer Overflow in byte accounting",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "In `lib/types/multipart.js`, byte counts are accumulated using standard JavaScript numbers. While JS numbers support large integers, extreme file sizes could theoretically lead to precision loss in edge-case arithmetic operations.",
+      "steps_to_exploit": [
+        "Upload files of near-limit sizes repeatedly.",
+        "Monitor if byte counters diverge from actual bytes received.",
+        "Trigger potential logic flaws in limit enforcement."
+      ],
+      "impact": "Bypassing file size limits.",
+      "evolved_from": [],
+      "attack_category": "scalability",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/types/multipart.js",
+          "line": 201,
+          "quote": "if ((nsize += data.length) > fileSizeLimit) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/types/multipart.js",
+          "line": 201,
+          "quote": "if ((nsize += data.length) > fileSizeLimit) {"
+        }
+      ],
+      "id": "45f65a08",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure regex usage in parseParams",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `parseParams` function uses a complex regular expression `RE_ENCODED` and manual state-machine parsing to decode parameters. Complex regexes on user input can sometimes lead to catastrophic backtracking.",
+      "steps_to_exploit": [
+        "Submit a crafted string with many encoded segments that trigger regex backtracking.",
+        "Monitor CPU usage to observe a DoS condition."
+      ],
+      "impact": "Denial of Service (DoS) via ReDoS.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/utils/parseParams.js",
+          "line": 5,
+          "quote": "const RE_ENCODED = /%[a-fA-F0-9][a-fA-F0-9]/g"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/utils/parseParams.js",
+          "line": 5,
+          "quote": "const RE_ENCODED = /%[a-fA-F0-9][a-fA-F0-9]/g"
+        }
+      ],
+      "id": "1431b2ef",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Improper cleanup of event listeners",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `Multipart.parser.on` listener for parts (or other components) is sometimes not cleaned up correctly upon error, leading to memory leaks over time.",
+      "steps_to_exploit": [
+        "Continuously send malformed multipart requests that trigger errors.",
+        "Observe if event listener counts increase in the process."
+      ],
+      "impact": "Memory leak leading to DoS.",
+      "evolved_from": [],
+      "attack_category": "scalability",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/types/multipart.js",
+          "line": 93,
+          "quote": ".on('part', function onPart (part) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/types/multipart.js",
+          "line": 93,
+          "quote": ".on('part', function onPart (part) {"
+        }
+      ],
+      "id": "1d776d1b",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Reliance on `Buffer.from(string, 'binary')`",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Use of the 'binary' encoding in Node.js is deprecated/discouraged as it does not correctly handle multi-byte characters and can lead to data corruption.",
+      "steps_to_exploit": [
+        "Send data with non-ASCII characters.",
+        "Observe if the data is corrupted during processing in `UrlEncoded.prototype.write`."
+      ],
+      "impact": "Data corruption or processing failure.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/types/urlencoded.js",
+          "line": 75,
+          "quote": "if (idxeq > p) { this._key += this.decoder.write(data.toString('binary', p, idxeq)) }"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/types/urlencoded.js",
+          "line": 75,
+          "quote": "if (idxeq > p) { this._key += this.decoder.write(data.toString('binary', p, idxeq)) }"
+        }
+      ],
+      "id": "501b6ad4",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Missing Error Handling in stream write",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "In `benchmarks/busboy/contestants/busboy.js`, the call to `busboy.write(buffer, () => { })` passes an empty callback. If an error occurs, it is not properly caught, potentially leaving the stream in an inconsistent state.",
+      "steps_to_exploit": [
+        "Trigger an error during a write operation.",
+        "Observe if the process fails to handle the stream error gracefully."
+      ],
+      "impact": "Uncaught exceptions or silent failure.",
+      "evolved_from": [],
+      "attack_category": "error_handling",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "benchmarks/busboy/contestants/busboy.js",
+          "line": 32,
+          "quote": "busboy.write(buffer, () => { })"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "benchmarks/busboy/contestants/busboy.js",
+          "line": 32,
+          "quote": "busboy.write(buffer, () => { })"
+        }
+      ],
+      "id": "e060c6aa",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Default to unsafe charset handling",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The parser defaults to `utf8` if a charset is missing, which may be inappropriate for legacy systems or specific binary formats, potentially leading to security bypasses in downstream applications expecting stricter encoding controls.",
+      "steps_to_exploit": [
+        "Send data with a non-standard charset without specifying it.",
+        "Observe how the application processes the bytes.",
+        "Exploit potential interpretation mismatches."
+      ],
+      "impact": "Security logic bypasses due to character set misinterpretation.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/types/urlencoded.js",
+          "line": 28,
+          "quote": "if (charset === undefined) { charset = cfg.defCharset || 'utf8' }"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/types/urlencoded.js",
+          "line": 28,
+          "quote": "if (charset === undefined) { charset = cfg.defCharset || 'utf8' }"
+        }
+      ],
+      "id": "8cf0f880",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "proposed": [
+    {
+      "title": "Unbounded Buffer Accumulation via `Buffer.concat`",
+      "code_refs": [
+        {
+          "file": "bench/createMultipartBufferForEncodingBench.js",
+          "line": 22,
+          "quote": "return Buffer.concat(buffers)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of Potentially Insecure `Buffer.allocUnsafe`",
+      "code_refs": [
+        {
+          "file": "bench/dicer/dicer-bench-multipart-parser.js",
+          "line": 11,
+          "quote": "const buffer = Buffer.allocUnsafe(size)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potential Path Traversal in filename handling",
+      "code_refs": [
+        {
+          "file": "lib/types/multipart.js",
+          "line": 149,
+          "quote": "if (!preservePath) { filename = basename(filename) }"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unbounded Header Accumulation",
+      "code_refs": [
+        {
+          "file": "deps/dicer/lib/HeaderParser.js",
+          "line": 17,
+          "quote": "this.maxHeaderPairs = getLimit(cfg, 'maxHeaderPairs', 2000)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Lack of Explicit Character Set Sanitization",
+      "code_refs": [
+        {
+          "file": "lib/utils/decodeText.js",
+          "line": 42,
+          "quote": "return decoders.other.bind(charset)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Prototype Pollution via object creation",
+      "code_refs": [
+        {
+          "file": "deps/dicer/lib/HeaderParser.js",
+          "line": 20,
+          "quote": "this.header = Object.create(null)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure `npm` script usage",
+      "code_refs": [
+        {
+          "file": "benchmarks/busboy/regenerate.cmd",
+          "line": 1,
+          "quote": "rem Make sure to run this in Admin account"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Sensitive data in console output",
+      "code_refs": [
+        {
+          "file": "bench/parse-params.js",
+          "line": 17,
+          "quote": "errors.map((e) => console.error(e))"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Weak Randomness in file naming",
+      "code_refs": [
+        {
+          "file": "bench/dicer/parted-multipart.js",
+          "line": 459,
+          "quote": "tag = Math.random().toString(36).substring(2)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potential Integer Overflow in byte accounting",
+      "code_refs": [
+        {
+          "file": "lib/types/multipart.js",
+          "line": 201,
+          "quote": "if ((nsize += data.length) > fileSizeLimit) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure regex usage in parseParams",
+      "code_refs": [
+        {
+          "file": "lib/utils/parseParams.js",
+          "line": 5,
+          "quote": "const RE_ENCODED = /%[a-fA-F0-9][a-fA-F0-9]/g"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Improper cleanup of event listeners",
+      "code_refs": [
+        {
+          "file": "lib/types/multipart.js",
+          "line": 93,
+          "quote": ".on('part', function onPart (part) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Reliance on `Buffer.from(string, 'binary')`",
+      "code_refs": [
+        {
+          "file": "lib/types/urlencoded.js",
+          "line": 75,
+          "quote": "if (idxeq > p) { this._key += this.decoder.write(data.toString('binary', p, idxeq)) }"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Missing Error Handling in stream write",
+      "code_refs": [
+        {
+          "file": "benchmarks/busboy/contestants/busboy.js",
+          "line": 32,
+          "quote": "busboy.write(buffer, () => { })"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Default to unsafe charset handling",
+      "code_refs": [
+        {
+          "file": "lib/types/urlencoded.js",
+          "line": 28,
+          "quote": "if (charset === undefined) { charset = cfg.defCharset || 'utf8' }"
+        }
+      ],
+      "outcome": "unchecked"
+    }
+  ],
+  "rejected": [],
+  "verification": null,
+  "arm_meta": {
+    "baseline": {
+      "model": "gemini/gemini-3.1-flash-lite",
+      "context": "code",
+      "requested": 15,
+      "returned": 15,
+      "files_shown": 51,
+      "chars_shown": 156153,
+      "files_that_did_not_fit": []
+    }
+  },
+  "seconds": {
+    "arm": 10.6,
+    "check": 0.0,
+    "total": 10.6
+  },
+  "usage": {
+    "arm": {
+      "calls": 1,
+      "failed": 0,
+      "est_tokens": 42112,
+      "seconds_in_calls": 10.5,
+      "by_task": {
+        "baseline": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 157287,
+          "completion_chars": 11160,
+          "seconds": 10.50935649999883,
+          "est_tokens": 42112
+        }
+      }
+    },
+    "check": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    }
+  }
+}

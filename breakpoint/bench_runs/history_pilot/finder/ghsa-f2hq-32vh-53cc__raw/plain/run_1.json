@@ -1,0 +1,794 @@
+{
+  "schema": 1,
+  "set": "ghsa-f2hq-32vh-53cc",
+  "variant": "raw",
+  "arm": "plain",
+  "run": 1,
+  "commit": "abfee49e691dc1cafe0978900c132d89ab8b3595",
+  "started_at": "2026-10-24T10:53:44+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": false,
+  "status": "ok",
+  "candidates": 15,
+  "kept": [
+    {
+      "title": "Denial of Service via Regex Backtracking",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Several regex patterns in src/text-format.ts (e.g., replaceTags, replaceBlocks, stripThroughLastTag) utilize overlapping patterns that fail to match until the end of the input, triggering catastrophic backtracking on specially crafted HTML, causing high CPU usage.",
+      "steps_to_exploit": [
+        "Craft a large HTML MIME part containing hundreds of unclosed HTML tags or malformed tag bodies.",
+        "Send the email containing this part to the parser.",
+        "The parser hangs while attempting to process the HTML, consuming 100% CPU."
+      ],
+      "impact": "Remote Denial of Service, potential CPU exhaustion of the host application.",
+      "evolved_from": [],
+      "attack_category": "scalability",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/text-format.ts",
+          "line": 365,
+          "quote": "replaceTags(head, /<a\\b/gi, /<a\\b[^>]*href\\s*=\\s*[\"']?([^\\s\"']+)[^>]*>/iy, (match, href) => ` (${href}) `)"
+        },
+        {
+          "file": "src/text-format.ts",
+          "line": 354,
+          "quote": "str = replaceBlocks(str, /<script\\b/gi, true, /<\\/script\\b/gi, true, ' ');"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/text-format.ts",
+          "line": 365,
+          "quote": "replaceTags(head, /<a\\b/gi, /<a\\b[^>]*href\\s*=\\s*[\"']?([^\\s\"']+)[^>]*>/iy, (match, href) => ` (${href}) `)"
+        },
+        {
+          "file": "src/text-format.ts",
+          "line": 354,
+          "quote": "str = replaceBlocks(str, /<script\\b/gi, true, /<\\/script\\b/gi, true, ' ');"
+        }
+      ],
+      "id": "886bd2fd",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unsafe Deserialization via arbitrary property injection in header parsing",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The parseStructuredHeader method uses Object.prototype.hasOwnProperty.call but doesn't fully sanitize parameter keys, allowing an attacker to set prototype properties or perform prototype pollution if the environment allows it, potentially affecting subsequent header processing logic.",
+      "steps_to_exploit": [
+        "Craft a malicious Content-Type header containing parameters like __proto__ or constructor.",
+        "Submit the email to the parser.",
+        "The parameter key is stored in the params object, potentially altering the behavior of standard Object methods used throughout the application."
+      ],
+      "impact": "Code execution or logic bypass via prototype pollution.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/mime-node.ts",
+          "line": 364,
+          "quote": "if (name && !Object.prototype.hasOwnProperty.call(response.params, name)) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/mime-node.ts",
+          "line": 364,
+          "quote": "if (name && !Object.prototype.hasOwnProperty.call(response.params, name)) {"
+        }
+      ],
+      "id": "c5e9fb6f",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potential Path Traversal in attachment filename handling",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The attachment filename is extracted from headers and passed to decodeWords. If an attacker provides a filename parameter with path traversal sequences like ../, the resulting attachment metadata could deceive storage backends or users.",
+      "steps_to_exploit": [
+        "Create a MIME part with Content-Disposition: attachment; filename=\"../../etc/passwd\".",
+        "Process the email.",
+        "The extracted filename metadata retains the traversal path, which may overwrite local files if saved improperly by the consumer."
+      ],
+      "impact": "Local file system damage if the consumer application saves attachments using the untrusted filename.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/postal-mime.ts",
+          "line": 425,
+          "quote": "const filename = node.contentDisposition.parsed.params.filename || node.contentType.parsed.params.name || null;"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/postal-mime.ts",
+          "line": 425,
+          "quote": "const filename = node.contentDisposition.parsed.params.filename || node.contentType.parsed.params.name || null;"
+        }
+      ],
+      "id": "75ea3822",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of unsafe regex for address extraction",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The addressParser uses regexes on user-supplied strings which can be bypassed or cause ReDoS, leading to incorrect address parsing or DoS.",
+      "steps_to_exploit": [
+        "Create an extremely long address string with nested parentheses.",
+        "Pass the string to the addressParser.",
+        "The engine hangs on the complex regex match."
+      ],
+      "impact": "Denial of Service and potential misinterpretation of sender identity.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [],
+      "code_refs": [],
+      "id": "de4f4220",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Random/Unique ID generation",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The parser relies on structural headers for boundary detection. The lack of cryptographic uniqueness in boundary verification allows attackers to spoof multipart boundaries.",
+      "steps_to_exploit": [
+        "Determine a valid boundary used by the parser.",
+        "Inject a payload that mimics the boundary marker in an arbitrary message body.",
+        "The parser terminates current processing prematurely."
+      ],
+      "impact": "Data injection or parsing bypass by manipulating the structure of a multipart message.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/postal-mime.ts",
+          "line": 219,
+          "quote": "if (boundaries.length && line.length > 2 && line[0] === 0x2d && line[1] === 0x2d) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/postal-mime.ts",
+          "line": 219,
+          "quote": "if (boundaries.length && line.length > 2 && line[0] === 0x2d && line[1] === 0x2d) {"
+        }
+      ],
+      "id": "9c1dd9eb",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insufficient validation of nesting depth",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Although nesting depth is checked, the combination of MIME parts can lead to high memory consumption even within depth limits, as each part retains state objects.",
+      "steps_to_exploit": [
+        "Craft an email with a high number of shallow parts that are large in size.",
+        "Observe memory exhaustion (OOM) as the parser maintains pointers to all nodes and content buffers.",
+        "Application crashes."
+      ],
+      "impact": "Memory exhaustion and crash of the host process.",
+      "evolved_from": [],
+      "attack_category": "scalability",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/mime-node.ts",
+          "line": 112,
+          "quote": "if (this.postalMime.partCount > options.maxPartCount) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/mime-node.ts",
+          "line": 112,
+          "quote": "if (this.postalMime.partCount > options.maxPartCount) {"
+        }
+      ],
+      "id": "b0589734",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Lack of Content-Type validation",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The parser implicitly trusts the Content-Type header of MIME parts. Malicious types can be used to hide payloads from security filters.",
+      "steps_to_exploit": [
+        "Wrap a known malicious file type as an innocuous Content-Type (e.g., text/plain).",
+        "Send email.",
+        "The parser treats it as plain text and extracts the content."
+      ],
+      "impact": "Security filter bypass.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/mime-node.ts",
+          "line": 610,
+          "quote": "case 'content-type':"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/mime-node.ts",
+          "line": 610,
+          "quote": "case 'content-type':"
+        }
+      ],
+      "id": "4efc30bc",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Weak boundary marker verification",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Boundary checking logic only validates the start of the line and the match, allowing potential collisions if the user controls the input content.",
+      "steps_to_exploit": [
+        "Construct a message where the content contains the exact boundary string preceded by '--'.",
+        "The parser detects a false boundary, truncating the message.",
+        "The malicious boundary content is then interpreted as a header or part metadata."
+      ],
+      "impact": "Structural manipulation of email body content.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/postal-mime.ts",
+          "line": 230,
+          "quote": "let boundaryMatches = true;"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/postal-mime.ts",
+          "line": 230,
+          "quote": "let boundaryMatches = true;"
+        }
+      ],
+      "id": "0e618134",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Improper handling of non-standard charsets",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Falling back to windows-1252 for unknown charsets can result in 'mojibake' where security-relevant strings (like URLs or XSS payloads) are obfuscated or mangled, potentially bypassing downstream WAFs or security scanners.",
+      "steps_to_exploit": [
+        "Encode a malicious script using an obscure or non-standard charset.",
+        "The decoder fails to recognize it and interprets bytes as windows-1252.",
+        "Security scanner misses the payload, but browser-based viewers (with different logic) may execute it."
+      ],
+      "impact": "Security filter bypass due to character set confusion.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/decode-strings.ts",
+          "line": 272,
+          "quote": "return findDecoder(charset) || tryDecoder('windows-1252') || utf8Decoder;"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/decode-strings.ts",
+          "line": 272,
+          "quote": "return findDecoder(charset) || tryDecoder('windows-1252') || utf8Decoder;"
+        }
+      ],
+      "id": "f3b34aaf",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Integer overflow vulnerability in maxHeadersSize",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "headerSize is tracked without bounds checking before the addition, allowing for overflow in memory constrained environments if the header size input is sufficiently large.",
+      "steps_to_exploit": [
+        "Submit an email with an extremely large, folded header.",
+        "Trigger numeric overflow in headerSize calculation.",
+        "Bypass logic that enforces maxHeadersSize."
+      ],
+      "impact": "Bypass of message size limits leading to DoS.",
+      "evolved_from": [],
+      "attack_category": "scalability",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/mime-node.ts",
+          "line": 684,
+          "quote": "this.postalMime.headerSize += line.length;"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/mime-node.ts",
+          "line": 684,
+          "quote": "this.postalMime.headerSize += line.length;"
+        }
+      ],
+      "id": "54f13dc0",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unquoted parameter injection in Content-Disposition",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The parameter parser for structured headers, such as Content-Disposition, allows injecting separators if values are not properly quoted, potentially confusing the mime-node logic.",
+      "steps_to_exploit": [
+        "Inject a filename parameter containing a semicolon (;) followed by another parameter key.",
+        "The structured parser splits the parameter, allowing parameter injection.",
+        "Unexpected attachment behavior occurs."
+      ],
+      "impact": "Metadata manipulation.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/mime-node.ts",
+          "line": 431,
+          "quote": "} else if (!quote && chr === ';') {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/mime-node.ts",
+          "line": 431,
+          "quote": "} else if (!quote && chr === ';') {"
+        }
+      ],
+      "id": "39e48d5f",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "DOM-like behavior in text/html conversion (XSS)",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "textToHtml wraps text in <div> tags without fully neutralizing potential control characters or attributes if the downstream usage is not strictly enforced.",
+      "steps_to_exploit": [
+        "Craft a part that the parser renders as HTML.",
+        "The current implementation lacks an robust sanitization logic before joining fragments in renderTextContent.",
+        "An XSS payload could be formed."
+      ],
+      "impact": "Cross-Site Scripting (XSS) if output is rendered in a web browser without further sanitization.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/text-format.ts",
+          "line": 94,
+          "quote": "return '<div>' + html + '</div>';"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/text-format.ts",
+          "line": 94,
+          "quote": "return '<div>' + html + '</div>';"
+        }
+      ],
+      "id": "be353ad8",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Resource consumption through recursion in collectNode",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "collectNode recursively visits all nodes; an deeply nested structure within a valid depth limit can still lead to stack overflow if the number of sibling nodes is massive.",
+      "steps_to_exploit": [
+        "Create a message with a very broad tree (10,000 nodes at a single level).",
+        "Process the email.",
+        "Recursive calls exhaust the stack."
+      ],
+      "impact": "DoS via Stack Overflow.",
+      "evolved_from": [],
+      "attack_category": "scalability",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/postal-mime.ts",
+          "line": 374,
+          "quote": "await this.collectNode(childNode, alternative, related);"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/postal-mime.ts",
+          "line": 374,
+          "quote": "await this.collectNode(childNode, alternative, related);"
+        }
+      ],
+      "id": "6e21c642",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Incomplete MIME type normalization",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Content-Type strings are parsed using loose logic, potentially allowing attackers to override legitimate MIME parts by providing a later header that satisfies the check, but holds a different type.",
+      "steps_to_exploit": [
+        "Send a message with two conflicting Content-Type headers.",
+        "The parser stores the first valid one, but the MIME type normalization might accept a malformed second one as a valid 'text/plain' fallback.",
+        "The parser behaves unexpectedly."
+      ],
+      "impact": "Bypass of security checks expecting a specific MIME type.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/mime-node.ts",
+          "line": 634,
+          "quote": "if (this.contentType.multipart && !this.contentType.parsed.params.boundary) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/mime-node.ts",
+          "line": 634,
+          "quote": "if (this.contentType.multipart && !this.contentType.parsed.params.boundary) {"
+        }
+      ],
+      "id": "cd99342d",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Information leak via leaked Error messages",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The parser throws descriptive errors, including partial parsing state and internal limits, which can be leaked to end-users.",
+      "steps_to_exploit": [
+        "Trigger an intentional error by sending an email that exceeds a limit.",
+        "Observe the error message containing internal state info.",
+        "Use this information to identify implementation details for further exploitation."
+      ],
+      "impact": "Information disclosure facilitating targeted attacks.",
+      "evolved_from": [],
+      "attack_category": "ux",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/mime-node.ts",
+          "line": 113,
+          "quote": "throw new Error(`Maximum MIME part count of ${options.maxPartCount} parts exceeded`);"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/mime-node.ts",
+          "line": 113,
+          "quote": "throw new Error(`Maximum MIME part count of ${options.maxPartCount} parts exceeded`);"
+        }
+      ],
+      "id": "89c77836",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "proposed": [
+    {
+      "title": "Denial of Service via Regex Backtracking",
+      "code_refs": [
+        {
+          "file": "src/text-format.ts",
+          "line": 365,
+          "quote": "replaceTags(head, /<a\\b/gi, /<a\\b[^>]*href\\s*=\\s*[\"']?([^\\s\"']+)[^>]*>/iy, (match, href) => ` (${href}) `)"
+        },
+        {
+          "file": "src/text-format.ts",
+          "line": 354,
+          "quote": "str = replaceBlocks(str, /<script\\b/gi, true, /<\\/script\\b/gi, true, ' ');"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unsafe Deserialization via arbitrary property injection in header parsing",
+      "code_refs": [
+        {
+          "file": "src/mime-node.ts",
+          "line": 364,
+          "quote": "if (name && !Object.prototype.hasOwnProperty.call(response.params, name)) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potential Path Traversal in attachment filename handling",
+      "code_refs": [
+        {
+          "file": "src/postal-mime.ts",
+          "line": 425,
+          "quote": "const filename = node.contentDisposition.parsed.params.filename || node.contentType.parsed.params.name || null;"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of unsafe regex for address extraction",
+      "code_refs": [],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure Random/Unique ID generation",
+      "code_refs": [
+        {
+          "file": "src/postal-mime.ts",
+          "line": 219,
+          "quote": "if (boundaries.length && line.length > 2 && line[0] === 0x2d && line[1] === 0x2d) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insufficient validation of nesting depth",
+      "code_refs": [
+        {
+          "file": "src/mime-node.ts",
+          "line": 112,
+          "quote": "if (this.postalMime.partCount > options.maxPartCount) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Lack of Content-Type validation",
+      "code_refs": [
+        {
+          "file": "src/mime-node.ts",
+          "line": 610,
+          "quote": "case 'content-type':"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Weak boundary marker verification",
+      "code_refs": [
+        {
+          "file": "src/postal-mime.ts",
+          "line": 230,
+          "quote": "let boundaryMatches = true;"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Improper handling of non-standard charsets",
+      "code_refs": [
+        {
+          "file": "src/decode-strings.ts",
+          "line": 272,
+          "quote": "return findDecoder(charset) || tryDecoder('windows-1252') || utf8Decoder;"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Integer overflow vulnerability in maxHeadersSize",
+      "code_refs": [
+        {
+          "file": "src/mime-node.ts",
+          "line": 684,
+          "quote": "this.postalMime.headerSize += line.length;"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unquoted parameter injection in Content-Disposition",
+      "code_refs": [
+        {
+          "file": "src/mime-node.ts",
+          "line": 431,
+          "quote": "} else if (!quote && chr === ';') {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "DOM-like behavior in text/html conversion (XSS)",
+      "code_refs": [
+        {
+          "file": "src/text-format.ts",
+          "line": 94,
+          "quote": "return '<div>' + html + '</div>';"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Resource consumption through recursion in collectNode",
+      "code_refs": [
+        {
+          "file": "src/postal-mime.ts",
+          "line": 374,
+          "quote": "await this.collectNode(childNode, alternative, related);"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Incomplete MIME type normalization",
+      "code_refs": [
+        {
+          "file": "src/mime-node.ts",
+          "line": 634,
+          "quote": "if (this.contentType.multipart && !this.contentType.parsed.params.boundary) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Information leak via leaked Error messages",
+      "code_refs": [
+        {
+          "file": "src/mime-node.ts",
+          "line": 113,
+          "quote": "throw new Error(`Maximum MIME part count of ${options.maxPartCount} parts exceeded`);"
+        }
+      ],
+      "outcome": "unchecked"
+    }
+  ],
+  "rejected": [],
+  "verification": null,
+  "arm_meta": {
+    "baseline": {
+      "model": "gemini/gemini-3.1-flash-lite",
+      "context": "code",
+      "requested": 15,
+      "returned": 15,
+      "files_shown": 25,
+      "chars_shown": 299621,
+      "files_that_did_not_fit": [
+        ".github/workflows/release.yaml"
+      ]
+    }
+  },
+  "seconds": {
+    "arm": 13.9,
+    "check": 0.0,
+    "total": 13.9
+  },
+  "usage": {
+    "arm": {
+      "calls": 1,
+      "failed": 0,
+      "est_tokens": 78210,
+      "seconds_in_calls": 13.8,
+      "by_task": {
+        "baseline": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 300703,
+          "completion_chars": 12135,
+          "seconds": 13.834107500035316,
+          "est_tokens": 78210
+        }
+      }
+    },
+    "check": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    }
+  }
+}

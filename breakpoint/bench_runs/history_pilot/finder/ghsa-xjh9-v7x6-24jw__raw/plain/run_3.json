@@ -1,0 +1,764 @@
+{
+  "schema": 1,
+  "set": "ghsa-xjh9-v7x6-24jw",
+  "variant": "raw",
+  "arm": "plain",
+  "run": 3,
+  "commit": "957a24b66d5915e6d0a6ac988c9dbcee86373e9b",
+  "started_at": "2026-10-24T11:02:09+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": false,
+  "status": "ok",
+  "candidates": 15,
+  "kept": [
+    {
+      "title": "Denial of Service via unbounded buffer growth",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The parser accumulates data into a string in memory without adequate size constraints, potentially leading to heap exhaustion.",
+      "steps_to_exploit": [
+        "Craft a large multipart/form-data request with massive chunks of data",
+        "Send the request with an excessively large field value",
+        "Monitor the memory usage of the node process to confirm it grows linearly with the input"
+      ],
+      "impact": "Remote attackers can crash the application process, leading to service disruption.",
+      "evolved_from": [],
+      "attack_category": "rate_limiting",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/types/multipart.js",
+          "line": 237,
+          "quote": "buffer += data.toString('binary', 0, extralen)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/types/multipart.js",
+          "line": 237,
+          "quote": "buffer += data.toString('binary', 0, extralen)"
+        }
+      ],
+      "id": "35313598",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure temporary file handling in benchmark utilities",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The benchmark code in parted-multipart handles files in insecure directories with weak naming schemes, potentially leading to file manipulation.",
+      "steps_to_exploit": [
+        "Access the server where benchmarks are running",
+        "Predict the generated filename because it uses simple Math.random() in a predictable way",
+        "Create a malicious file at the predicted location before the application writes to it"
+      ],
+      "impact": "Arbitrary file overwriting or local privilege escalation if the benchmark is run with high privileges.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "bench/dicer/parted-multipart.js",
+          "line": 370,
+          "quote": "Parser.root = process.platform === 'win32'"
+        },
+        {
+          "file": "bench/dicer/parted-multipart.js",
+          "line": 469,
+          "quote": "return fs.createWriteStream(name)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "bench/dicer/parted-multipart.js",
+          "line": 370,
+          "quote": "Parser.root = process.platform === 'win32'"
+        },
+        {
+          "file": "bench/dicer/parted-multipart.js",
+          "line": 469,
+          "quote": "return fs.createWriteStream(name)"
+        }
+      ],
+      "id": "d934ae22",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unsafe use of Buffer.allocUnsafe",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Allocation of uninitialized memory buffers in benchmarks may expose sensitive data from previous operations.",
+      "steps_to_exploit": [
+        "Trigger the execution of multipart buffer creation code",
+        "Read the content of the buffer allocated via Buffer.allocUnsafe before it is overwritten",
+        "Inspect the uninitialized memory for leaks of secrets or internal data structures"
+      ],
+      "impact": "Exposure of sensitive heap data previously resident in the process memory.",
+      "evolved_from": [],
+      "attack_category": "data_privacy",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "bench/dicer/dicer-bench-multipart-parser.js",
+          "line": 11,
+          "quote": "const buffer = Buffer.allocUnsafe(size)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "bench/dicer/dicer-bench-multipart-parser.js",
+          "line": 11,
+          "quote": "const buffer = Buffer.allocUnsafe(size)"
+        }
+      ],
+      "id": "3de07d1d",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Missing input validation in path processing",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The custom basename implementation fails to account for edge cases in various character encodings or OS path separators.",
+      "steps_to_exploit": [
+        "Provide a filename containing unexpected path separators",
+        "Observe if the path traversal or normalization bypasses expected safety checks"
+      ],
+      "impact": "Potential for path traversal vulnerabilities when processing user-supplied file names.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/utils/basename.js",
+          "line": 5,
+          "quote": "for (var i = path.length - 1; i >= 0; --i) { // eslint-disable-line no-var"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/utils/basename.js",
+          "line": 5,
+          "quote": "for (var i = path.length - 1; i >= 0; --i) { // eslint-disable-line no-var"
+        }
+      ],
+      "id": "e91638a8",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of unsafe character encoding patterns",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The Decoder prototype uses a custom decoding loop which may be susceptible to state machine confusion or incorrect multi-byte sequence handling.",
+      "steps_to_exploit": [
+        "Send a specially crafted string with mixed encoded/non-encoded characters",
+        "Verify if the decoder state machine behaves unexpectedly",
+        "Attempt to inject control characters into parsed fields"
+      ],
+      "impact": "Parsing errors leading to logic flaws or unexpected application behavior.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/utils/Decoder.js",
+          "line": 24,
+          "quote": "for (; i < len; ++i) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/utils/Decoder.js",
+          "line": 24,
+          "quote": "for (; i < len; ++i) {"
+        }
+      ],
+      "id": "fabe7477",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Prototype pollution via object header parsing",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Header parsing uses Object.create(null) but manual assignment and property manipulation may be vulnerable to proto-pollution if not carefully restricted.",
+      "steps_to_exploit": [
+        "Craft a multipart part with a header name like __proto__",
+        "Observe if the object property modification affects the prototype chain"
+      ],
+      "impact": "Severe logic flaws or application crash if internal object prototypes are corrupted.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "deps/dicer/lib/HeaderParser.js",
+          "line": 20,
+          "quote": "this.header = Object.create(null)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "deps/dicer/lib/HeaderParser.js",
+          "line": 20,
+          "quote": "this.header = Object.create(null)"
+        }
+      ],
+      "id": "af50f2ba",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Predictable random number generation in benchmarks",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The use of Math.random() for naming temporary files in benchmark utility is cryptographically insecure.",
+      "steps_to_exploit": [
+        "Examine the source code to identify the PRNG algorithm",
+        "Predict subsequent 'random' filenames generated by the system",
+        "Pre-create malicious files to block or hijack the benchmark execution"
+      ],
+      "impact": "Facilitates attacks on file operations in the benchmark environment.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "bench/dicer/parted-multipart.js",
+          "line": 459,
+          "quote": "tag = Math.random().toString(36).substring(2)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "bench/dicer/parted-multipart.js",
+          "line": 459,
+          "quote": "tag = Math.random().toString(36).substring(2)"
+        }
+      ],
+      "id": "a055fddc",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Incomplete handling of CRLF sequences",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The header parser logic for folding headers and multi-line content can be bypassed with malformed line breaks.",
+      "steps_to_exploit": [
+        "Send a multipart request with malicious folding sequences in headers",
+        "Attempt to split header values or bypass header filters"
+      ],
+      "impact": "Security bypasses related to header-based filtering or parsing logic.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "deps/dicer/lib/HeaderParser.js",
+          "line": 117,
+          "quote": "if ((buffer[lineStart] === '\\t' || buffer[lineStart] === ' ') && h) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "deps/dicer/lib/HeaderParser.js",
+          "line": 117,
+          "quote": "if ((buffer[lineStart] === '\\t' || buffer[lineStart] === ' ') && h) {"
+        }
+      ],
+      "id": "ab776c75",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of deprecated and vulnerable dependencies",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The project includes several dependencies (e.g., outdated multipart parsers in benchmarks) with known vulnerabilities.",
+      "steps_to_exploit": [
+        "Analyze the dependency tree using tools like npm audit",
+        "Identify vulnerable versions of parsed multipart modules in the bench directory"
+      ],
+      "impact": "Increased attack surface due to the inclusion of known-vulnerable code in the repository.",
+      "evolved_from": [],
+      "attack_category": "supply_chain",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [],
+      "code_refs": [],
+      "id": "2fdfa0b2",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Lack of rate limiting in benchmarks",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Benchmark scripts run in an infinite loop (10000 iterations) without any pause or external limits.",
+      "steps_to_exploit": [
+        "Trigger the benchmark scripts on an exposed production-like environment",
+        "Exhaust CPU resources on the target machine"
+      ],
+      "impact": "Resource exhaustion leading to potential DoS if benchmarks are inadvertently deployed.",
+      "evolved_from": [],
+      "attack_category": "rate_limiting",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "bench/busboy-form-bench-utf8.js",
+          "line": 6,
+          "quote": "for (var i = 0, il = 10000; i < il; i++) { // eslint-disable-line no-var"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "bench/busboy-form-bench-utf8.js",
+          "line": 6,
+          "quote": "for (var i = 0, il = 10000; i < il; i++) { // eslint-disable-line no-var"
+        }
+      ],
+      "id": "65742309",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Improper error handling leads to process crashes",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Multiple locations emit 'error' events, but callers may not have listeners, causing unhandled 'error' events to crash the process.",
+      "steps_to_exploit": [
+        "Trigger a parsing error in a way that the emitter propagates to a listener-less instance",
+        "Cause an unhandled exception process crash"
+      ],
+      "impact": "Unstable service due to unhandled promise rejections or EventEmitter errors.",
+      "evolved_from": [],
+      "attack_category": "error_handling",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "deps/dicer/lib/Dicer.js",
+          "line": 54,
+          "quote": "self.emit('error', new Error('Unexpected end of multipart data'))"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "deps/dicer/lib/Dicer.js",
+          "line": 54,
+          "quote": "self.emit('error', new Error('Unexpected end of multipart data'))"
+        }
+      ],
+      "id": "852334ff",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potential for path injection in file stream creation",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Filename is joined directly into a filesystem path without strict validation.",
+      "steps_to_exploit": [
+        "Supply a filename containing path traversal sequences like ../../../",
+        "Observe if files are created outside of the target directory"
+      ],
+      "impact": "Arbitrary file write to the filesystem, leading to code execution.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "bench/dicer/parted-multipart.js",
+          "line": 462,
+          "quote": "name = path.join(dir, name) + ext.substring(0, 6)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "bench/dicer/parted-multipart.js",
+          "line": 462,
+          "quote": "name = path.join(dir, name) + ext.substring(0, 6)"
+        }
+      ],
+      "id": "05a4ffb3",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of insecure 'binary' encoding",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Binary encoding is used for string conversion, which can cause data corruption or security bypasses in multi-byte sequences.",
+      "steps_to_exploit": [
+        "Supply payloads that rely on multi-byte characters to bypass security filters",
+        "Verify if the binary conversion corrupts the payload in a way that impacts filter logic"
+      ],
+      "impact": "Security filter bypass due to data corruption during conversion.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/types/urlencoded.js",
+          "line": 75,
+          "quote": "if (idxeq > p) { this._key += this.decoder.write(data.toString('binary', p, idxeq)) }"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/types/urlencoded.js",
+          "line": 75,
+          "quote": "if (idxeq > p) { this._key += this.decoder.write(data.toString('binary', p, idxeq)) }"
+        }
+      ],
+      "id": "188ae6d6",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Exposure of debug info in logs",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Various commented-out code blocks reveal that debug-level logs were used, which if re-enabled would log sensitive data.",
+      "steps_to_exploit": [
+        "Re-enable debugging logs in benchmarks or library code",
+        "Monitor the output to collect sensitive data processed during requests"
+      ],
+      "impact": "Leakage of potentially sensitive form data through system logs.",
+      "evolved_from": [],
+      "attack_category": "data_privacy",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [],
+      "code_refs": [],
+      "id": "e27cb05a",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure temporary directory root",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Hardcoding the temp directory to /tmp on Unix or C:/Temp on Windows without validating environment permissions.",
+      "steps_to_exploit": [
+        "Determine that the process writes to a predictable, global temporary directory",
+        "Race the file creation process to gain control of files"
+      ],
+      "impact": "Filesystem security risks associated with shared temporary directories.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "bench/dicer/parted-multipart.js",
+          "line": 370,
+          "quote": "Parser.root = process.platform === 'win32'"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "bench/dicer/parted-multipart.js",
+          "line": 370,
+          "quote": "Parser.root = process.platform === 'win32'"
+        }
+      ],
+      "id": "00de31c5",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "proposed": [
+    {
+      "title": "Denial of Service via unbounded buffer growth",
+      "code_refs": [
+        {
+          "file": "lib/types/multipart.js",
+          "line": 237,
+          "quote": "buffer += data.toString('binary', 0, extralen)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure temporary file handling in benchmark utilities",
+      "code_refs": [
+        {
+          "file": "bench/dicer/parted-multipart.js",
+          "line": 370,
+          "quote": "Parser.root = process.platform === 'win32'"
+        },
+        {
+          "file": "bench/dicer/parted-multipart.js",
+          "line": 469,
+          "quote": "return fs.createWriteStream(name)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unsafe use of Buffer.allocUnsafe",
+      "code_refs": [
+        {
+          "file": "bench/dicer/dicer-bench-multipart-parser.js",
+          "line": 11,
+          "quote": "const buffer = Buffer.allocUnsafe(size)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Missing input validation in path processing",
+      "code_refs": [
+        {
+          "file": "lib/utils/basename.js",
+          "line": 5,
+          "quote": "for (var i = path.length - 1; i >= 0; --i) { // eslint-disable-line no-var"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of unsafe character encoding patterns",
+      "code_refs": [
+        {
+          "file": "lib/utils/Decoder.js",
+          "line": 24,
+          "quote": "for (; i < len; ++i) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Prototype pollution via object header parsing",
+      "code_refs": [
+        {
+          "file": "deps/dicer/lib/HeaderParser.js",
+          "line": 20,
+          "quote": "this.header = Object.create(null)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Predictable random number generation in benchmarks",
+      "code_refs": [
+        {
+          "file": "bench/dicer/parted-multipart.js",
+          "line": 459,
+          "quote": "tag = Math.random().toString(36).substring(2)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Incomplete handling of CRLF sequences",
+      "code_refs": [
+        {
+          "file": "deps/dicer/lib/HeaderParser.js",
+          "line": 117,
+          "quote": "if ((buffer[lineStart] === '\\t' || buffer[lineStart] === ' ') && h) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of deprecated and vulnerable dependencies",
+      "code_refs": [],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Lack of rate limiting in benchmarks",
+      "code_refs": [
+        {
+          "file": "bench/busboy-form-bench-utf8.js",
+          "line": 6,
+          "quote": "for (var i = 0, il = 10000; i < il; i++) { // eslint-disable-line no-var"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Improper error handling leads to process crashes",
+      "code_refs": [
+        {
+          "file": "deps/dicer/lib/Dicer.js",
+          "line": 54,
+          "quote": "self.emit('error', new Error('Unexpected end of multipart data'))"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potential for path injection in file stream creation",
+      "code_refs": [
+        {
+          "file": "bench/dicer/parted-multipart.js",
+          "line": 462,
+          "quote": "name = path.join(dir, name) + ext.substring(0, 6)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of insecure 'binary' encoding",
+      "code_refs": [
+        {
+          "file": "lib/types/urlencoded.js",
+          "line": 75,
+          "quote": "if (idxeq > p) { this._key += this.decoder.write(data.toString('binary', p, idxeq)) }"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Exposure of debug info in logs",
+      "code_refs": [],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure temporary directory root",
+      "code_refs": [
+        {
+          "file": "bench/dicer/parted-multipart.js",
+          "line": 370,
+          "quote": "Parser.root = process.platform === 'win32'"
+        }
+      ],
+      "outcome": "unchecked"
+    }
+  ],
+  "rejected": [],
+  "verification": null,
+  "arm_meta": {
+    "baseline": {
+      "model": "gemini/gemini-3.1-flash-lite",
+      "context": "code",
+      "requested": 15,
+      "returned": 15,
+      "files_shown": 51,
+      "chars_shown": 156153,
+      "files_that_did_not_fit": []
+    }
+  },
+  "seconds": {
+    "arm": 11.5,
+    "check": 0.0,
+    "total": 11.5
+  },
+  "usage": {
+    "arm": {
+      "calls": 1,
+      "failed": 0,
+      "est_tokens": 41984,
+      "seconds_in_calls": 11.4,
+      "by_task": {
+        "baseline": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 157287,
+          "completion_chars": 10649,
+          "seconds": 11.421120300074108,
+          "est_tokens": 41984
+        }
+      }
+    },
+    "check": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    }
+  }
+}

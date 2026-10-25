@@ -1,0 +1,113 @@
+{
+  "schema": 1,
+  "set": "ghsa-9v7f-9g4p-ffgj",
+  "variant": "raw",
+  "arm": "import-yp",
+  "run": 1,
+  "commit": "f91ed44dd65baaf457f4b3353ed35e98a753934c",
+  "started_at": "2026-10-24T11:20:38+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": true,
+  "status": "ok",
+  "candidates": 2,
+  "kept": [],
+  "proposed": [
+    {
+      "title": "Potential for Arbitrary File Access via JWKS URI",
+      "code_refs": [
+        {
+          "file": "jwt/jwks_client.py",
+          "line": 78,
+          "quote": "if scheme not in (\"http\", \"https\"):"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    },
+    {
+      "title": "JWKS URI Scheme Confusion",
+      "code_refs": [
+        {
+          "file": "jwt/jwks_client.py",
+          "line": 78,
+          "quote": "if scheme not in (\"http\", \"https\"):"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    }
+  ],
+  "rejected": [
+    {
+      "title": "Potential for Arbitrary File Access via JWKS URI",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    },
+    {
+      "title": "JWKS URI Scheme Confusion",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    }
+  ],
+  "verification": {
+    "mode": "source-code",
+    "files_indexed": 88,
+    "checked": 2,
+    "confirmed": 0,
+    "refuted": 2,
+    "unverified": 0,
+    "errors": 0,
+    "defender_pass": true,
+    "appeal_pass": true
+  },
+  "arm_meta": {
+    "imported_from": "eval_runs_check/inputs/ghsa-9v7f-9g4p-ffgj/yp.json",
+    "note": "produced elsewhere; not repeatable by this harness"
+  },
+  "seconds": {
+    "arm": 0.0,
+    "check": 27.4,
+    "total": 27.4
+  },
+  "usage": {
+    "arm": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    },
+    "check": {
+      "calls": 6,
+      "failed": 0,
+      "est_tokens": 65805,
+      "seconds_in_calls": 27.3,
+      "by_task": {
+        "verify_appeal": {
+          "calls": 2,
+          "failed": 0,
+          "prompt_chars": 161861,
+          "completion_chars": 1146,
+          "seconds": 10.386955399997532,
+          "est_tokens": 40752
+        },
+        "verify_judge": {
+          "calls": 2,
+          "failed": 0,
+          "prompt_chars": 88927,
+          "completion_chars": 2492,
+          "seconds": 10.121330299996771,
+          "est_tokens": 22855
+        },
+        "verify_locate": {
+          "calls": 2,
+          "failed": 0,
+          "prompt_chars": 8336,
+          "completion_chars": 459,
+          "seconds": 6.817122699925676,
+          "est_tokens": 2199
+        }
+      }
+    }
+  }
+}

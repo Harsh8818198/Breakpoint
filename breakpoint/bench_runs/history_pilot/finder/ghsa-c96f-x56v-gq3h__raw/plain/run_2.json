@@ -1,0 +1,807 @@
+{
+  "schema": 1,
+  "set": "ghsa-c96f-x56v-gq3h",
+  "variant": "raw",
+  "arm": "plain",
+  "run": 2,
+  "commit": "a21e332f69c82684cdd130b79164236ef7c15684",
+  "started_at": "2026-10-24T10:53:15+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": false,
+  "status": "ok",
+  "candidates": 15,
+  "kept": [
+    {
+      "title": "Unsafe Dynamic Code Execution (New Function)",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The router uses the `new Function()` constructor to build optimized routing functions based on user-defined constraints and handler patterns. In `lib/handler-storage.js` line 171 and 78, these functions are constructed using strings concatenated with potentially unsanitized inputs, creating a code injection vulnerability.",
+      "steps_to_exploit": [
+        "Find a way to influence the constraints or parameter naming during router initialization.",
+        "Inject malicious JavaScript payloads into the constraint name or parameter name.",
+        "The router will incorporate these strings into the dynamically generated function body.",
+        "Trigger a route lookup, which will execute the injected code in the application context."
+      ],
+      "impact": "Full Remote Code Execution (RCE) on the server process.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/handler-storage.js",
+          "line": 78,
+          "quote": "return new Function('NullObject', fnBody.join('\\n'))(NullObject) // eslint-disable-line"
+        },
+        {
+          "file": "lib/handler-storage.js",
+          "line": 171,
+          "quote": "this._getHandlerMatchingConstraints = new Function('derivedConstraints', lines.join('\\n')) // eslint-disable-line"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/handler-storage.js",
+          "line": 78,
+          "quote": "return new Function('NullObject', fnBody.join('\\n'))(NullObject) // eslint-disable-line"
+        },
+        {
+          "file": "lib/handler-storage.js",
+          "line": 171,
+          "quote": "this._getHandlerMatchingConstraints = new Function('derivedConstraints', lines.join('\\n')) // eslint-disable-line"
+        }
+      ],
+      "id": "444ba8a1",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Regex Denial of Service (ReDoS) via Unsafe User-Provided Regex",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The router allows users to define custom regex parameters. While there is an `isRegexSafe` check, if `allowUnsafeRegex` is enabled, the system is susceptible to ReDoS during path matching, particularly in `index.js` at line 675.",
+      "steps_to_exploit": [
+        "Set `allowUnsafeRegex: true` in the Router configuration.",
+        "Register a route with a complex, nested regex parameter that is vulnerable to catastrophic backtracking.",
+        "Send a specially crafted request path that forces the regex engine into exponential backtracking.",
+        "The CPU will hit 100% usage, effectively blocking other requests."
+      ],
+      "impact": "Denial of Service due to CPU exhaustion.",
+      "evolved_from": [],
+      "attack_category": "rate_limiting",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 675,
+          "quote": "const matchedParameters = currentNode.regex.exec(param)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 675,
+          "quote": "const matchedParameters = currentNode.regex.exec(param)"
+        }
+      ],
+      "id": "fb2ea00f",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Arbitrary Prototype Pollution in NullObject",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Although `NullObject` attempts to use `Object.create(null)` to prevent prototype pollution, the way params are assigned to the created object in `lib/handler-storage.js` (line 71) without checking for `__proto__` or `constructor` allows attackers to overwrite object properties.",
+      "steps_to_exploit": [
+        "Identify a route that allows parameterized input.",
+        "Pass parameters that include reserved keys like `__proto__` or `constructor`.",
+        "The assignment in `lib/handler-storage.js` will attempt to set these properties, potentially polluting the object prototype if the context allows.",
+        "Trigger secondary logic that relies on these prototype-polluted objects."
+      ],
+      "impact": "Potential for application-wide logic bypass or data corruption.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/handler-storage.js",
+          "line": 71,
+          "quote": "fnBody.push(`params['${params[i]}'] = paramsArray[${i}]`)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/handler-storage.js",
+          "line": 71,
+          "quote": "fnBody.push(`params['${params[i]}'] = paramsArray[${i}]`)"
+        }
+      ],
+      "id": "0a07f22d",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Information Leakage via Pretty Print",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `prettyPrint` function in `lib/pretty-print.js` (line 165) exposes route information, including constraints and potentially sensitive metadata, to anyone who calls the function. If this endpoint is exposed publicly, it leaks the internal routing structure.",
+      "steps_to_exploit": [
+        "Identify an endpoint that triggers `router.prettyPrint()`.",
+        "Make an authenticated or unauthenticated call to that endpoint.",
+        "Capture the returned output containing internal routing logic, constraints, and potentially user-defined metadata."
+      ],
+      "impact": "Exposure of internal API structure and sensitive configuration logic.",
+      "evolved_from": [],
+      "attack_category": "data_privacy",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/pretty-print.js",
+          "line": 165,
+          "quote": "return printObjectTree(objectTree)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/pretty-print.js",
+          "line": 165,
+          "quote": "return printObjectTree(objectTree)"
+        }
+      ],
+      "id": "dae2375d",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Path Traversal via Improperly Sanitized URL",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `safeDecodeURI` function in `lib/url-sanitizer.js` (line 46) attempts to decode URI components, but its handling of double-encoded characters and reserved delimiters can be bypassed, leading to potential path traversal or unexpected route matching.",
+      "steps_to_exploit": [
+        "Craft a URL with double-encoded path segments or unexpected delimiters (like `;`).",
+        "Observe if the `safeDecodeURI` logic fails to normalize the path correctly.",
+        "Send a request that matches a route pattern incorrectly due to incomplete sanitization."
+      ],
+      "impact": "Security bypasses where restricted routes become accessible through path manipulation.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/url-sanitizer.js",
+          "line": 46,
+          "quote": "function safeDecodeURI (path, useSemicolonDelimiter) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/url-sanitizer.js",
+          "line": 46,
+          "quote": "function safeDecodeURI (path, useSemicolonDelimiter) {"
+        }
+      ],
+      "id": "76a193bf",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Excessive Resource Consumption via Unbounded Route Parameter Length",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "While `maxParamLength` is configurable, it defaults to 100 in `index.js` (line 98). If this is not strictly enforced by the user and configured effectively, large path parameters can cause excessive memory consumption when generating the param objects.",
+      "steps_to_exploit": [
+        "Find a route with a catch-all or parametric segment.",
+        "Send a request with a massive path segment (e.g., millions of characters).",
+        "The memory allocation required to process these parameters in `index.js` might cause an OOM event."
+      ],
+      "impact": "Denial of Service via memory exhaustion.",
+      "evolved_from": [],
+      "attack_category": "rate_limiting",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 98,
+          "quote": "this.maxParamLength = opts.maxParamLength || 100"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 98,
+          "quote": "this.maxParamLength = opts.maxParamLength || 100"
+        }
+      ],
+      "id": "18c2fa9e",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potential Logic Bypass in Constraint Matching",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `_buildConstraintStore` method in `lib/handler-storage.js` (line 88) uses bitmasks to identify matching routes. With a limit of 31 routes per node (line 51), there is a risk that complex constraint logic could be misinterpreted if the bitwise operations are not handled with perfect precision across different constraints.",
+      "steps_to_exploit": [
+        "Create a node with exactly 31 routes and overlapping constraints.",
+        "Send requests that should match specific routes but might collide with others due to the bitmask logic.",
+        "Observe if a request is routed to the wrong handler."
+      ],
+      "impact": "Authorization or routing bypass resulting in incorrect handler execution.",
+      "evolved_from": [],
+      "attack_category": "authz",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/handler-storage.js",
+          "line": 88,
+          "quote": "_buildConstraintStore (store, constraint) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/handler-storage.js",
+          "line": 88,
+          "quote": "_buildConstraintStore (store, constraint) {"
+        }
+      ],
+      "id": "36b67187",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Default Configuration for Regex Matching",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `allowUnsafeRegex` option defaults to `false` but can be globally toggled, and the default router initialization in `index.js` (line 100) exposes this configuration. Improperly handled, developers might enable it, creating ReDoS vectors.",
+      "steps_to_exploit": [
+        "Attacker identifies an environment where `allowUnsafeRegex` has been set to `true`.",
+        "Submit complex regex inputs to the vulnerable route.",
+        "Trigger ReDoS."
+      ],
+      "impact": "Denial of Service via ReDoS.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 100,
+          "quote": "this.allowUnsafeRegex = opts.allowUnsafeRegex || false"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 100,
+          "quote": "this.allowUnsafeRegex = opts.allowUnsafeRegex || false"
+        }
+      ],
+      "id": "f06e44c4",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Weak Type Enforcement in Constraints",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The constraint system validates inputs using `validate()` methods, but in `lib/constrainer.js` (line 101), if a strategy is missing or not properly validated for a specific input, the router may behave unpredictably.",
+      "steps_to_exploit": [
+        "Provide unexpected data types to a constraint field that doesn't explicitly enforce strict type checks.",
+        "Trigger the `newStoreForConstraint` function to handle unexpected state."
+      ],
+      "impact": "Unexpected application state or potential runtime errors.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/constrainer.js",
+          "line": 101,
+          "quote": "validateConstraints (constraints) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/constrainer.js",
+          "line": 101,
+          "quote": "validateConstraints (constraints) {"
+        }
+      ],
+      "id": "82346ff8",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Lack of Deep Protection Against Prototype Pollution in `deepEqual`",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The use of `fast-deep-equal` in `index.js` (line 31) for route matching is generally safe, but if the comparison logic is used against user-supplied objects in `off()` or `on()`, an attacker might provide a payload that interacts with object internals.",
+      "steps_to_exploit": [
+        "Send a request that forces `deepEqual` to compare a crafted user object against a system route object.",
+        "If the engine is vulnerable, this could lead to unexpected results or crashes."
+      ],
+      "impact": "Denial of Service or logic manipulation.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 31,
+          "quote": "const deepEqual = require('fast-deep-equal')"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 31,
+          "quote": "const deepEqual = require('fast-deep-equal')"
+        }
+      ],
+      "id": "664a09e4",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Uncaught Exceptions in URL Decoding",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "While `safeDecodeURI` is wrapped in a try/catch, if an error happens in `safeDecodeURIComponent` (line 84 in `lib/url-sanitizer.js`), the application flow might result in returning a partial path or `null` which could be misused.",
+      "steps_to_exploit": [
+        "Send malformed percent-encoded sequences that trigger an error within the decoder.",
+        "Analyze the response to check if the error is handled safely."
+      ],
+      "impact": "Potential for application instability or uncaught crashes.",
+      "evolved_from": [],
+      "attack_category": "error_handling",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/url-sanitizer.js",
+          "line": 84,
+          "quote": "function safeDecodeURIComponent (uriComponent) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/url-sanitizer.js",
+          "line": 84,
+          "quote": "function safeDecodeURIComponent (uriComponent) {"
+        }
+      ],
+      "id": "cb2d57f6",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Complexity and Maintenance Risk of Bitwise Logic",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The use of bitwise operations for handler matching in `lib/handler-storage.js` (line 131) is highly complex and error-prone, significantly increasing the probability of future logic bugs during security-sensitive updates.",
+      "steps_to_exploit": [
+        "Attempt to find edge cases where bitwise masks interact with high-bit positions incorrectly.",
+        "Exploit potential off-by-one errors in constraint masking."
+      ],
+      "impact": "Long-term maintainability issues leading to potential critical vulnerabilities.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/handler-storage.js",
+          "line": 131,
+          "quote": "let candidates = ${(1 << this.handlers.length) - 1}"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/handler-storage.js",
+          "line": 131,
+          "quote": "let candidates = ${(1 << this.handlers.length) - 1}"
+        }
+      ],
+      "id": "c0100db5",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of `var`/dynamic assignment in `new Function` generation",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The generated function body in `lib/handler-storage.js` (line 65) creates code strings that are later executed. The lack of strict mode in the generated function could lead to variable leakage into the outer scope.",
+      "steps_to_exploit": [
+        "Inject variables during route definition that conflict with internal logic of the generated function.",
+        "Attempt to cause an identifier collision.",
+        "Trigger logic errors in the matching function."
+      ],
+      "impact": "Logic hijacking or application failure.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/handler-storage.js",
+          "line": 65,
+          "quote": "const fnBody = []"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/handler-storage.js",
+          "line": 65,
+          "quote": "const fnBody = []"
+        }
+      ],
+      "id": "b804192c",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure GitHub Workflow Permissions",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The workflow `.github/workflows/node.js.yml` (line 62) provides write permissions to pull requests, which could be exploited by a compromised PR to modify repository contents.",
+      "steps_to_exploit": [
+        "Submit a PR with a malicious payload that triggers the automated workflow.",
+        "Use the excessive permissions to overwrite sensitive files in the repository."
+      ],
+      "impact": "Compromise of the repository build process and supply chain.",
+      "evolved_from": [],
+      "attack_category": "supply_chain",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": ".github/workflows/node.js.yml",
+          "line": 62,
+          "quote": "permissions:"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": ".github/workflows/node.js.yml",
+          "line": 62,
+          "quote": "permissions:"
+        }
+      ],
+      "id": "0871bd56",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potentially Insecure Regex in Router",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `FULL_PATH_REGEXP` used in `index.js` (line 39) is complex. If this regex is not perfectly crafted, it might be susceptible to ReDoS when processing long, specially crafted URLs.",
+      "steps_to_exploit": [
+        "Provide a long string with repeated characters that match parts of the regex but eventually fail to match the full string.",
+        "Measure execution time to confirm backtracking behavior."
+      ],
+      "impact": "Denial of Service.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 39,
+          "quote": "const FULL_PATH_REGEXP = /^https?:\\/\\/.*?\\//"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 39,
+          "quote": "const FULL_PATH_REGEXP = /^https?:\\/\\/.*?\\//"
+        }
+      ],
+      "id": "32e53851",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "proposed": [
+    {
+      "title": "Unsafe Dynamic Code Execution (New Function)",
+      "code_refs": [
+        {
+          "file": "lib/handler-storage.js",
+          "line": 78,
+          "quote": "return new Function('NullObject', fnBody.join('\\n'))(NullObject) // eslint-disable-line"
+        },
+        {
+          "file": "lib/handler-storage.js",
+          "line": 171,
+          "quote": "this._getHandlerMatchingConstraints = new Function('derivedConstraints', lines.join('\\n')) // eslint-disable-line"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Regex Denial of Service (ReDoS) via Unsafe User-Provided Regex",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 675,
+          "quote": "const matchedParameters = currentNode.regex.exec(param)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Arbitrary Prototype Pollution in NullObject",
+      "code_refs": [
+        {
+          "file": "lib/handler-storage.js",
+          "line": 71,
+          "quote": "fnBody.push(`params['${params[i]}'] = paramsArray[${i}]`)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Information Leakage via Pretty Print",
+      "code_refs": [
+        {
+          "file": "lib/pretty-print.js",
+          "line": 165,
+          "quote": "return printObjectTree(objectTree)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Path Traversal via Improperly Sanitized URL",
+      "code_refs": [
+        {
+          "file": "lib/url-sanitizer.js",
+          "line": 46,
+          "quote": "function safeDecodeURI (path, useSemicolonDelimiter) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Excessive Resource Consumption via Unbounded Route Parameter Length",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 98,
+          "quote": "this.maxParamLength = opts.maxParamLength || 100"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potential Logic Bypass in Constraint Matching",
+      "code_refs": [
+        {
+          "file": "lib/handler-storage.js",
+          "line": 88,
+          "quote": "_buildConstraintStore (store, constraint) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure Default Configuration for Regex Matching",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 100,
+          "quote": "this.allowUnsafeRegex = opts.allowUnsafeRegex || false"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Weak Type Enforcement in Constraints",
+      "code_refs": [
+        {
+          "file": "lib/constrainer.js",
+          "line": 101,
+          "quote": "validateConstraints (constraints) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Lack of Deep Protection Against Prototype Pollution in `deepEqual`",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 31,
+          "quote": "const deepEqual = require('fast-deep-equal')"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Uncaught Exceptions in URL Decoding",
+      "code_refs": [
+        {
+          "file": "lib/url-sanitizer.js",
+          "line": 84,
+          "quote": "function safeDecodeURIComponent (uriComponent) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Complexity and Maintenance Risk of Bitwise Logic",
+      "code_refs": [
+        {
+          "file": "lib/handler-storage.js",
+          "line": 131,
+          "quote": "let candidates = ${(1 << this.handlers.length) - 1}"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of `var`/dynamic assignment in `new Function` generation",
+      "code_refs": [
+        {
+          "file": "lib/handler-storage.js",
+          "line": 65,
+          "quote": "const fnBody = []"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure GitHub Workflow Permissions",
+      "code_refs": [
+        {
+          "file": ".github/workflows/node.js.yml",
+          "line": 62,
+          "quote": "permissions:"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potentially Insecure Regex in Router",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 39,
+          "quote": "const FULL_PATH_REGEXP = /^https?:\\/\\/.*?\\//"
+        }
+      ],
+      "outcome": "unchecked"
+    }
+  ],
+  "rejected": [],
+  "verification": null,
+  "arm_meta": {
+    "baseline": {
+      "model": "gemini/gemini-3.1-flash-lite",
+      "context": "code",
+      "requested": 15,
+      "returned": 15,
+      "files_shown": 21,
+      "chars_shown": 101393,
+      "files_that_did_not_fit": []
+    }
+  },
+  "seconds": {
+    "arm": 17.0,
+    "check": 0.0,
+    "total": 17.0
+  },
+  "usage": {
+    "arm": {
+      "calls": 1,
+      "failed": 0,
+      "est_tokens": 28877,
+      "seconds_in_calls": 17.0,
+      "by_task": {
+        "baseline": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 102467,
+          "completion_chars": 13042,
+          "seconds": 16.95698880008422,
+          "est_tokens": 28877
+        }
+      }
+    },
+    "check": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    }
+  }
+}

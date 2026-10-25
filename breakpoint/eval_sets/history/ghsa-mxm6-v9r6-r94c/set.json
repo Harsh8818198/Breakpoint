@@ -1,0 +1,63 @@
+{
+  "id": "ghsa-mxm6-v9r6-r94c",
+  "title": "@nuxtjs/mdc: @nuxtjs/mdc's URL sanitizer misses SVG xlink:href and data:text/html, allowing XSS from untrusted markdown at the default configuration",
+  "role": "heldout",
+  "repo": {
+    "url": "https://github.com/nuxt-content/mdc",
+    "commit": "d6e5fc6001085f2d34b905ba0407a2f7392de388",
+    "partial": true
+  },
+  "language": "javascript",
+  "framework": "",
+  "provenance": "Labels come from the maintainers' fix commit, not from a model: the lines it changed or removed in its parent commit (advisory GHSA-mxm6-v9r6-r94c). Whether the patch really addresses the advisory is recorded in history.label_review.",
+  "contamination": "Advisory published 2026-09-16 and fix committed 2026-06-21, both on or after 2026-03-10, after the 2026-03-03 release of gemini-3.1-flash-lite (knowledge cutoff January 2025): that model cannot have trained on this fix. A model with a later cutoff might have. The code may still resemble earlier public fixes of similar bugs in the same project.",
+  "bugs": [
+    {
+      "id": "ghsa-mxm6-v9r6-r94c",
+      "title": "@nuxtjs/mdc's URL sanitizer misses SVG xlink:href and data:text/html, allowing XSS from untrusted markdown at the default configuration",
+      "class": "xss",
+      "cwe": "CWE-79",
+      "locations": [
+        {
+          "file": "src/runtime/parser/utils/props.ts",
+          "lines": [
+            33,
+            33
+          ]
+        },
+        {
+          "file": "src/runtime/parser/utils/props.ts",
+          "lines": [
+            50,
+            50
+          ]
+        }
+      ],
+      "notes": "Judge a finding against the advisory text in `history`, not only against the lines."
+    }
+  ],
+  "variants": {},
+  "history": {
+    "advisory": "GHSA-mxm6-v9r6-r94c",
+    "advisory_url": "https://github.com/advisories/GHSA-mxm6-v9r6-r94c",
+    "severity": "high",
+    "published": "2026-09-16",
+    "package": "@nuxtjs/mdc",
+    "ecosystem": "npm",
+    "vulnerable_versions": "< 0.22.1",
+    "patched": "0.22.1",
+    "fix_commit": "61d636c2983f021288e4fc5c4006733b38cf0d53",
+    "fix_url": "https://github.com/nuxt-content/mdc/commit/61d636c2983f021288e4fc5c4006733b38cf0d53",
+    "fix_date": "2026-06-21T18:59:08Z",
+    "changed_lines": 4,
+    "source_files_changed": [
+      "src/runtime/parser/utils/props.ts"
+    ],
+    "other_files_changed": 1,
+    "addition_only": false,
+    "source_bytes": 164204,
+    "fits_in_one_prompt": true,
+    "description": "## Summary\n\n`@nuxtjs/mdc` renders untrusted markdown (including raw HTML) to a Vue component tree. Across two prior advisories it added a URL/attribute sanitizer to block dangerous links in that HTML: `validateProps` / `validateProp` and an `unsafeLinkPrefix` deny-list (`dist/runtime/parser/utils/props.js`). The sanitizer runs at parse time (`dist/runtime/parser/compiler.js`) and `parseMarkdown` enables raw HTML by default (`allowDangerousHtml: true`, `dist/runtime/parser/options.js`), so the sanitizer is the only barrier and it applies with no configuration required.\n\nTwo sibling vectors bypass that sanitizer at the default configuration:\n\n1. SVG anchor `xlink:href`. `validateProp` only scheme-checks attributes named exactly `href` or `src`:\n\n   ```\n   if (attribute === \"href\" || attribute === \"src\") return isAnchorLinkAllowed(value);\n   return true;\n   ```\n\n   An `xlink:href` (parsed to the hast property `xLinkHref`) is neither, so a `javascript:` URL on an SVG `<a>` is passed through. The renderer maps the property back to the real attribute (`MDCRenderer.vue`: `find(html, \"xLinkHref\").attribute` is `xlink:href`), so the output element is `<a xlink:href=\"javascript:...\">`. Clicking it runs the script in the page origin. Plain `<a href=\"javascript:...\">` is correctly stripped, which is what makes this the un-patched sibling.\n\n2. `<iframe src=\"data:text/html,...\">`. `data:text/html` is present in `unsafeLinkPrefix`, but the check compares it against `url.protocol`:\n\n   ```\n   if (unsafeLinkPrefix.some((prefix) => url.protocol.toLowerCase().startsWith(prefix))) return false;\n   ```\n\n   For any data URI `url.protocol` is just `\"data:\"`, so `\"data:\".startsWith(\"data:text/html\")` is always false. Every `data:text/*` entry in the deny-list is therefore dead code, and `<iframe src=\"data:text/html,<script>...</script>\">` is allowed (iframe is not in the render-time `dangerousTags`, which is only `[\"script\",\"base\"]`). The framed document executes script in an opaque origin. For contrast, `srcdoc` and `object` are blocked, so this is a precise gap rather than a general absence of filtering.\n\n## Reproduction\n\nI will attach the zip file for POC, you can simply extract and run `./poc.sh` to install mdc and show the poc in the html file.\n[nuxtjs-mdc-xss_poc.zip](https://github.com/user-attachments/files/29175603/nuxtjs-mdc-xss_poc.zip)\n\nTwo zero-argument checks:\n\n1. `sh poc/poc.sh` installs `@nuxtjs/mdc` and runs `parseMarkdown` (the documented API) at default. It shows the parsed tree retains `a { xLinkHref: \"javascript:...\" }` and `iframe { src: \"data:text/html,...\" }`, while the control payloads `href=\"javascript:...\"` and `srcdoc=...` are removed by the sanitizer. This isolates the sanitizer bypass deterministically.\n2. `poc/poc.sh` also serves `poc/poc.html` over http (data: iframes and javascript: links are restricted under the file:// origin, so http is used). Open the printed URL and click the blue SVG link. The page contains the exact DOM the renderer produces for those parsed nodes; clicking the SVG link executes script in the page origin (same-origin), and the data:text/html iframe executes on load. The page prints VULNERABLE for each that fires.\n\nBoth vectors were confirmed executing in a current Chromium build: the SVG `xlink:href` link runs script in the document origin on click, and the data:text/html iframe runs script on load.\n\n## Suggested fix\n\nIn `validateProp`, scheme-check `xlink:href` (and the hast `xLinkHref`) the same way as `href`/`src`. In `isAnchorLinkAllowed`, compare the dangerous MIME-typed entries against the full URL (or `href`), not against `url.protocol`, so `data:text/html` is actually matched; or add `iframe` to the render-time dangerous-tag set / restrict iframe `src` schemes.",
+    "label_review": "Claude read the fix patch against the advisory text on 2026-10-24 and found they match (one reader, not independently reviewed)."
+  }
+}

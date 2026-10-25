@@ -1,0 +1,84 @@
+{
+  "id": "ghsa-g3jj-5cmm-3hxx",
+  "title": "fast-jwt: fast-jwt treats raw public JWK JSON as an HMAC secret, enabling HS256 token forgery",
+  "role": "heldout",
+  "repo": {
+    "url": "https://github.com/nearform/fast-jwt",
+    "commit": "0c7813ead3e6dfc8e9cd83d78dca6948a004f9b9",
+    "partial": true
+  },
+  "language": "javascript",
+  "framework": "",
+  "provenance": "Labels come from the maintainers' fix commit, not from a model: the lines it changed or removed in its parent commit (advisory GHSA-g3jj-5cmm-3hxx). Whether the patch really addresses the advisory is recorded in history.label_review.",
+  "contamination": "Advisory published 2026-10-08 and fix committed 2026-07-28, both on or after 2026-03-10, after the 2026-03-03 release of gemini-3.1-flash-lite (knowledge cutoff January 2025): that model cannot have trained on this fix. A model with a later cutoff might have. The code may still resemble earlier public fixes of similar bugs in the same project.",
+  "bugs": [
+    {
+      "id": "ghsa-g3jj-5cmm-3hxx",
+      "title": "fast-jwt treats raw public JWK JSON as an HMAC secret, enabling HS256 token forgery",
+      "class": "crypto",
+      "cwe": "CWE-347",
+      "locations": [
+        {
+          "file": "src/crypto.js",
+          "lines": [
+            29,
+            29
+          ]
+        },
+        {
+          "file": "src/crypto.js",
+          "lines": [
+            81,
+            81
+          ]
+        },
+        {
+          "file": "src/crypto.js",
+          "lines": [
+            97,
+            97
+          ]
+        },
+        {
+          "file": "src/crypto.js",
+          "lines": [
+            108,
+            108
+          ]
+        },
+        {
+          "file": "src/crypto.js",
+          "lines": [
+            170,
+            170
+          ]
+        }
+      ],
+      "notes": "The fix only adds code, so the label is the line just before the insertion; a correct finding may point at the unprotected code a few lines on, or elsewhere in the same function. Judge a finding against the advisory text in `history`, not only against the lines."
+    }
+  ],
+  "variants": {},
+  "history": {
+    "advisory": "GHSA-g3jj-5cmm-3hxx",
+    "advisory_url": "https://github.com/advisories/GHSA-g3jj-5cmm-3hxx",
+    "severity": "high",
+    "published": "2026-10-08",
+    "package": "fast-jwt",
+    "ecosystem": "npm",
+    "vulnerable_versions": "= 6.2.4",
+    "patched": "6.3.0",
+    "fix_commit": "10f9591349199ed2ab9fa1748ce92cdca697f6cf",
+    "fix_url": "https://github.com/nearform/fast-jwt/commit/10f9591349199ed2ab9fa1748ce92cdca697f6cf",
+    "fix_date": "2026-07-28T14:29:22Z",
+    "changed_lines": 48,
+    "source_files_changed": [
+      "src/crypto.js"
+    ],
+    "other_files_changed": 1,
+    "addition_only": true,
+    "source_bytes": 81803,
+    "fits_in_one_prompt": true,
+    "description": "### Summary\n\n`fast-jwt` 6.2.4 silently classifies raw serialized public JWK JSON\nas an HMAC secret.\n\nIf an application supplies public JWK JSON text as the verifier key and\nHS256 is explicitly allowed or automatically inferred, an attacker who\nknows the same public JSON text can use it as an HMAC key and create an\narbitrary HS256 token that `fast-jwt` accepts as valid.\n\nThis can result in authentication or authorization bypass through forged\nJWT claims.\n\nThe PoC demonstrates the issue with a serialized RSA public JWK. The same\nnon-PEM classification also applies to raw JWKS JSON text, although the\nattached standalone PoC focuses on the smallest JWK case.\n\n### Details\n\nThe verifier accepts a string or Buffer as key material. In\n`src/crypto.js`, `performDetectPublicKeyAlgorithms()` attempts to infer\nthe permitted algorithm family from the supplied string.\n\nStrings matching supported PEM public-key formats are classified as\nasymmetric keys. Any other non-empty string is assumed to be an HMAC\nsecret:\n\n```js\nfunction performDetectPublicKeyAlgorithms(key) {\n  const trimmedKey = key.trim()\n  const publicKeyPemMatch = trimmedKey.match(publicKeyPemMatcher)\n\n  if (trimmedKey.match(privateKeyPemMatcher)) {\n    throw new TokenError(\n      TokenError.codes.invalidKey,\n      'Private keys are not supported for verifying.'\n    )\n  } else if (\n    publicKeyPemMatch &&\n    publicKeyPemMatch[1] === 'RSA'\n  ) {\n    return rsaAlgorithms\n  } else if (\n    !publicKeyPemMatch &&\n    !trimmedKey.includes(publicKeyX509CertMatcher)\n  ) {\n    // Not a PEM, assume a plain secret\n    return hsAlgorithms\n  }\n\n  // ...\n}\n\nA serialized RSA, EC, or OKP public JWK is valid JSON, but it is not PEM\nand does not contain a certificate header. It therefore reaches:\n\nreturn hsAlgorithms\n\nThe HS256 verification path then uses the complete public JSON string as\nthe HMAC key.\n\nBecause JWK public-key material is public by design, an attacker can know\nthe verifier's cryptographic key material. When that public material is\nreinterpreted as an HMAC secret, the attacker can calculate a valid\nHS256 signature over arbitrary claims.\n\nThe vulnerable transition is:\n\nPublic asymmetric JWK JSON\n        |\n        v\nDoes not match PEM detection\n        |\n        v\nClassified as a plain secret\n        |\n        v\nHS256 permitted or inferred\n        |\n        v\nAttacker signs using public JSON bytes\n        |\n        v\nForged token accepted\n\nThe attached PoC demonstrates both relevant configurations:\n\nAn explicit mixed-family allowlist:\ncreateVerifier({\n  key: rawJwk,\n  algorithms: ['HS256', 'RS256']\n})\nNo explicit algorithm allowlist:\ncreateVerifier({\n  key: rawJwk\n})\n\nIn the second configuration, fast-jwt detects the raw non-PEM string as\nsymmetric key material and permits the HS algorithm family.\n\nAn RS256-only verifier rejects the same forged token, providing a\nnegative control:\n\ncreateVerifier({\n  key: rawJwk,\n  algorithms: ['RS256']\n})\n\nThe documentation describes asymmetric verifier keys as PEM-encoded\npublic keys. The security issue is not that the raw JWK is successfully\nparsed as an asymmetric key. It is that ambiguous structured public-key\ntext is silently reclassified as a symmetric secret rather than being\nrejected, and that this classification permits an attacker-controlled\nHS256 token.\n\nPoC\n\nRequirements:\n\nNode.js 20 or newer\nnpm\nThe attached submission ZIP\n\nExtract the attachment and run:\n\ncd poc\nnpm install\nnode poc.js\n\nThe PoC performs the following steps:\n\nGenerates a fresh RSA key pair locally.\nExports only the public key as a JWK.\nAdds ordinary public JWK metadata such as kid, use, and alg.\nSerializes the public JWK as JSON.\nUses the serialized public JWK text as an HS256 HMAC key.\nCreates a token containing attacker-selected administrative claims.\nSupplies the same raw public JSON string to the real\nfast-jwt verifier.\nConfirms acceptance with a mixed HS256/RS256 allowlist.\nConfirms acceptance when algorithm detection is left enabled.\nConfirms rejection with an RS",
+    "label_review": "Claude read the fix patch against the advisory text on 2026-10-24 and found they match (one reader, not independently reviewed)."
+  }
+}

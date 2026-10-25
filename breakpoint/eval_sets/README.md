@@ -66,10 +66,53 @@ Run the same arm on `raw` and on a cleaned variant to measure what the leak is w
 - One reader is not enough for a number you will quote: have a second person check the labels and the adjudication.
 - Record `provenance` honestly, including "one reader, not reviewed".
 
+## Advisory sets: real fixes made after the model existed (`eval_sets/history/`)
+
+The sets above are teaching apps labelled by us. The advisory sets are the opposite: real projects, labelled by their
+maintainers, and fixed after the model was released.
+
+A GitHub security advisory that links its fix commit gives everything a set needs without a human labeller: the parent of
+the fix commit is the vulnerable code, the lines the fix changed are where the flaw was, and the advisory text says what
+the flaw is. Choosing only advisories published, and fixes committed, on or after 2026-03-10 (a week after
+`gemini-3.1-flash-lite-preview` launched; its knowledge cutoff is January 2025) means that model cannot have trained on them.
+A model with a later cutoff might have: the contamination note in each set says so.
+
+```bash
+breakpoint-eval harvest --count 24 --seed breakpoint-history-1    # choose and build sets; writes eval_sets/history/selection.json
+breakpoint-eval advisory GHSA-xxxx-xxxx-xxxx                      # one advisory
+breakpoint-eval run history/ghsa-xxxx-xxxx-xxxx --arm plain --runs 1
+breakpoint-eval history --arm plain                               # one table over every set that has runs
+```
+
+How the sets are chosen, so nobody can say we picked the easy ones:
+
+- Reviewed advisories of severity high or critical, in npm and PyPI, published since the cut-off date, taken in a fixed
+  pseudo-random order (`sha1(seed|id)`), never by how promising they look.
+- Mechanical filters only, applied from GitHub's data before any model sees code: exactly one fix commit in the advisory's
+  own repository, committed after the cut-off, with one parent; the fix changes 1 to 4 source files and at most 80 lines
+  (tests, docs, lockfiles and vendored code do not count); it removes or changes at least one old line, or adds a check
+  (then the label is the line before the insertion); the repository's source fits the plain prompt (250 KB).
+- Every advisory that was considered, and why each skipped one was skipped, is in `selection.json`. In the first
+  harvest, 519 were considered and 24 built; most of the rest had no usable fix-commit link (198), source too large (120) or
+  several fix commits (61).
+- `history.label_review` records whether a person read the patch against the advisory text. It starts as `not reviewed`. In the first
+  harvest every fix patch was read before any model ran: 22 matched their advisory, 2 were dropped (listed in `selection.json`).
+
+First results (22 sets, plain prompt, gemini-3.1-flash-lite): `bench_runs/history_pilot/RESULTS.md`. In short: the prompt named
+the maintainers' flaw clearly in 6 of 66 runs, and the code check kept most clear hits but kept no vulnerability among 10
+survivors on four sets.
+
+What this does and does not show:
+
+- Each set holds **one** flaw, so one set is a yes or no. Only the total over many sets means anything.
+- A fix commit labels the flaw it fixed. It cannot say whether any *other* finding is false, so precision on everything else
+  still needs a person to read the findings.
+- Sets are limited to repositories small enough for one prompt, on purpose: that is the fair test for the plain-prompt arm.
+  It says nothing about repositories too big for one prompt, which is where a structured pipeline should have an advantage.
+- The vulnerable code can still resemble earlier public fixes of similar bugs in the same project.
+
 ## What is still missing
 
-- **Post-cutoff repositories.** A bug published after a model's training cutoff cannot have been memorised. Add at least two
-  small, recently patched projects, labelled from the fix commit.
-- **Repositories too big for one prompt** that are not teaching apps.
+- **Repositories too big for one prompt** that are not teaching apps (the advisory sets are small on purpose).
 - **Other languages and frameworks.** Every set here is Express.
 - **Second labellers** for all three sets.

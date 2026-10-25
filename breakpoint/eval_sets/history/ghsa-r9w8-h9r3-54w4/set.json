@@ -1,0 +1,71 @@
+{
+  "id": "ghsa-r9w8-h9r3-54w4",
+  "title": "devalue: devalue: Custom ArrayBuffer revivers can bypass typed-array allocation validation",
+  "role": "heldout",
+  "repo": {
+    "url": "https://github.com/sveltejs/devalue",
+    "commit": "dae8153e9d7541b975cc4018138d6cebec6c1199",
+    "partial": true
+  },
+  "language": "javascript",
+  "framework": "",
+  "provenance": "Labels come from the maintainers' fix commit, not from a model: the lines it changed or removed in its parent commit (advisory GHSA-r9w8-h9r3-54w4). Whether the patch really addresses the advisory is recorded in history.label_review.",
+  "contamination": "Advisory published 2026-10-01 and fix committed 2026-09-18, both on or after 2026-03-10, after the 2026-03-03 release of gemini-3.1-flash-lite (knowledge cutoff January 2025): that model cannot have trained on this fix. A model with a later cutoff might have. The code may still resemble earlier public fixes of similar bugs in the same project.",
+  "bugs": [
+    {
+      "id": "ghsa-r9w8-h9r3-54w4",
+      "title": "devalue: Custom ArrayBuffer revivers can bypass typed-array allocation validation",
+      "class": "other",
+      "cwe": "CWE-789",
+      "locations": [
+        {
+          "file": "src/operations.js",
+          "lines": [
+            109,
+            109
+          ]
+        },
+        {
+          "file": "src/operations.js",
+          "lines": [
+            143,
+            143
+          ]
+        },
+        {
+          "file": "src/types.d.ts",
+          "lines": [
+            359,
+            359
+          ]
+        }
+      ],
+      "notes": "The fix only adds code, so the label is the line just before the insertion; a correct finding may point at the unprotected code a few lines on, or elsewhere in the same function. Judge a finding against the advisory text in `history`, not only against the lines."
+    }
+  ],
+  "variants": {},
+  "history": {
+    "advisory": "GHSA-r9w8-h9r3-54w4",
+    "advisory_url": "https://github.com/advisories/GHSA-r9w8-h9r3-54w4",
+    "severity": "high",
+    "published": "2026-10-01",
+    "package": "devalue",
+    "ecosystem": "npm",
+    "vulnerable_versions": "<= 5.9.2",
+    "patched": "5.9.3",
+    "fix_commit": "8f8d78e173f8a00023d009c7677ccc600dee0b99",
+    "fix_url": "https://github.com/sveltejs/devalue/commit/8f8d78e173f8a00023d009c7677ccc600dee0b99",
+    "fix_date": "2026-09-18T18:40:34Z",
+    "changed_lines": 26,
+    "source_files_changed": [
+      "src/operations.js",
+      "src/types.d.ts"
+    ],
+    "other_files_changed": 2,
+    "addition_only": true,
+    "source_bytes": 80147,
+    "fits_in_one_prompt": true,
+    "description": "Under very specific circumstances, `parse` could create massive ArrayBuffers with very small input. This required a malformed `ArrayBuffer` custom reviver.",
+    "label_review": "Claude read the fix patch against the advisory text on 2026-10-24 and found they match (one reader, not independently reviewed). Weak: the advisory is two sentences and the fix only adds validation before a typed-array constructor."
+  }
+}

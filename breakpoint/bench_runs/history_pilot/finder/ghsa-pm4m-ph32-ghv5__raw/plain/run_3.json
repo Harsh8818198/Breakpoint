@@ -1,0 +1,843 @@
+{
+  "schema": 1,
+  "set": "ghsa-pm4m-ph32-ghv5",
+  "variant": "raw",
+  "arm": "plain",
+  "run": 3,
+  "commit": "bd7ebb2b7818873407c942c6371504e427c99cba",
+  "started_at": "2026-10-24T10:59:13+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": false,
+  "status": "ok",
+  "candidates": 15,
+  "kept": [
+    {
+      "title": "Unsafe Deserialization via YAML Tags in Demo",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The demo implementation creates a custom tag '!sexy' and registers it with a schema using jsyaml.defineSequenceTag, which allows custom logic execution during the loading process (support/demo_template/index.mjs:26-29).",
+      "steps_to_exploit": [
+        "Craft a malicious YAML file containing the '!sexy' tag.",
+        "Submit the YAML file to the demo application instance.",
+        "The custom tag handler will execute logic during deserialization, potentially causing unintended side effects or resource exhaustion."
+      ],
+      "impact": "Remote code execution or arbitrary logic injection by manipulating objects constructed during parsing.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "support/demo_template/index.mjs",
+          "line": 26,
+          "quote": "const SexyYamlTag = jsyaml.defineSequenceTag('!sexy', {"
+        },
+        {
+          "file": "support/demo_template/index.mjs",
+          "line": 28,
+          "quote": "addItem: (container, item) => { container.push(`sexy ${item}`) }"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "support/demo_template/index.mjs",
+          "line": 26,
+          "quote": "const SexyYamlTag = jsyaml.defineSequenceTag('!sexy', {"
+        },
+        {
+          "file": "support/demo_template/index.mjs",
+          "line": 28,
+          "quote": "addItem: (container, item) => { container.push(`sexy ${item}`) }"
+        }
+      ],
+      "id": "24374e5a",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Denial of Service via Unlimited Alias Expansion",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The parser lacks an active mechanism to limit alias references during document construction, which can be leveraged for 'Billion Laughs' style expansion attacks (src/parser/constructor.ts:442-457).",
+      "steps_to_exploit": [
+        "Craft a YAML document with nested YAML aliases (anchors).",
+        "Upload the document to the parser.",
+        "The parser expands the aliases recursively until memory exhaustion or process crash."
+      ],
+      "impact": "Denial of service through memory exhaustion.",
+      "evolved_from": [],
+      "attack_category": "rate_limiting",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/parser/constructor.ts",
+          "line": 442,
+          "quote": "case EVENT_ALIAS: {"
+        },
+        {
+          "file": "src/parser/constructor.ts",
+          "line": 448,
+          "quote": "const anchor = state.anchors.get(name)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/parser/constructor.ts",
+          "line": 442,
+          "quote": "case EVENT_ALIAS: {"
+        },
+        {
+          "file": "src/parser/constructor.ts",
+          "line": 448,
+          "quote": "const anchor = state.anchors.get(name)"
+        }
+      ],
+      "id": "9c6211df",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of atob/btoa for Data Processing in Browser",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The demo uses base64 encoding/decoding via atob/btoa to store YAML in the URL fragment (support/demo_template/index.mjs:37). This is insecure for sensitive data and prone to URL length limits.",
+      "steps_to_exploit": [
+        "User crafts a large YAML payload.",
+        "The application encodes it into the URL permalink.",
+        "The URL exceeds character limits, causing browser truncation or leakage of encoded data in referrer logs."
+      ],
+      "impact": "Information leakage and potential URL-based injection attacks.",
+      "evolved_from": [],
+      "attack_category": "crypto",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "support/demo_template/index.mjs",
+          "line": 37,
+          "quote": "permalink.href = `#yaml=${encodeBase64(str)}`"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "support/demo_template/index.mjs",
+          "line": 37,
+          "quote": "permalink.href = `#yaml=${encodeBase64(str)}`"
+        }
+      ],
+      "id": "e8103952",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Script execution in Demo",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The demo uses 'inspect(obj, false, 10)' to display the result (support/demo_template/index.mjs:43). If the object graph contains circular references or complex structures, this could lead to unexpected behavior in the browser.",
+      "steps_to_exploit": [
+        "User submits YAML that constructs a deeply nested object.",
+        "The UI crashes or hangs while trying to stringify the resulting JS object for display."
+      ],
+      "impact": "UI-based denial of service.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "support/demo_template/index.mjs",
+          "line": 43,
+          "quote": "result.setValue(inspect(obj, false, 10))"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "support/demo_template/index.mjs",
+          "line": 43,
+          "quote": "result.setValue(inspect(obj, false, 10))"
+        }
+      ],
+      "id": "d488187e",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Lack of Input Sanitization for Filenames",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The CLI utility takes a filename argument and passes it directly to readFileSync without sanitization (bin/js-yaml.mjs:39-60).",
+      "steps_to_exploit": [
+        "Attacker executes 'js-yaml ../../../etc/passwd' on a system where the binary has read access.",
+        "The CLI reads and processes the sensitive file as YAML."
+      ],
+      "impact": "Arbitrary file reading on the host system.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "bin/js-yaml.mjs",
+          "line": 39,
+          "quote": "cli.add_argument('file', {"
+        },
+        {
+          "file": "bin/js-yaml.mjs",
+          "line": 60,
+          "quote": "input = readFileSync(options.file === '-' ? 0 : options.file, 'utf8')"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "bin/js-yaml.mjs",
+          "line": 39,
+          "quote": "cli.add_argument('file', {"
+        },
+        {
+          "file": "bin/js-yaml.mjs",
+          "line": 60,
+          "quote": "input = readFileSync(options.file === '-' ? 0 : options.file, 'utf8')"
+        }
+      ],
+      "id": "1ac1ee23",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potential Prototype Pollution in Mapping Tags",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "While there are safeguards against '__proto__', the custom mapping logic is manually managing objects (src/tag/mapping/map.ts:21-24). Incorrect configuration of these tags could lead to prototype pollution.",
+      "steps_to_exploit": [
+        "Identify a schema that enables a custom mapping tag.",
+        "Inject a key named '__proto__' in a YAML object.",
+        "Verify if the logic fails to block recursive or non-standard property definition."
+      ],
+      "impact": "Prototype pollution affecting the entire Node.js runtime.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/tag/mapping/map.ts",
+          "line": 21,
+          "quote": "if (normalizedKey === '__proto__') {"
+        },
+        {
+          "file": "src/tag/mapping/map.ts",
+          "line": 24,
+          "quote": "Object.defineProperty(container, normalizedKey, {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/tag/mapping/map.ts",
+          "line": 21,
+          "quote": "if (normalizedKey === '__proto__') {"
+        },
+        {
+          "file": "src/tag/mapping/map.ts",
+          "line": 24,
+          "quote": "Object.defineProperty(container, normalizedKey, {"
+        }
+      ],
+      "id": "18048cbe",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of unsafe `parseInt` in Tag Resolution",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Integer resolution in multiple files (src/tag/scalar/int_core.ts, src/tag/scalar/int_json.ts) relies on parseInt which can return incorrect values for non-integer inputs if not handled perfectly.",
+      "steps_to_exploit": [
+        "Provide a string that triggers overflow or unexpected behavior in parseInt.",
+        "The resulting integer state in the YAML object might differ from expected values."
+      ],
+      "impact": "Data corruption and logical errors in YAML-based configurations.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/tag/scalar/int_core.ts",
+          "line": 37,
+          "quote": "return sign * parseInt(value, 10)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/tag/scalar/int_core.ts",
+          "line": 37,
+          "quote": "return sign * parseInt(value, 10)"
+        }
+      ],
+      "id": "874c15a8",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Incomplete Validation of Binary Data",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Binary tag resolution accepts data via atob() which may contain padding or whitespace (src/tag/scalar/binary.ts:10).",
+      "steps_to_exploit": [
+        "Craft malformed base64 strings containing non-standard character combinations.",
+        "The decoder may produce output that does not match intended data integrity checks."
+      ],
+      "impact": "Logical inconsistency in decoded data.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/tag/scalar/binary.ts",
+          "line": 10,
+          "quote": "const binary = atob(input)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/tag/scalar/binary.ts",
+          "line": 10,
+          "quote": "const binary = atob(input)"
+        }
+      ],
+      "id": "7791f550",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Vulnerability to ReDoS in Timestamp Tags",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Timestamp regexes are non-trivial and could potentially be subject to ReDoS attacks (src/tag/scalar/timestamp.ts:6-16).",
+      "steps_to_exploit": [
+        "Craft a long, malformed timestamp string with repetitive characters.",
+        "Send to the parser to trigger catastrophic backtracking in the regex engine."
+      ],
+      "impact": "Denial of service.",
+      "evolved_from": [],
+      "attack_category": "rate_limiting",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/tag/scalar/timestamp.ts",
+          "line": 6,
+          "quote": "const YAML_TIMESTAMP_REGEXP = new RegExp("
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/tag/scalar/timestamp.ts",
+          "line": 6,
+          "quote": "const YAML_TIMESTAMP_REGEXP = new RegExp("
+        }
+      ],
+      "id": "96a155a3",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of 'eval' or similar constructs (via implicit behavior)",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The logic for constructing sequences and mappings is highly dynamic (src/tag/sequence/seq.ts, src/tag/mapping/map.ts). If user input can force specific tag lookups, arbitrary object creation is possible.",
+      "steps_to_exploit": [
+        "Manipulate the YAML structure to resolve to a custom tag defined in the environment.",
+        "The parser calls the 'create' or 'addItem' function of that tag."
+      ],
+      "impact": "Remote code execution if custom tags are misused by the consumer.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/tag/sequence/seq.ts",
+          "line": 4,
+          "quote": "create: () => [] as unknown[],"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/tag/sequence/seq.ts",
+          "line": 4,
+          "quote": "create: () => [] as unknown[],"
+        }
+      ],
+      "id": "cb8766d0",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Exposure of Debugging Information in CLI",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The CLI might output full stack traces in error messages when the '--trace' flag is used, leaking system internal structures (bin/js-yaml.mjs:68, 91, 98).",
+      "steps_to_exploit": [
+        "Trigger an error in the parser.",
+        "Run with '--trace' to reveal internal file paths and module structures."
+      ],
+      "impact": "Information disclosure.",
+      "evolved_from": [],
+      "attack_category": "error_handling",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "bin/js-yaml.mjs",
+          "line": 91,
+          "quote": "if (options.trace && err.stack) console.error(e.stack)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "bin/js-yaml.mjs",
+          "line": 91,
+          "quote": "if (options.trace && err.stack) console.error(e.stack)"
+        }
+      ],
+      "id": "b09c784c",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potential for Object Property Collisions",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Mapping resolution uses object property assignment (src/tag/mapping/map.ts:28), which could collide with built-in properties if '__proto__' or similar keys are used incorrectly.",
+      "steps_to_exploit": [
+        "Craft YAML keys that mimic object property names.",
+        "Check if properties like 'toString' or 'constructor' are shadowed and used to exploit logic further down the stack."
+      ],
+      "impact": "Denial of service or logic subversion.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/tag/mapping/map.ts",
+          "line": 28,
+          "quote": "container[normalizedKey] = value"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/tag/mapping/map.ts",
+          "line": 28,
+          "quote": "container[normalizedKey] = value"
+        }
+      ],
+      "id": "5a290392",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Lack of Size Limits on Loaded Documents",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The 'loadAll' function reads and parses entire documents into memory without enforcing a size limit on the input string (src/load.ts:38-46).",
+      "steps_to_exploit": [
+        "Upload a multi-gigabyte YAML file.",
+        "The system runs out of heap memory."
+      ],
+      "impact": "Denial of service.",
+      "evolved_from": [],
+      "attack_category": "rate_limiting",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/load.ts",
+          "line": 38,
+          "quote": "function loadAll (input: string, options?: LoadOptions): unknown[]"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/load.ts",
+          "line": 38,
+          "quote": "function loadAll (input: string, options?: LoadOptions): unknown[]"
+        }
+      ],
+      "id": "93f6d75b",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of deprecated 'js-yaml' API in Benchmark",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The benchmark suite imports an older version of js-yaml (4.1.1) from an 'extra' directory (benchmark/implementations/js-yaml-4.1.1/index.mjs:3), which may contain known vulnerabilities.",
+      "steps_to_exploit": [
+        "If the benchmark environment is exposed, the application runs potentially vulnerable legacy code."
+      ],
+      "impact": "Compromise of the benchmark environment.",
+      "evolved_from": [],
+      "attack_category": "supply_chain",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "benchmark/implementations/js-yaml-4.1.1/index.mjs",
+          "line": 3,
+          "quote": "const { load } = createRequire(import.meta.url)('../../extra/node_modules/js-yaml')"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "benchmark/implementations/js-yaml-4.1.1/index.mjs",
+          "line": 3,
+          "quote": "const { load } = createRequire(import.meta.url)('../../extra/node_modules/js-yaml')"
+        }
+      ],
+      "id": "d9d97e7b",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Temporary Directory usage in spec downloads",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The spec-getting script initializes git repos in local directories (support/get-yaml-test-suite.mjs:67-70). If the environment has shared users, this could be exploited.",
+      "steps_to_exploit": [
+        "An attacker modifies the git repository metadata in the test directory before the build runs.",
+        "The script executes operations in the test directory."
+      ],
+      "impact": "Local privilege escalation or test environment compromise.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "support/get-yaml-test-suite.mjs",
+          "line": 67,
+          "quote": "git(['-C', suiteDir, 'init', '-q'])"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "support/get-yaml-test-suite.mjs",
+          "line": 67,
+          "quote": "git(['-C', suiteDir, 'init', '-q'])"
+        }
+      ],
+      "id": "fbfaf18e",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "proposed": [
+    {
+      "title": "Unsafe Deserialization via YAML Tags in Demo",
+      "code_refs": [
+        {
+          "file": "support/demo_template/index.mjs",
+          "line": 26,
+          "quote": "const SexyYamlTag = jsyaml.defineSequenceTag('!sexy', {"
+        },
+        {
+          "file": "support/demo_template/index.mjs",
+          "line": 28,
+          "quote": "addItem: (container, item) => { container.push(`sexy ${item}`) }"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Denial of Service via Unlimited Alias Expansion",
+      "code_refs": [
+        {
+          "file": "src/parser/constructor.ts",
+          "line": 442,
+          "quote": "case EVENT_ALIAS: {"
+        },
+        {
+          "file": "src/parser/constructor.ts",
+          "line": 448,
+          "quote": "const anchor = state.anchors.get(name)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of atob/btoa for Data Processing in Browser",
+      "code_refs": [
+        {
+          "file": "support/demo_template/index.mjs",
+          "line": 37,
+          "quote": "permalink.href = `#yaml=${encodeBase64(str)}`"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure Script execution in Demo",
+      "code_refs": [
+        {
+          "file": "support/demo_template/index.mjs",
+          "line": 43,
+          "quote": "result.setValue(inspect(obj, false, 10))"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Lack of Input Sanitization for Filenames",
+      "code_refs": [
+        {
+          "file": "bin/js-yaml.mjs",
+          "line": 39,
+          "quote": "cli.add_argument('file', {"
+        },
+        {
+          "file": "bin/js-yaml.mjs",
+          "line": 60,
+          "quote": "input = readFileSync(options.file === '-' ? 0 : options.file, 'utf8')"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potential Prototype Pollution in Mapping Tags",
+      "code_refs": [
+        {
+          "file": "src/tag/mapping/map.ts",
+          "line": 21,
+          "quote": "if (normalizedKey === '__proto__') {"
+        },
+        {
+          "file": "src/tag/mapping/map.ts",
+          "line": 24,
+          "quote": "Object.defineProperty(container, normalizedKey, {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of unsafe `parseInt` in Tag Resolution",
+      "code_refs": [
+        {
+          "file": "src/tag/scalar/int_core.ts",
+          "line": 37,
+          "quote": "return sign * parseInt(value, 10)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Incomplete Validation of Binary Data",
+      "code_refs": [
+        {
+          "file": "src/tag/scalar/binary.ts",
+          "line": 10,
+          "quote": "const binary = atob(input)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Vulnerability to ReDoS in Timestamp Tags",
+      "code_refs": [
+        {
+          "file": "src/tag/scalar/timestamp.ts",
+          "line": 6,
+          "quote": "const YAML_TIMESTAMP_REGEXP = new RegExp("
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of 'eval' or similar constructs (via implicit behavior)",
+      "code_refs": [
+        {
+          "file": "src/tag/sequence/seq.ts",
+          "line": 4,
+          "quote": "create: () => [] as unknown[],"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Exposure of Debugging Information in CLI",
+      "code_refs": [
+        {
+          "file": "bin/js-yaml.mjs",
+          "line": 91,
+          "quote": "if (options.trace && err.stack) console.error(e.stack)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potential for Object Property Collisions",
+      "code_refs": [
+        {
+          "file": "src/tag/mapping/map.ts",
+          "line": 28,
+          "quote": "container[normalizedKey] = value"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Lack of Size Limits on Loaded Documents",
+      "code_refs": [
+        {
+          "file": "src/load.ts",
+          "line": 38,
+          "quote": "function loadAll (input: string, options?: LoadOptions): unknown[]"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of deprecated 'js-yaml' API in Benchmark",
+      "code_refs": [
+        {
+          "file": "benchmark/implementations/js-yaml-4.1.1/index.mjs",
+          "line": 3,
+          "quote": "const { load } = createRequire(import.meta.url)('../../extra/node_modules/js-yaml')"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure Temporary Directory usage in spec downloads",
+      "code_refs": [
+        {
+          "file": "support/get-yaml-test-suite.mjs",
+          "line": 67,
+          "quote": "git(['-C', suiteDir, 'init', '-q'])"
+        }
+      ],
+      "outcome": "unchecked"
+    }
+  ],
+  "rejected": [],
+  "verification": null,
+  "arm_meta": {
+    "baseline": {
+      "model": "gemini/gemini-3.1-flash-lite",
+      "context": "code",
+      "requested": 15,
+      "returned": 15,
+      "files_shown": 62,
+      "chars_shown": 261933,
+      "files_that_did_not_fit": []
+    }
+  },
+  "seconds": {
+    "arm": 12.1,
+    "check": 0.0,
+    "total": 12.1
+  },
+  "usage": {
+    "arm": {
+      "calls": 1,
+      "failed": 0,
+      "est_tokens": 68559,
+      "seconds_in_calls": 12.0,
+      "by_task": {
+        "baseline": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 263089,
+          "completion_chars": 11148,
+          "seconds": 11.954878400079906,
+          "est_tokens": 68559
+        }
+      }
+    },
+    "check": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    }
+  }
+}

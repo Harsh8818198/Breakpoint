@@ -1,0 +1,748 @@
+{
+  "schema": 1,
+  "set": "ghsa-g3jj-5cmm-3hxx",
+  "variant": "raw",
+  "arm": "plain",
+  "run": 1,
+  "commit": "0c7813ead3e6dfc8e9cd83d78dca6948a004f9b9",
+  "started_at": "2026-10-24T10:55:14+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": false,
+  "status": "ok",
+  "candidates": 15,
+  "kept": [
+    {
+      "title": "Hardcoded Secret used for HMAC benchmarking server",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The benchmark server uses a hardcoded string 'secretsecretsecret' for JWT signing/verification, which is insecure if used in production.",
+      "steps_to_exploit": [
+        "Locate the benchmark server endpoint",
+        "Use the known secret 'secretsecretsecret' to sign arbitrary payloads",
+        "Forge valid JWTs with escalated privileges"
+      ],
+      "impact": "Full authentication bypass by forging tokens with arbitrary claims.",
+      "evolved_from": [],
+      "attack_category": "auth",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "benchmarks/clinic-server.js",
+          "line": 6,
+          "quote": "const key = 'secretsecretsecret'"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "benchmarks/clinic-server.js",
+          "line": 6,
+          "quote": "const key = 'secretsecretsecret'"
+        }
+      ],
+      "id": "dd868c4b",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of unsafe regex in validator configurations",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Verifier options allow Regex patterns that are not inherently safe, leading to ReDoS (Regular Expression Denial of Service).",
+      "steps_to_exploit": [
+        "Identify an application using fast-jwt with a configurable regex validator",
+        "Submit a crafted, long string designed to trigger exponential backtracking",
+        "Observe CPU exhaustion on the server"
+      ],
+      "impact": "Denial of service through resource exhaustion.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/verifier.js",
+          "line": 48,
+          "quote": "if (r instanceof RegExp && !safeRegex(r)) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/verifier.js",
+          "line": 48,
+          "quote": "if (r instanceof RegExp && !safeRegex(r)) {"
+        }
+      ],
+      "id": "4e2c9293",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure default cache key builder allows collisions",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The default cache key builder relies on `hashToken`, which might lead to collisions if not handled correctly across different JWT structures.",
+      "steps_to_exploit": [
+        "Find two distinct tokens that produce the same cache key due to hash collision",
+        "Authenticate with the valid token",
+        "Inject the malicious token, which the system erroneously treats as the valid cached result"
+      ],
+      "impact": "Authentication bypass or privilege escalation due to cache poisoning.",
+      "evolved_from": [],
+      "attack_category": "auth",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/verifier.js",
+          "line": 499,
+          "quote": "cacheKeyBuilder: hashToken"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/verifier.js",
+          "line": 499,
+          "quote": "cacheKeyBuilder: hashToken"
+        }
+      ],
+      "id": "b2ca8996",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potential timing attacks in signature verification",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "While `timingSafeEqual` is used for HMAC, other signature algorithms rely on `createVerify`, which may not be fully constant-time depending on the underlying Node.js implementation for all elliptic curves.",
+      "steps_to_exploit": [
+        "Collect a large volume of timing data for verification operations",
+        "Use statistical analysis to deduce private key bits via timing side-channels"
+      ],
+      "impact": "Information disclosure of cryptographic keys.",
+      "evolved_from": [],
+      "attack_category": "crypto",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/crypto.js",
+          "line": 366,
+          "quote": "return createVerify('RSA-' + alg)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/crypto.js",
+          "line": 366,
+          "quote": "return createVerify('RSA-' + alg)"
+        }
+      ],
+      "id": "cbbfa4a8",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure key detection for password protected private keys",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "If a password-protected key is provided without explicitly defining an algorithm, the system attempts to detect the algorithm, potentially leaking sensitive metadata or failing open.",
+      "steps_to_exploit": [
+        "Provide a specially crafted password-protected key",
+        "Trigger automatic detection to force the system to perform operations on the unencrypted material in memory"
+      ],
+      "impact": "Potential exposure of sensitive key metadata.",
+      "evolved_from": [],
+      "attack_category": "crypto",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/crypto.js",
+          "line": 135,
+          "quote": "case 'ENCRYPTED': // Can be either RSA or EC key - we'll used the supplied algorithm"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/crypto.js",
+          "line": 135,
+          "quote": "case 'ENCRYPTED': // Can be either RSA or EC key - we'll used the supplied algorithm"
+        }
+      ],
+      "id": "34bccd04",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Missing validation for 'none' algorithm on some endpoints",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The signer and verifier structures attempt to handle the 'none' algorithm, which is inherently insecure and should be strictly disabled by default.",
+      "steps_to_exploit": [
+        "Modify a token header to set 'alg': 'none'",
+        "Remove the signature portion of the JWT",
+        "Bypass integrity checks on servers that fail to enforce strict algorithm allow-lists"
+      ],
+      "impact": "Total authentication bypass.",
+      "evolved_from": [],
+      "attack_category": "auth",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/signer.js",
+          "line": 126,
+          "quote": "const signature = algorithm === 'none' ? '' : createSignature(algorithm, key, input)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/signer.js",
+          "line": 126,
+          "quote": "const signature = algorithm === 'none' ? '' : createSignature(algorithm, key, input)"
+        }
+      ],
+      "id": "49ae63f7",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Risk of Prototype Pollution via `mutatePayload`",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `mutatePayload` option allows the library to modify the user-provided payload object directly, which can lead to prototype pollution if the input object is attacker-controlled.",
+      "steps_to_exploit": [
+        "Pass a malicious object as payload with `__proto__` properties",
+        "Enable `mutatePayload` in the signer options",
+        "Observe modifications to the global Object prototype"
+      ],
+      "impact": "Remote code execution or significant application state corruption.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/signer.js",
+          "line": 112,
+          "quote": "Object.assign(payload, finalPayload)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/signer.js",
+          "line": 112,
+          "quote": "Object.assign(payload, finalPayload)"
+        }
+      ],
+      "id": "3b6bfb78",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Lack of strict bounds checking for cache sizes",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `createCache` function parses a raw size from user input without sufficient validation, leading to potential memory issues.",
+      "steps_to_exploit": [
+        "Provide a massive integer as the cache size configuration",
+        "Trigger cache population until the process exceeds heap limits"
+      ],
+      "impact": "Denial of service via memory exhaustion.",
+      "evolved_from": [],
+      "attack_category": "rate_limiting",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/verifier.js",
+          "line": 84,
+          "quote": "const size = parseInt(rawSize === true ? defaultCacheSize : rawSize, 10)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/verifier.js",
+          "line": 84,
+          "quote": "const size = parseInt(rawSize === true ? defaultCacheSize : rawSize, 10)"
+        }
+      ],
+      "id": "d4437419",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Sensitive information leakage in benchmark logs",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Benchmarks automatically write logs to disk with file naming based on timestamps, potentially capturing sensitive keys or valid tokens if misconfigured.",
+      "steps_to_exploit": [
+        "Monitor the `benchmarks/logs` directory in a shared or CI environment",
+        "Retrieve leaked tokens from stored log files"
+      ],
+      "impact": "Exposure of valid authentication tokens and cryptographic material.",
+      "evolved_from": [],
+      "attack_category": "data_privacy",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [],
+      "code_refs": [],
+      "id": "87dee101",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unbounded cache duration for error responses",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Error cache TTL is configurable, and if set improperly or to a very large number, it effectively caches denials.",
+      "steps_to_exploit": [
+        "Submit invalid tokens to fill up the error cache",
+        "Force legitimate users into the error-cached state"
+      ],
+      "impact": "Denial of service by poisoning the negative cache.",
+      "evolved_from": [],
+      "attack_category": "rate_limiting",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/verifier.js",
+          "line": 111,
+          "quote": "const ttl = typeof errorCacheTTL === 'function' ? errorCacheTTL(value) : errorCacheTTL"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/verifier.js",
+          "line": 111,
+          "quote": "const ttl = typeof errorCacheTTL === 'function' ? errorCacheTTL(value) : errorCacheTTL"
+        }
+      ],
+      "id": "99fd73bb",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Reliance on `Buffer.from` without explicit encoding checks",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "While there are some base64 checks, relying on Buffer behavior for various string inputs can lead to unexpected handling of malformed input.",
+      "steps_to_exploit": [
+        "Provide non-utf8 encoded binary data in base64 segments",
+        "Observe how the library handles the decoding logic"
+      ],
+      "impact": "Unexpected logic execution or error-handling bypass.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/decoder.js",
+          "line": 48,
+          "quote": "const header = JSON.parse(Buffer.from(headerSegment, 'base64').toString('utf-8'))"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/decoder.js",
+          "line": 48,
+          "quote": "const header = JSON.parse(Buffer.from(headerSegment, 'base64').toString('utf-8'))"
+        }
+      ],
+      "id": "604cd298",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure usage of `process.nextTick` in async callbacks",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Using `process.nextTick` to wrap callbacks can lead to starvation or bypass synchronous control flow mechanisms.",
+      "steps_to_exploit": [
+        "Trigger multiple async key fetches to exhaust the event loop queue",
+        "Cause the application to become unresponsive"
+      ],
+      "impact": "Denial of service.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/utils.js",
+          "line": 15,
+          "quote": "process.nextTick(() => callback(null, key))"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/utils.js",
+          "line": 15,
+          "quote": "process.nextTick(() => callback(null, key))"
+        }
+      ],
+      "id": "b7baeb42",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Blind trust in `JSON.parse` for payload decoding",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The library parses the payload segment without an explicit schema validator, which is prone to issues if the payload contains unexpected object structures.",
+      "steps_to_exploit": [
+        "Craft a JWT with a massive or complex JSON payload",
+        "Exhaust CPU/Memory during the JSON parsing phase"
+      ],
+      "impact": "Denial of service.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/decoder.js",
+          "line": 59,
+          "quote": "payload = JSON.parse(payload)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/decoder.js",
+          "line": 59,
+          "quote": "payload = JSON.parse(payload)"
+        }
+      ],
+      "id": "b6d56fa1",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Weak validation of `typ` header parameter",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The header `typ` check performs a loose replacement of 'application/' which might lead to content-type confusion attacks.",
+      "steps_to_exploit": [
+        "Create a JWT with `typ`: 'application/application/jwt'",
+        "Observe how the sanitizer allows malformed types through"
+      ],
+      "impact": "Bypass of strict content-type enforcement.",
+      "evolved_from": [],
+      "attack_category": "auth",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [],
+      "code_refs": [],
+      "id": "ccc6c69e",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of deprecated or weak elliptic curves in key generation",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The generator for keys includes 'secp256k1' and others which may have varying security profiles compared to modern standards.",
+      "steps_to_exploit": [
+        "Analyze keys generated by the utility for vulnerabilities inherent to specific curves"
+      ],
+      "impact": "Compromised cryptographic strength.",
+      "evolved_from": [],
+      "attack_category": "crypto",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "benchmarks/keys/generate-keys.js",
+          "line": 9,
+          "quote": "es: { 256: 'prime256v1', 384: 'secp384r1', 512: 'secp521r1' },"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "benchmarks/keys/generate-keys.js",
+          "line": 9,
+          "quote": "es: { 256: 'prime256v1', 384: 'secp384r1', 512: 'secp521r1' },"
+        }
+      ],
+      "id": "cc954f91",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "proposed": [
+    {
+      "title": "Hardcoded Secret used for HMAC benchmarking server",
+      "code_refs": [
+        {
+          "file": "benchmarks/clinic-server.js",
+          "line": 6,
+          "quote": "const key = 'secretsecretsecret'"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of unsafe regex in validator configurations",
+      "code_refs": [
+        {
+          "file": "src/verifier.js",
+          "line": 48,
+          "quote": "if (r instanceof RegExp && !safeRegex(r)) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure default cache key builder allows collisions",
+      "code_refs": [
+        {
+          "file": "src/verifier.js",
+          "line": 499,
+          "quote": "cacheKeyBuilder: hashToken"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potential timing attacks in signature verification",
+      "code_refs": [
+        {
+          "file": "src/crypto.js",
+          "line": 366,
+          "quote": "return createVerify('RSA-' + alg)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure key detection for password protected private keys",
+      "code_refs": [
+        {
+          "file": "src/crypto.js",
+          "line": 135,
+          "quote": "case 'ENCRYPTED': // Can be either RSA or EC key - we'll used the supplied algorithm"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Missing validation for 'none' algorithm on some endpoints",
+      "code_refs": [
+        {
+          "file": "src/signer.js",
+          "line": 126,
+          "quote": "const signature = algorithm === 'none' ? '' : createSignature(algorithm, key, input)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Risk of Prototype Pollution via `mutatePayload`",
+      "code_refs": [
+        {
+          "file": "src/signer.js",
+          "line": 112,
+          "quote": "Object.assign(payload, finalPayload)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Lack of strict bounds checking for cache sizes",
+      "code_refs": [
+        {
+          "file": "src/verifier.js",
+          "line": 84,
+          "quote": "const size = parseInt(rawSize === true ? defaultCacheSize : rawSize, 10)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Sensitive information leakage in benchmark logs",
+      "code_refs": [],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unbounded cache duration for error responses",
+      "code_refs": [
+        {
+          "file": "src/verifier.js",
+          "line": 111,
+          "quote": "const ttl = typeof errorCacheTTL === 'function' ? errorCacheTTL(value) : errorCacheTTL"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Reliance on `Buffer.from` without explicit encoding checks",
+      "code_refs": [
+        {
+          "file": "src/decoder.js",
+          "line": 48,
+          "quote": "const header = JSON.parse(Buffer.from(headerSegment, 'base64').toString('utf-8'))"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure usage of `process.nextTick` in async callbacks",
+      "code_refs": [
+        {
+          "file": "src/utils.js",
+          "line": 15,
+          "quote": "process.nextTick(() => callback(null, key))"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Blind trust in `JSON.parse` for payload decoding",
+      "code_refs": [
+        {
+          "file": "src/decoder.js",
+          "line": 59,
+          "quote": "payload = JSON.parse(payload)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Weak validation of `typ` header parameter",
+      "code_refs": [],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of deprecated or weak elliptic curves in key generation",
+      "code_refs": [
+        {
+          "file": "benchmarks/keys/generate-keys.js",
+          "line": 9,
+          "quote": "es: { 256: 'prime256v1', 384: 'secp384r1', 512: 'secp521r1' },"
+        }
+      ],
+      "outcome": "unchecked"
+    }
+  ],
+  "rejected": [],
+  "verification": null,
+  "arm_meta": {
+    "baseline": {
+      "model": "gemini/gemini-3.1-flash-lite",
+      "context": "code",
+      "requested": 15,
+      "returned": 15,
+      "files_shown": 27,
+      "chars_shown": 97195,
+      "files_that_did_not_fit": []
+    }
+  },
+  "seconds": {
+    "arm": 8.7,
+    "check": 0.0,
+    "total": 8.7
+  },
+  "usage": {
+    "arm": {
+      "calls": 1,
+      "failed": 0,
+      "est_tokens": 26977,
+      "seconds_in_calls": 8.7,
+      "by_task": {
+        "baseline": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 98281,
+          "completion_chars": 9626,
+          "seconds": 8.660484699998051,
+          "est_tokens": 26977
+        }
+      }
+    },
+    "check": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    }
+  }
+}

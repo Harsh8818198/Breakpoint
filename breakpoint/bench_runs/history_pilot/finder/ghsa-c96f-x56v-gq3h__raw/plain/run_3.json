@@ -1,0 +1,786 @@
+{
+  "schema": 1,
+  "set": "ghsa-c96f-x56v-gq3h",
+  "variant": "raw",
+  "arm": "plain",
+  "run": 3,
+  "commit": "a21e332f69c82684cdd130b79164236ef7c15684",
+  "started_at": "2026-10-24T10:53:32+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": false,
+  "status": "ok",
+  "candidates": 15,
+  "kept": [
+    {
+      "title": "Unsafe Dynamic Code Execution (New Function)",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `HandlerStorage` class generates and compiles JavaScript function strings using `new Function()` with dynamically built bodies derived from user-defined route parameters and constraints.",
+      "steps_to_exploit": [
+        "Define a route parameter name containing malicious JS syntax (e.g., 'x');constructor('eval(name)')()').",
+        "Trigger the router's compilation mechanism for that route.",
+        "The router evaluates the string in the constructor context, leading to arbitrary code execution."
+      ],
+      "impact": "Full Remote Code Execution (RCE) on the server process.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/handler-storage.js",
+          "line": 78,
+          "quote": "return new Function('NullObject', fnBody.join('\\n'))(NullObject) // eslint-disable-line"
+        },
+        {
+          "file": "lib/handler-storage.js",
+          "line": 171,
+          "quote": "this._getHandlerMatchingConstraints = new Function('derivedConstraints', lines.join('\\n')) // eslint-disable-line"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/handler-storage.js",
+          "line": 78,
+          "quote": "return new Function('NullObject', fnBody.join('\\n'))(NullObject) // eslint-disable-line"
+        },
+        {
+          "file": "lib/handler-storage.js",
+          "line": 171,
+          "quote": "this._getHandlerMatchingConstraints = new Function('derivedConstraints', lines.join('\\n')) // eslint-disable-line"
+        }
+      ],
+      "id": "7f8762d4",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Prototype Pollution via NullObject/Constructor",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `_createParamsObject` method in `lib/handler-storage.js` builds objects using a custom `NullObject` constructor, but the dynamic property assignment `params['${params[i]}']` is vulnerable if `params[i]` contains prototype-accessing keys like `__proto__` or `constructor`.",
+      "steps_to_exploit": [
+        "Create a route with a parameter name like 'constructor' or '__proto__'.",
+        "Lookup a path that maps to this parametric route.",
+        "The router sets properties on the result object, which overwrites prototype properties for the entire application."
+      ],
+      "impact": "Global state modification, potentially leading to denial of service or privilege escalation.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/handler-storage.js",
+          "line": 71,
+          "quote": "fnBody.push(`params['${params[i]}'] = paramsArray[${i}]`)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/handler-storage.js",
+          "line": 71,
+          "quote": "fnBody.push(`params['${params[i]}'] = paramsArray[${i}]`)"
+        }
+      ],
+      "id": "927fc783",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Denial of Service via ReDoS in RegExp Compilation",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The router compiles user-provided regular expressions from route definitions using `new RegExp()`. While `safe-regex2` is used for check, it is not exhaustive against advanced ReDoS vectors in complex groups.",
+      "steps_to_exploit": [
+        "Register a route with a regex that passes simple safety checks but is complex enough to trigger backtracking.",
+        "Send a request path that causes the engine to perform exponential backtracking in the regex engine.",
+        "The Event Loop is blocked, causing service unavailability."
+      ],
+      "impact": "Resource exhaustion and total application Denial of Service.",
+      "evolved_from": [],
+      "attack_category": "scalability",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 415,
+          "quote": "const regex = isRegexNode ? new RegExp('^' + regexps.join('') + '$') : null"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 415,
+          "quote": "const regex = isRegexNode ? new RegExp('^' + regexps.join('') + '$') : null"
+        }
+      ],
+      "id": "a0730b92",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Improper Input Validation of Route Constraints",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `Constrainer` allows users to define custom constraints, but `addConstraintStrategy` does not properly sanitize or limit the naming of constraints, potentially conflicting with reserved internal keys.",
+      "steps_to_exploit": [
+        "Register a custom constraint with the name 'version' or 'host'.",
+        "The logic in `constrainer.js` and `handler-storage.js` may behave unpredictably by overriding internal logic with the custom strategy.",
+        "This leads to incorrect handler selection or routing logic bypassing."
+      ],
+      "impact": "Security logic bypasses and potential for misrouting requests.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/constrainer.js",
+          "line": 39,
+          "quote": "addConstraintStrategy (strategy) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/constrainer.js",
+          "line": 39,
+          "quote": "addConstraintStrategy (strategy) {"
+        }
+      ],
+      "id": "9990d3b3",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Sync/Async Constraint Race Conditions",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Constraints can be either synchronous or asynchronous. The `deriveAsyncConstraints` method performs multiple asynchronous lookups concurrently, but the implementation does not guarantee the order or atomicity of constraint resolution.",
+      "steps_to_exploit": [
+        "Define multiple async constraints.",
+        "Simulate high-concurrency requests.",
+        "The `asyncConstraintsCount` counter might be susceptible to race conditions if the `deriveAsyncConstraints` loop is misused, leading to incomplete or incorrect context matching."
+      ],
+      "impact": "Authentication or authorization bypass if constraint evaluation fails or provides inconsistent data.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/constrainer.js",
+          "line": 137,
+          "quote": "if (--asyncConstraintsCount === 0) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/constrainer.js",
+          "line": 137,
+          "quote": "if (--asyncConstraintsCount === 0) {"
+        }
+      ],
+      "id": "5f86cdfa",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Integer Overflow in Bitmask Logic",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The router uses a bitmask (31 bits) to match handlers. If more than 31 handlers are assigned to a single node, the system explicitly throws an error, but the logic relies on `1 << i`, which in JavaScript treats operands as 32-bit signed integers.",
+      "steps_to_exploit": [
+        "Register exactly 32 handlers to a node that supports constraints.",
+        "The bitmask logic will overflow the signed bit, resulting in invalid handler index mapping.",
+        "The router may return an incorrect handler or `null` even if a match exists."
+      ],
+      "impact": "Routing errors and unreliable handler selection.",
+      "evolved_from": [],
+      "attack_category": "scalability",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/handler-storage.js",
+          "line": 51,
+          "quote": "if (!isMergedTree && this.handlers.length >= 31) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/handler-storage.js",
+          "line": 51,
+          "quote": "if (!isMergedTree && this.handlers.length >= 31) {"
+        }
+      ],
+      "id": "e3c63744",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Error Handling in `safeDecodeURI`",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `safeDecodeURI` function swallows errors and returns `null` or falls back to an `onBadUrl` handler without sufficiently validating the input for malicious character sequences.",
+      "steps_to_exploit": [
+        "Send a request with malformed percent-encoding.",
+        "The exception is caught and passed to `onBadUrl`.",
+        "If the `onBadUrl` handler does not strictly validate the input, malicious payloads can be echoed or processed by downstream logic."
+      ],
+      "impact": "XSS or injection potential via improperly handled error paths.",
+      "evolved_from": [],
+      "attack_category": "error_handling",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 591,
+          "quote": "} catch (error) { return this._onBadUrl(path) }"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 591,
+          "quote": "} catch (error) { return this._onBadUrl(path) }"
+        }
+      ],
+      "id": "a347c3d3",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Bypassing Authentication via Constraint Mismatch",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `mustMatchWhenDerived` logic in `HandlerStorage` assumes that if a constraint is derived but missing from the route, it should return null. This is highly fragile and depends on every custom constraint implementing this logic correctly.",
+      "steps_to_exploit": [
+        "Create a constraint where the developer fails to implement `mustMatchWhenDerived` correctly.",
+        "Send a request containing the constraint header.",
+        "The router fails to reject the request and matches a handler that shouldn't be accessible."
+      ],
+      "impact": "Authorization bypass.",
+      "evolved_from": [],
+      "attack_category": "authz",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/handler-storage.js",
+          "line": 164,
+          "quote": "lines.push(`if (derivedConstraints.${constraint} !== undefined) return null`)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/handler-storage.js",
+          "line": 164,
+          "quote": "lines.push(`if (derivedConstraints.${constraint} !== undefined) return null`)"
+        }
+      ],
+      "id": "38853186",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Lack of Memory Limit on Route Storage",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The router does not limit the number of routes that can be added to the internal `routes` array or the complexity of the radix tree.",
+      "steps_to_exploit": [
+        "Dynamically register an extremely large number of routes with long, unique, or complex paths.",
+        "The heap usage of the Node.js process grows until it crashes."
+      ],
+      "impact": "Denial of Service via memory exhaustion.",
+      "evolved_from": [],
+      "attack_category": "scalability",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 104,
+          "quote": "this.routes = []"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 104,
+          "quote": "this.routes = []"
+        }
+      ],
+      "id": "bac2ceeb",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unintended Exposure of Internal Meta-Data",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `prettyPrint` function and `defaultBuildPrettyMeta` expose the internal `store` objects of routes, which may contain sensitive application configuration, database schemas, or internal metadata.",
+      "steps_to_exploit": [
+        "Call the `prettyPrint()` method if exposed via an admin route or logs.",
+        "The entire internal structure and associated metadata are rendered into a string."
+      ],
+      "impact": "Information disclosure of internal application structure.",
+      "evolved_from": [],
+      "attack_category": "data_privacy",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [],
+      "code_refs": [],
+      "id": "04afd747",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Path Traversal via Normalized URL",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `removeDuplicateSlashes` and `trimLastSlash` utilities are applied after path decoding in some branches, potentially allowing path traversal if the user-defined `defaultRoute` or custom handlers use the path for filesystem lookups.",
+      "steps_to_exploit": [
+        "Send a request like `/static/../secret/file`.",
+        "The router might normalize the path incorrectly depending on the sequence of normalization steps."
+      ],
+      "impact": "Unauthorized access to files or directories.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 849,
+          "quote": "return path.indexOf('//') !== -1 ? path.replace(REMOVE_DUPLICATE_SLASHES_REGEXP, '/') : path"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 849,
+          "quote": "return path.indexOf('//') !== -1 ? path.replace(REMOVE_DUPLICATE_SLASHES_REGEXP, '/') : path"
+        }
+      ],
+      "id": "5053ddff",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Inconsistent Case Sensitivity Handling",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "If `caseSensitive` is disabled, the router forces all paths to lowercase. This can lead to security bypasses if authorization rules are case-sensitive but the routing is not.",
+      "steps_to_exploit": [
+        "Register a restricted path `/Admin`.",
+        "Send a request to `/admin`.",
+        "The router matches the path, but downstream security middleware might not recognize it as the protected `/Admin` endpoint."
+      ],
+      "impact": "Bypass of path-based authorization rules.",
+      "evolved_from": [],
+      "attack_category": "authz",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 288,
+          "quote": "pattern = pattern.toLowerCase()"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 288,
+          "quote": "pattern = pattern.toLowerCase()"
+        }
+      ],
+      "id": "e556304e",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "ReDoS via Regex Param Extraction",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `getClosingParenthensePosition` helper function uses a manual loop to find the end of a regex group. If a very deeply nested or malformed regex string is provided, it can be extremely slow.",
+      "steps_to_exploit": [
+        "Provide a route definition with deeply nested regex parentheses.",
+        "The router takes significant time during initialization to parse the regex, blocking the event loop."
+      ],
+      "impact": "Denial of Service during application startup or route registration.",
+      "evolved_from": [],
+      "attack_category": "scalability",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 879,
+          "quote": "while (idx < path.length) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 879,
+          "quote": "while (idx < path.length) {"
+        }
+      ],
+      "id": "90561e04",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Weak Randomness/Uniqueness in Constraints",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `ConstraintStrategy` implementation relies on user-provided strings for keys, which are not namespaced, leading to high collision probability if multiple plugins use the same constraint key.",
+      "steps_to_exploit": [
+        "Register two different plugins that both use the 'version' or 'custom' constraint key.",
+        "The router will cause one plugin to overwrite the other's routing logic."
+      ],
+      "impact": "Unpredictable behavior and security configuration conflicts.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "lib/constrainer.js",
+          "line": 44,
+          "quote": "if (this.strategies[strategy.name] && this.strategies[strategy.name].isCustom) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "lib/constrainer.js",
+          "line": 44,
+          "quote": "if (this.strategies[strategy.name] && this.strategies[strategy.name].isCustom) {"
+        }
+      ],
+      "id": "69f4cb8f",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Hardcoded Node Version Requirement",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The router requires Node >= 20. Running in an older environment may cause subtle bugs in modern JS features (like `Object.hasOwn` or `RegExp` features) which are assumed to exist.",
+      "steps_to_exploit": [
+        "Run the router in an environment slightly below Node 20.",
+        "The lack of polyfills for modern features might lead to silent failures where security checks (like `hasOwn`) do nothing."
+      ],
+      "impact": "Security bypasses due to feature failure in unsupported environments.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "package.json",
+          "line": 28,
+          "quote": "\"node\": \">=20\""
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "package.json",
+          "line": 28,
+          "quote": "\"node\": \">=20\""
+        }
+      ],
+      "id": "a8e6fc5d",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "proposed": [
+    {
+      "title": "Unsafe Dynamic Code Execution (New Function)",
+      "code_refs": [
+        {
+          "file": "lib/handler-storage.js",
+          "line": 78,
+          "quote": "return new Function('NullObject', fnBody.join('\\n'))(NullObject) // eslint-disable-line"
+        },
+        {
+          "file": "lib/handler-storage.js",
+          "line": 171,
+          "quote": "this._getHandlerMatchingConstraints = new Function('derivedConstraints', lines.join('\\n')) // eslint-disable-line"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Prototype Pollution via NullObject/Constructor",
+      "code_refs": [
+        {
+          "file": "lib/handler-storage.js",
+          "line": 71,
+          "quote": "fnBody.push(`params['${params[i]}'] = paramsArray[${i}]`)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Denial of Service via ReDoS in RegExp Compilation",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 415,
+          "quote": "const regex = isRegexNode ? new RegExp('^' + regexps.join('') + '$') : null"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Improper Input Validation of Route Constraints",
+      "code_refs": [
+        {
+          "file": "lib/constrainer.js",
+          "line": 39,
+          "quote": "addConstraintStrategy (strategy) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Sync/Async Constraint Race Conditions",
+      "code_refs": [
+        {
+          "file": "lib/constrainer.js",
+          "line": 137,
+          "quote": "if (--asyncConstraintsCount === 0) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Integer Overflow in Bitmask Logic",
+      "code_refs": [
+        {
+          "file": "lib/handler-storage.js",
+          "line": 51,
+          "quote": "if (!isMergedTree && this.handlers.length >= 31) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure Error Handling in `safeDecodeURI`",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 591,
+          "quote": "} catch (error) { return this._onBadUrl(path) }"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Bypassing Authentication via Constraint Mismatch",
+      "code_refs": [
+        {
+          "file": "lib/handler-storage.js",
+          "line": 164,
+          "quote": "lines.push(`if (derivedConstraints.${constraint} !== undefined) return null`)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Lack of Memory Limit on Route Storage",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 104,
+          "quote": "this.routes = []"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unintended Exposure of Internal Meta-Data",
+      "code_refs": [],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Path Traversal via Normalized URL",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 849,
+          "quote": "return path.indexOf('//') !== -1 ? path.replace(REMOVE_DUPLICATE_SLASHES_REGEXP, '/') : path"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Inconsistent Case Sensitivity Handling",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 288,
+          "quote": "pattern = pattern.toLowerCase()"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "ReDoS via Regex Param Extraction",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 879,
+          "quote": "while (idx < path.length) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Weak Randomness/Uniqueness in Constraints",
+      "code_refs": [
+        {
+          "file": "lib/constrainer.js",
+          "line": 44,
+          "quote": "if (this.strategies[strategy.name] && this.strategies[strategy.name].isCustom) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Hardcoded Node Version Requirement",
+      "code_refs": [
+        {
+          "file": "package.json",
+          "line": 28,
+          "quote": "\"node\": \">=20\""
+        }
+      ],
+      "outcome": "unchecked"
+    }
+  ],
+  "rejected": [],
+  "verification": null,
+  "arm_meta": {
+    "baseline": {
+      "model": "gemini/gemini-3.1-flash-lite",
+      "context": "code",
+      "requested": 15,
+      "returned": 15,
+      "files_shown": 21,
+      "chars_shown": 101393,
+      "files_that_did_not_fit": []
+    }
+  },
+  "seconds": {
+    "arm": 11.6,
+    "check": 0.0,
+    "total": 11.6
+  },
+  "usage": {
+    "arm": {
+      "calls": 1,
+      "failed": 0,
+      "est_tokens": 28820,
+      "seconds_in_calls": 11.5,
+      "by_task": {
+        "baseline": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 102467,
+          "completion_chars": 12813,
+          "seconds": 11.534618000034243,
+          "est_tokens": 28820
+        }
+      }
+    },
+    "check": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    }
+  }
+}

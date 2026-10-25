@@ -1,0 +1,793 @@
+{
+  "schema": 1,
+  "set": "ghsa-g3jj-5cmm-3hxx",
+  "variant": "raw",
+  "arm": "plain",
+  "run": 2,
+  "commit": "0c7813ead3e6dfc8e9cd83d78dca6948a004f9b9",
+  "started_at": "2026-10-24T10:55:22+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": false,
+  "status": "ok",
+  "candidates": 15,
+  "kept": [
+    {
+      "title": "Hardcoded Cryptographic Secret in Benchmark Server",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The benchmark server in benchmarks/clinic-server.js uses a hardcoded string 'secretsecretsecret' for HMAC signature generation and verification. This is a static secret prone to brute-force or dictionary attacks.",
+      "steps_to_exploit": [
+        "Access the application's source code or find the public benchmark file.",
+        "Identify the hardcoded 'secretsecretsecret' value.",
+        "Use this secret to forge valid JWTs with arbitrary payloads using the HS256 algorithm.",
+        "Submit forged JWTs to the /auth-jwt endpoint to bypass authentication."
+      ],
+      "impact": "Full authentication bypass, allowing attackers to impersonate any user.",
+      "evolved_from": [],
+      "attack_category": "crypto",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "benchmarks/clinic-server.js",
+          "line": 6,
+          "quote": "const key = 'secretsecretsecret'"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "benchmarks/clinic-server.js",
+          "line": 6,
+          "quote": "const key = 'secretsecretsecret'"
+        }
+      ],
+      "id": "705011b4",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potentially Insecure Cache Key Builder",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The verifier allows custom 'cacheKeyBuilder' functions. If these builders do not account for all components of the token (e.g., header and payload variations), it leads to cache collisions, potentially allowing an attacker to reuse a valid token's validation result for a different malicious token.",
+      "steps_to_exploit": [
+        "Identify that a custom cacheKeyBuilder is implemented or that the default one may have collisions.",
+        "Craft two different tokens that produce the same cache key.",
+        "First, authenticate with a valid token to populate the cache.",
+        "Attempt to authenticate with the second malicious token; the system serves the cached result of the first token."
+      ],
+      "impact": "Authentication bypass or privilege escalation due to cached validation state leakage.",
+      "evolved_from": [],
+      "attack_category": "auth",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/verifier.js",
+          "line": 582,
+          "quote": "if (cache && options?.cacheKeyBuilder) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/verifier.js",
+          "line": 582,
+          "quote": "if (cache && options?.cacheKeyBuilder) {"
+        }
+      ],
+      "id": "6b6011b1",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of Weak/Unsafe Regular Expressions",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "User-provided regular expressions in 'allowedJti', 'allowedAud', etc., may cause ReDoS (Regular Expression Denial of Service). While there is a check via 'safe-regex2', it is only a best-effort defense and can be bypassed.",
+      "steps_to_exploit": [
+        "Supply a complex, non-catastrophic-looking regex that still exhibits exponential backtracking.",
+        "Send a specially crafted payload string that triggers worst-case performance in the regex engine.",
+        "Repeat the request to consume CPU resources, leading to service unavailability."
+      ],
+      "impact": "Denial of Service via high CPU consumption.",
+      "evolved_from": [],
+      "attack_category": "rate_limiting",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/verifier.js",
+          "line": 565,
+          "quote": "if (allowedJti) checkForUnsafeRegExp(allowedJti, 'allowedJti')"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/verifier.js",
+          "line": 565,
+          "quote": "if (allowedJti) checkForUnsafeRegExp(allowedJti, 'allowedJti')"
+        }
+      ],
+      "id": "f840506a",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Missing 'alg: none' Protection in Signer",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The 'sign' function supports 'none' as an algorithm. While there is a check in the factory, the low-level logic relies on the algorithm not being 'none' to define signature creation, which is a common source of algorithm confusion vulnerabilities.",
+      "steps_to_exploit": [
+        "Request a token generation with 'none' algorithm.",
+        "Check if the library produces a token without a signature.",
+        "Attempt to use this token against a verification endpoint that improperly accepts or defaults to 'none'."
+      ],
+      "impact": "Signature verification bypass.",
+      "evolved_from": [],
+      "attack_category": "crypto",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/signer.js",
+          "line": 126,
+          "quote": "const signature = algorithm === 'none' ? '' : createSignature(algorithm, key, input)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/signer.js",
+          "line": 126,
+          "quote": "const signature = algorithm === 'none' ? '' : createSignature(algorithm, key, input)"
+        }
+      ],
+      "id": "c0da8867",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Default CacheTTL Handling",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The cache uses a 600-second default TTL (10 minutes) for valid tokens. If revocation mechanisms are not implemented or if the cache is not cleared properly, stale tokens remain active far longer than intended.",
+      "steps_to_exploit": [
+        "Obtain a valid token.",
+        "Wait for the server to update security policies or revoke the user's access.",
+        "Re-use the token within the 10-minute cache window to gain unauthorized access."
+      ],
+      "impact": "Extended window for unauthorized access if a user is revoked.",
+      "evolved_from": [],
+      "attack_category": "auth",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/verifier.js",
+          "line": 499,
+          "quote": "{ cacheTTL: 600_000, clockTolerance: 0, errorCacheTTL: -1, cacheKeyBuilder: hashToken, ...options }"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/verifier.js",
+          "line": 499,
+          "quote": "{ cacheTTL: 600_000, clockTolerance: 0, errorCacheTTL: -1, cacheKeyBuilder: hashToken, ...options }"
+        }
+      ],
+      "id": "7ac1ceda",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potential Key Confusion in Verification",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The verifier automatically attempts to detect key types from the provided PEM string. If a malicious input is provided, the library might misinterpret a public key as an HMAC secret or vice versa, bypassing algorithm-specific security checks.",
+      "steps_to_exploit": [
+        "Provide an HMAC-based JWT.",
+        "Pass a specially crafted public key string that the library's detection logic misclassifies.",
+        "Trick the verifier into checking HMAC against the provided public key, potentially leading to signature confusion."
+      ],
+      "impact": "Signature verification bypass or authentication bypass.",
+      "evolved_from": [],
+      "attack_category": "crypto",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/crypto.js",
+          "line": 255,
+          "quote": "function detectPublicKeyAlgorithms(key, providedAlgorithms) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/crypto.js",
+          "line": 255,
+          "quote": "function detectPublicKeyAlgorithms(key, providedAlgorithms) {"
+        }
+      ],
+      "id": "28f05ad2",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Sensitive Information Leakage in Logs",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The benchmark utils export logging functionality that writes to the file system. In some environments, this might include sensitive keys or token data in plain text in the 'logs/' directory.",
+      "steps_to_exploit": [
+        "Run the benchmark suites with 'NODE_DEBUG=fast-jwt'.",
+        "Observe that logs are written to the 'logs/' directory.",
+        "Access the server filesystem to read logs containing sensitive keys/tokens."
+      ],
+      "impact": "Exposure of sensitive cryptographic material or user tokens.",
+      "evolved_from": [],
+      "attack_category": "data_privacy",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "benchmarks/utils.mjs",
+          "line": 85,
+          "quote": "await writeFile(resolve(directory, `${type}-${now}.log`), output.join('\\n'), 'utf-8')"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "benchmarks/utils.mjs",
+          "line": 85,
+          "quote": "await writeFile(resolve(directory, `${type}-${now}.log`), output.join('\\n'), 'utf-8')"
+        }
+      ],
+      "id": "7b677b20",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Error Handling: Exposing Stack Traces",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The 'TokenError' class uses 'Error.captureStackTrace(this, this.constructor)'. In production, returning the full error object or stack trace in API responses can leak internal code structures.",
+      "steps_to_exploit": [
+        "Send malformed JWT requests.",
+        "Observe the error messages/stack traces returned by the API.",
+        "Use this information to fingerprint the library version and internal logic."
+      ],
+      "impact": "Information disclosure of internal server structure.",
+      "evolved_from": [],
+      "attack_category": "error_handling",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/error.js",
+          "line": 27,
+          "quote": "Error.captureStackTrace(this, this.constructor)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/error.js",
+          "line": 27,
+          "quote": "Error.captureStackTrace(this, this.constructor)"
+        }
+      ],
+      "id": "00d0f5c7",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Missing Content-Type check in Routes",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The routes in 'clinic-server.js' do not explicitly enforce 'application/json' for payloads, although the schema defines properties. Improperly configured Fastify routes may allow unexpected Content-Types leading to parsing bypasses.",
+      "steps_to_exploit": [
+        "Send a request with a different Content-Type but valid JSON body.",
+        "Test if the server processes the payload anyway, potentially bypassing security middleware that only checks specific types."
+      ],
+      "impact": "Security middleware bypass.",
+      "evolved_from": [],
+      "attack_category": "auth",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "benchmarks/clinic-server.js",
+          "line": 67,
+          "quote": "fastify.post('/sign-jwt', {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "benchmarks/clinic-server.js",
+          "line": 67,
+          "quote": "fastify.post('/sign-jwt', {"
+        }
+      ],
+      "id": "51c5215d",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potential Prototype Pollution in 'TokenError'",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The 'TokenError' constructor iterates over 'additional' objects and assigns properties directly to 'this'. If not strictly sanitized, this can lead to prototype pollution.",
+      "steps_to_exploit": [
+        "Submit a payload designed to provide an 'additional' object with a property name like '__proto__'.",
+        "Check if the server's global object or the error prototype is modified."
+      ],
+      "impact": "Potential for Remote Code Execution or privilege escalation.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/error.js",
+          "line": 32,
+          "quote": "for (const k in additional) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/error.js",
+          "line": 32,
+          "quote": "for (const k in additional) {"
+        }
+      ],
+      "id": "07de63b1",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Reliance on Node.js Version for Crypto",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Certain algorithms (EdDSA) are supported conditionally based on the Node.js version. Older versions without proper support may fail silently or throw errors that, if not caught, crash the application.",
+      "steps_to_exploit": [
+        "Deploy the library on an outdated Node.js runtime.",
+        "Use EdDSA signatures.",
+        "Cause an unhandled exception or crash by triggering the missing support path."
+      ],
+      "impact": "Denial of Service.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/crypto.js",
+          "line": 353,
+          "quote": "throw new TokenError(TokenError.codes.signError, 'EdDSA algorithms are not supported by your Node.js version.')"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/crypto.js",
+          "line": 353,
+          "quote": "throw new TokenError(TokenError.codes.signError, 'EdDSA algorithms are not supported by your Node.js version.')"
+        }
+      ],
+      "id": "b713ef19",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Lack of Strict Input Validation on 'expiresIn'",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The 'expiresIn' option allows strings like '1d' via '@lukeed/ms'. If the user input is not validated, extremely large values could lead to tokens that effectively never expire.",
+      "steps_to_exploit": [
+        "Provide an extremely large string or number to 'expiresIn'.",
+        "Generate a token that has an 'exp' claim far in the future.",
+        "Use this token for unauthorized access long after intended expiration."
+      ],
+      "impact": "Authentication bypass via infinite token lifetime.",
+      "evolved_from": [],
+      "attack_category": "auth",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/signer.js",
+          "line": 246,
+          "quote": "expiresIn = parseMs(expiresIn)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/signer.js",
+          "line": 246,
+          "quote": "expiresIn = parseMs(expiresIn)"
+        }
+      ],
+      "id": "4b174011",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Default Clock Tolerance",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Clock tolerance allows tokens to be valid slightly before 'nbf' or after 'exp'. If not properly managed or set to a large value, this increases the window of attack for reused tokens.",
+      "steps_to_exploit": [
+        "Intercept an expired token.",
+        "Submit it within the clock tolerance window to bypass expiration checks."
+      ],
+      "impact": "Increased window for replaying expired tokens.",
+      "evolved_from": [],
+      "attack_category": "auth",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/verifier.js",
+          "line": 499,
+          "quote": "clockTolerance: 0"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/verifier.js",
+          "line": 499,
+          "quote": "clockTolerance: 0"
+        }
+      ],
+      "id": "d8ed8d71",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Dependency Risks in package.json",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The package uses several external dependencies (@lukeed/ms, asn1.js, etc.). Relying on older or unmaintained versions increases the surface area for supply-chain attacks.",
+      "steps_to_exploit": [
+        "Review the dependency tree for known vulnerabilities in listed versions.",
+        "Attempt to leverage a vulnerability in one of the sub-dependencies."
+      ],
+      "impact": "Compromise of the application through vulnerable dependencies.",
+      "evolved_from": [],
+      "attack_category": "supply_chain",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "package.json",
+          "line": 54,
+          "quote": "\"dependencies\": {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "package.json",
+          "line": 54,
+          "quote": "\"dependencies\": {"
+        }
+      ],
+      "id": "7553edaa",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure 'mutatePayload' behavior",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The 'mutatePayload' option in the signer allows modifying the source object. If the application passes an object that is reused elsewhere, this could lead to unintended data contamination.",
+      "steps_to_exploit": [
+        "Pass an object with shared references to the signer with mutatePayload: true.",
+        "Observe that the original object is altered.",
+        "Leverage the corrupted state in another part of the application."
+      ],
+      "impact": "State corruption leading to logic errors.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/signer.js",
+          "line": 112,
+          "quote": "Object.assign(payload, finalPayload)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/signer.js",
+          "line": 112,
+          "quote": "Object.assign(payload, finalPayload)"
+        }
+      ],
+      "id": "2cb7cc2f",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "proposed": [
+    {
+      "title": "Hardcoded Cryptographic Secret in Benchmark Server",
+      "code_refs": [
+        {
+          "file": "benchmarks/clinic-server.js",
+          "line": 6,
+          "quote": "const key = 'secretsecretsecret'"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potentially Insecure Cache Key Builder",
+      "code_refs": [
+        {
+          "file": "src/verifier.js",
+          "line": 582,
+          "quote": "if (cache && options?.cacheKeyBuilder) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of Weak/Unsafe Regular Expressions",
+      "code_refs": [
+        {
+          "file": "src/verifier.js",
+          "line": 565,
+          "quote": "if (allowedJti) checkForUnsafeRegExp(allowedJti, 'allowedJti')"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Missing 'alg: none' Protection in Signer",
+      "code_refs": [
+        {
+          "file": "src/signer.js",
+          "line": 126,
+          "quote": "const signature = algorithm === 'none' ? '' : createSignature(algorithm, key, input)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure Default CacheTTL Handling",
+      "code_refs": [
+        {
+          "file": "src/verifier.js",
+          "line": 499,
+          "quote": "{ cacheTTL: 600_000, clockTolerance: 0, errorCacheTTL: -1, cacheKeyBuilder: hashToken, ...options }"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potential Key Confusion in Verification",
+      "code_refs": [
+        {
+          "file": "src/crypto.js",
+          "line": 255,
+          "quote": "function detectPublicKeyAlgorithms(key, providedAlgorithms) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Sensitive Information Leakage in Logs",
+      "code_refs": [
+        {
+          "file": "benchmarks/utils.mjs",
+          "line": 85,
+          "quote": "await writeFile(resolve(directory, `${type}-${now}.log`), output.join('\\n'), 'utf-8')"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure Error Handling: Exposing Stack Traces",
+      "code_refs": [
+        {
+          "file": "src/error.js",
+          "line": 27,
+          "quote": "Error.captureStackTrace(this, this.constructor)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Missing Content-Type check in Routes",
+      "code_refs": [
+        {
+          "file": "benchmarks/clinic-server.js",
+          "line": 67,
+          "quote": "fastify.post('/sign-jwt', {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potential Prototype Pollution in 'TokenError'",
+      "code_refs": [
+        {
+          "file": "src/error.js",
+          "line": 32,
+          "quote": "for (const k in additional) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure Reliance on Node.js Version for Crypto",
+      "code_refs": [
+        {
+          "file": "src/crypto.js",
+          "line": 353,
+          "quote": "throw new TokenError(TokenError.codes.signError, 'EdDSA algorithms are not supported by your Node.js version.')"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Lack of Strict Input Validation on 'expiresIn'",
+      "code_refs": [
+        {
+          "file": "src/signer.js",
+          "line": 246,
+          "quote": "expiresIn = parseMs(expiresIn)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure Default Clock Tolerance",
+      "code_refs": [
+        {
+          "file": "src/verifier.js",
+          "line": 499,
+          "quote": "clockTolerance: 0"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Dependency Risks in package.json",
+      "code_refs": [
+        {
+          "file": "package.json",
+          "line": 54,
+          "quote": "\"dependencies\": {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure 'mutatePayload' behavior",
+      "code_refs": [
+        {
+          "file": "src/signer.js",
+          "line": 112,
+          "quote": "Object.assign(payload, finalPayload)"
+        }
+      ],
+      "outcome": "unchecked"
+    }
+  ],
+  "rejected": [],
+  "verification": null,
+  "arm_meta": {
+    "baseline": {
+      "model": "gemini/gemini-3.1-flash-lite",
+      "context": "code",
+      "requested": 15,
+      "returned": 15,
+      "files_shown": 27,
+      "chars_shown": 97195,
+      "files_that_did_not_fit": []
+    }
+  },
+  "seconds": {
+    "arm": 10.7,
+    "check": 0.0,
+    "total": 10.7
+  },
+  "usage": {
+    "arm": {
+      "calls": 1,
+      "failed": 0,
+      "est_tokens": 27677,
+      "seconds_in_calls": 10.7,
+      "by_task": {
+        "baseline": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 98281,
+          "completion_chars": 12428,
+          "seconds": 10.680841500055976,
+          "est_tokens": 27677
+        }
+      }
+    },
+    "check": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    }
+  }
+}

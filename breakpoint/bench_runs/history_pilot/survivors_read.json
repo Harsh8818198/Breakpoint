@@ -1,0 +1,21 @@
+{
+  "_about": "Claude read every finding the code check kept when it was run on all 15 candidates of run 1 for four advisory sets (2026-10-25), against the code at the cited line. One reader, not independently reviewed. 'not a vulnerability' means the finding is accurate about what the code does, or describes a feature, but names no attacker-controlled input that makes it a flaw (counted as wrong for precision). None of the ten is a vulnerability the advisory names.",
+  "ghsa-2933-q333-qg83": {
+    "Remote Code Execution via Eval on Untrusted Data": {"verdict": "not a vulnerability", "note": "the library loads .js/.ts translation files with eval by design; an attacker who can write those files can already run code"},
+    "Lack of Memory Limits on Read Operations": {"verdict": "not a vulnerability", "note": "reads a local file into memory; no attacker-controlled size"}
+  },
+  "ghsa-5846-7qm3-r52j": {
+    "Exposure of Debug Logic in Production": {"verdict": "not a vulnerability", "note": "an exported debug function that logs its input; the source already carries a FIXME about it"},
+    "NFKC Normalization May Create Ambiguities": {"verdict": "wrong", "note": "speculative ('may'); the cited line only calls the normaliser and no homograph bypass is shown"}
+  },
+  "ghsa-5gmw-xhrv-c9v3": {
+    "Arbitrary Code Execution via dynamic import of user-controlled filename": {"verdict": "wrong", "note": "the filename is the pool option the application sets, not user input"},
+    "Lack of Input Sanitization for Task Function Names": {"verdict": "wrong", "note": "a property read with an application-chosen name is not prototype pollution"},
+    "Global state pollution in process.__tinypool_state__": {"verdict": "not a vulnerability", "note": "accurate observation about a shared global"},
+    "Incomplete sanitization of worker environment": {"verdict": "not a vulnerability", "note": "merging the env option into the child's environment is what the option is for"}
+  },
+  "ghsa-6m44-fpc8-c3rq": {
+    "Insecure Input Handling in `read_stdin`": {"verdict": "not a vulnerability", "note": "a command-line tool reading standard input"},
+    "Insecure Temporary Files in `Makefile`": {"verdict": "wrong", "note": "rm -fr of build directories in a Makefile is not a temporary-file race"}
+  }
+}

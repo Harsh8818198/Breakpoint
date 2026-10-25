@@ -1,0 +1,3170 @@
+{
+  "parameters": {
+    "ecosystems": [
+      "npm",
+      "pip"
+    ],
+    "severities": [
+      "high",
+      "critical"
+    ],
+    "since": "2026-03-10",
+    "seed": "breakpoint-history-1",
+    "count": 24,
+    "max_considered": 700,
+    "max_source_bytes": 250000,
+    "model_release": "2026-03-03"
+  },
+  "pool": 1732,
+  "considered": [
+    {
+      "advisory": "GHSA-6wjp-v33h-5cvq",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-w6h2-fr4q-xvxv",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-rj4c-r689-cm87",
+      "outcome": "skipped",
+      "reason": "no_source_change",
+      "detail": "6 non-source file(s) changed"
+    },
+    {
+      "advisory": "GHSA-fhhq-h4hg-549x",
+      "outcome": "skipped",
+      "reason": "too_many_files",
+      "detail": "9 source files"
+    },
+    {
+      "advisory": "GHSA-vj7q-gjh5-988w",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "1253 KB"
+    },
+    {
+      "advisory": "GHSA-6wcc-39rp-hh9p",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "2"
+    },
+    {
+      "advisory": "GHSA-9pgf-384g-p7mv",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "2"
+    },
+    {
+      "advisory": "GHSA-p5w8-m249-4r4v",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "15226 KB"
+    },
+    {
+      "advisory": "GHSA-2rcg-mm5h-xchx",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-8x4m-qw58-3pcx",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-jjhp-8crj-mppq",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "1202 KB"
+    },
+    {
+      "advisory": "GHSA-6h5j-32cf-4253",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "5872 KB"
+    },
+    {
+      "advisory": "GHSA-jw8q-gjvg-8w4q",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-524w-vq63-2xhf",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-wc9g-mqfw-jrwm",
+      "outcome": "kept",
+      "package": "multer",
+      "class": "other"
+    },
+    {
+      "advisory": "GHSA-q29v-xc37-wh5m",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-g35p-px32-whv6",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "47083 KB"
+    },
+    {
+      "advisory": "GHSA-27f5-xjrr-q9ff",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-955r-262c-33jc",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-jm63-cq47-j5jp",
+      "outcome": "skipped",
+      "reason": "too_many_files",
+      "detail": "6 source files"
+    },
+    {
+      "advisory": "GHSA-4qqr-vv2q-cmr5",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-m5gr-86j6-99jp",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "1020 KB"
+    },
+    {
+      "advisory": "GHSA-m4m7-4cw8-62j6",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-98x5-vq43-vc5p",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-2mf3-mr2r-r4vf",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "781 KB"
+    },
+    {
+      "advisory": "GHSA-gf29-4f56-r2jf",
+      "outcome": "skipped",
+      "reason": "too_many_files",
+      "detail": "34 source files"
+    },
+    {
+      "advisory": "GHSA-vv4j-m4vr-f3g6",
+      "outcome": "skipped",
+      "reason": "too_many_files",
+      "detail": "5 source files"
+    },
+    {
+      "advisory": "GHSA-wm69-2pc3-rmmf",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-2h32-95rg-cppp",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-h539-c7r8-3xq4",
+      "outcome": "skipped",
+      "reason": "fix_too_large",
+      "detail": "163 changed lines"
+    },
+    {
+      "advisory": "GHSA-c72h-82w6-rqfp",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-8r9p-f939-6h3c",
+      "outcome": "kept",
+      "package": "follow-redirects",
+      "class": "disclosure"
+    },
+    {
+      "advisory": "GHSA-9c59-2mvc-vfr8",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-3xx2-mqjm-hg9x",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-wjhr-76vg-2hvc",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "2"
+    },
+    {
+      "advisory": "GHSA-27vj-qcqg-25rc",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "2"
+    },
+    {
+      "advisory": "GHSA-j98m-w3xp-9f56",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "287 KB"
+    },
+    {
+      "advisory": "GHSA-9473-5f9j-94wq",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "2"
+    },
+    {
+      "advisory": "GHSA-3c6j-hq33-3jv4",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-gf2q-c269-pqgc",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-3x9g-8vmp-wqvf",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-794r-5rp2-fpg8",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-8h6h-x5pq-56fq",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "619 KB"
+    },
+    {
+      "advisory": "GHSA-49f7-whx5-4256",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "3"
+    },
+    {
+      "advisory": "GHSA-59fj-m2j6-hcxh",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "2912 KB"
+    },
+    {
+      "advisory": "GHSA-pq96-jpmf-w254",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "31701 KB"
+    },
+    {
+      "advisory": "GHSA-3jxr-9vmj-r5cp",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "3"
+    },
+    {
+      "advisory": "GHSA-w28w-gp39-m4p6",
+      "outcome": "skipped",
+      "reason": "merge_or_root_commit",
+      "detail": "2 parents"
+    },
+    {
+      "advisory": "GHSA-6m44-fpc8-c3rq",
+      "outcome": "kept",
+      "package": "mistune",
+      "class": "dos"
+    },
+    {
+      "advisory": "GHSA-5648-rgj9-v224",
+      "outcome": "skipped",
+      "reason": "no_source_change",
+      "detail": "1 non-source file(s) changed"
+    },
+    {
+      "advisory": "GHSA-f396-4rp4-7v2j",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-f396-4rp4-7v2j",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-77xj-x4rm-935c",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "4711 KB"
+    },
+    {
+      "advisory": "GHSA-wmg3-h8mf-wgvr",
+      "outcome": "skipped",
+      "reason": "too_many_files",
+      "detail": "16 source files"
+    },
+    {
+      "advisory": "GHSA-52fh-8v99-63c2",
+      "outcome": "skipped",
+      "reason": "too_many_files",
+      "detail": "6 source files"
+    },
+    {
+      "advisory": "GHSA-mghh-pgcx-3jjj",
+      "outcome": "skipped",
+      "reason": "too_many_files",
+      "detail": "10 source files"
+    },
+    {
+      "advisory": "GHSA-24vr-rprv-67rf",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-7mj9-2mp8-4m2p",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "1524 KB"
+    },
+    {
+      "advisory": "GHSA-2gc4-cqfq-p2gv",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "835 KB"
+    },
+    {
+      "advisory": "GHSA-mxm6-v9r6-r94c",
+      "outcome": "kept",
+      "package": "@nuxtjs/mdc",
+      "class": "xss"
+    },
+    {
+      "advisory": "GHSA-mgf9-4vpg-hj56",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-x99w-6fgc-pmfw",
+      "outcome": "skipped",
+      "reason": "fix_too_large",
+      "detail": "233 changed lines"
+    },
+    {
+      "advisory": "GHSA-gmh7-3g9r-mjh5",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "1817 KB"
+    },
+    {
+      "advisory": "GHSA-w584-2h2r-2hvf",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "42668 KB"
+    },
+    {
+      "advisory": "GHSA-8ppf-4f7h-5ppj",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "379 KB"
+    },
+    {
+      "advisory": "GHSA-r7g4-qg5f-qqm2",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-ppr4-5f46-j9c6",
+      "outcome": "skipped",
+      "reason": "merge_or_root_commit",
+      "detail": "2 parents"
+    },
+    {
+      "advisory": "GHSA-p3m5-59mp-jv5r",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-7mx3-vvmw-hjmv",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "1545 KB"
+    },
+    {
+      "advisory": "GHSA-w889-685w-c8fh",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "2752 KB"
+    },
+    {
+      "advisory": "GHSA-rhp5-r9x4-f5g2",
+      "outcome": "skipped",
+      "reason": "fix_too_large",
+      "detail": "106 changed lines"
+    },
+    {
+      "advisory": "GHSA-rpj2-4hq8-938g",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-4gfv-wg42-7jw5",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-3qg8-5g3r-79v5",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-wxw2-rwmh-vr8f",
+      "outcome": "skipped",
+      "reason": "fix_too_large",
+      "detail": "803 changed lines"
+    },
+    {
+      "advisory": "GHSA-v42f-v8xc-j435",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "3"
+    },
+    {
+      "advisory": "GHSA-c7hr-448w-65px",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-5xf7-4p34-54qr",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "1546 KB"
+    },
+    {
+      "advisory": "GHSA-g9jw-92q7-g7fj",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-rgvg-3wpc-h44p",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-65qm-jvmh-6pqg",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "2754 KB"
+    },
+    {
+      "advisory": "GHSA-vxx3-6hc9-7cc3",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-2r4p-jpmg-48f4",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-h4xc-3qfq-jf93",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "2"
+    },
+    {
+      "advisory": "GHSA-57xq-rjx2-v5xh",
+      "outcome": "skipped",
+      "reason": "fix_too_large",
+      "detail": "87 changed lines"
+    },
+    {
+      "advisory": "GHSA-v853-p72q-4cfw",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "538 KB"
+    },
+    {
+      "advisory": "GHSA-f4j7-r4q5-qw2c",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-x9g3-xrwr-cwfg",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-9q4r-4842-93vw",
+      "outcome": "skipped",
+      "reason": "too_many_files",
+      "detail": "81 source files"
+    },
+    {
+      "advisory": "GHSA-xj96-63gp-2gmr",
+      "outcome": "skipped",
+      "reason": "merge_or_root_commit",
+      "detail": "2 parents"
+    },
+    {
+      "advisory": "GHSA-jqmf-mx4f-hfr6",
+      "outcome": "skipped",
+      "reason": "too_many_files",
+      "detail": "22 source files"
+    },
+    {
+      "advisory": "GHSA-w66g-j6c4-hcfc",
+      "outcome": "skipped",
+      "reason": "too_many_files",
+      "detail": "14 source files"
+    },
+    {
+      "advisory": "GHSA-xr4f-mjxj-w6w5",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-g697-2xrc-gc46",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-qw6v-5fcf-5666",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-5jq2-8x83-x246",
+      "outcome": "skipped",
+      "reason": "fix_too_large",
+      "detail": "117 changed lines"
+    },
+    {
+      "advisory": "GHSA-xc48-889x-5qmw",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "15228 KB"
+    },
+    {
+      "advisory": "GHSA-cxq5-97v7-87j8",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "2"
+    },
+    {
+      "advisory": "GHSA-g2v6-rqmx-r4w6",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "1991 KB"
+    },
+    {
+      "advisory": "GHSA-pvcr-8mvp-w8qr",
+      "outcome": "skipped",
+      "reason": "merge_or_root_commit",
+      "detail": "2 parents"
+    },
+    {
+      "advisory": "GHSA-pr59-h9ph-3fr8",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-rjg6-39jm-rgg4",
+      "outcome": "skipped",
+      "reason": "fix_too_large",
+      "detail": "167 changed lines"
+    },
+    {
+      "advisory": "GHSA-82w8-qh3p-5jfq",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-jqcg-44mw-7w3h",
+      "outcome": "kept",
+      "package": "proxy-addr",
+      "class": "authentication"
+    },
+    {
+      "advisory": "GHSA-46jr-4wx8-v453",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "2"
+    },
+    {
+      "advisory": "GHSA-x6vm-w76m-8j7g",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "14651 KB"
+    },
+    {
+      "advisory": "GHSA-9hw9-ch79-4vh6",
+      "outcome": "skipped",
+      "reason": "merge_or_root_commit",
+      "detail": "2 parents"
+    },
+    {
+      "advisory": "GHSA-78v8-vpjp-cjqh",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-g8rr-7rj2-f627",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-r82h-mqw3-fc56",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "2"
+    },
+    {
+      "advisory": "GHSA-c6w9-5g5j-jh2p",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "12535 KB"
+    },
+    {
+      "advisory": "GHSA-chx6-hx7r-mcp5",
+      "outcome": "skipped",
+      "reason": "too_many_files",
+      "detail": "5 source files"
+    },
+    {
+      "advisory": "GHSA-8qx3-8gm5-9cj2",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-c8x8-7fp4-3x9w",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "2"
+    },
+    {
+      "advisory": "GHSA-xc9g-j69q-37xw",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "2"
+    },
+    {
+      "advisory": "GHSA-mw5r-wq2m-397c",
+      "outcome": "skipped",
+      "reason": "no_source_change",
+      "detail": "10 non-source file(s) changed"
+    },
+    {
+      "advisory": "GHSA-m4rf-3fr8-xwx3",
+      "outcome": "skipped",
+      "reason": "fix_too_large",
+      "detail": "124 changed lines"
+    },
+    {
+      "advisory": "GHSA-p58f-9548-mpm2",
+      "outcome": "skipped",
+      "reason": "no_source_change",
+      "detail": "5 non-source file(s) changed"
+    },
+    {
+      "advisory": "GHSA-v5rc-cpwc-cfpr",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "1761 KB"
+    },
+    {
+      "advisory": "GHSA-6j36-r6pr-59x4",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "23527 KB"
+    },
+    {
+      "advisory": "GHSA-qxvg-h7q2-hcxh",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-6x26-6r6f-m537",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "7035 KB"
+    },
+    {
+      "advisory": "GHSA-jxjr-3g7g-3944",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "376 KB"
+    },
+    {
+      "advisory": "GHSA-qvv7-cg9c-w4x3",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-9v7f-9g4p-ffgj",
+      "outcome": "kept",
+      "package": "PyJWT",
+      "class": "disclosure"
+    },
+    {
+      "advisory": "GHSA-pqg4-j6r4-53mv",
+      "outcome": "kept",
+      "package": "shell-quote",
+      "class": "injection"
+    },
+    {
+      "advisory": "GHSA-4q6h-8p4v-67vq",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-jg86-v3jv-hrpm",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "2756 KB"
+    },
+    {
+      "advisory": "GHSA-fr26-jjhm-638c",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "2507 KB"
+    },
+    {
+      "advisory": "GHSA-jg88-rvpc-qvxj",
+      "outcome": "skipped",
+      "reason": "merge_or_root_commit",
+      "detail": "2 parents"
+    },
+    {
+      "advisory": "GHSA-72gw-mp4g-v24j",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-qj6x-xx2h-8hvv",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "15531 KB"
+    },
+    {
+      "advisory": "GHSA-8hv8-536x-4wqp",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-vv7q-7jx5-f767",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "3004 KB"
+    },
+    {
+      "advisory": "GHSA-72c6-fx6q-fr5w",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-f8c7-rwf9-fmgm",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "808 KB"
+    },
+    {
+      "advisory": "GHSA-jrc7-96c5-q579",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "2825 KB"
+    },
+    {
+      "advisory": "GHSA-2wm9-hf6c-p5cr",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-rm2v-h48j-895m",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-xx4j-w367-7247",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "12182 KB"
+    },
+    {
+      "advisory": "GHSA-mc52-mwq4-vfx3",
+      "outcome": "skipped",
+      "reason": "too_many_files",
+      "detail": "6 source files"
+    },
+    {
+      "advisory": "GHSA-r253-r9jw-qg44",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-mxfr-6hcw-j9rq",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-2q2q-jr9g-v9rf",
+      "outcome": "skipped",
+      "reason": "fix_too_large",
+      "detail": "479 changed lines"
+    },
+    {
+      "advisory": "GHSA-hjwc-26pj-v3pm",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-ghvf-qf6h-g8x5",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "2"
+    },
+    {
+      "advisory": "GHSA-rggc-m335-3wvj",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-8x35-hph8-37hq",
+      "outcome": "skipped",
+      "reason": "fix_too_large",
+      "detail": "803 changed lines"
+    },
+    {
+      "advisory": "GHSA-6966-vjj6-99xv",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "3"
+    },
+    {
+      "advisory": "GHSA-qq6c-99pv-prvf",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-v798-mcc6-2m3m",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "42668 KB"
+    },
+    {
+      "advisory": "GHSA-r23q-823p-vmf7",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "2"
+    },
+    {
+      "advisory": "GHSA-php9-fj8v-98fj",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "1769 KB"
+    },
+    {
+      "advisory": "GHSA-p68q-wchp-6fh7",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "501 KB"
+    },
+    {
+      "advisory": "GHSA-67qg-7284-2277",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-cxgv-hp74-jj7r",
+      "outcome": "skipped",
+      "reason": "merge_or_root_commit",
+      "detail": "2 parents"
+    },
+    {
+      "advisory": "GHSA-55hx-c926-fr95",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "5"
+    },
+    {
+      "advisory": "GHSA-6jcq-6546-qrrw",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-hmj8-5xmh-5573",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "3189 KB"
+    },
+    {
+      "advisory": "GHSA-49m4-vp58-wgc9",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-p26j-h7wj-r568",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-vg99-gr89-qhw9",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-7gwp-5pfp-969j",
+      "outcome": "skipped",
+      "reason": "fix_too_large",
+      "detail": "154 changed lines"
+    },
+    {
+      "advisory": "GHSA-c96f-x56v-gq3h",
+      "outcome": "kept",
+      "package": "find-my-way",
+      "class": "prototype-pollution"
+    },
+    {
+      "advisory": "GHSA-xwq8-frcg-77q8",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-f7hx-52q9-hcrf",
+      "outcome": "skipped",
+      "reason": "fix_too_large",
+      "detail": "84 changed lines"
+    },
+    {
+      "advisory": "GHSA-pqrj-4gwg-h5f7",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-qmw3-745m-w99g",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "3"
+    },
+    {
+      "advisory": "GHSA-jqff-g426-hqxp",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "3"
+    },
+    {
+      "advisory": "GHSA-v2hh-gcrm-f6hx",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "3"
+    },
+    {
+      "advisory": "GHSA-6c8g-9hfh-pq5h",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-jg6q-3qfh-r9f8",
+      "outcome": "skipped",
+      "reason": "fix_commit_in_another_repository",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-wg86-r78f-74mp",
+      "outcome": "skipped",
+      "reason": "too_many_files",
+      "detail": "6 source files"
+    },
+    {
+      "advisory": "GHSA-r5v6-2599-9g3m",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-7g7r-gx96-252g",
+      "outcome": "skipped",
+      "reason": "too_many_files",
+      "detail": "17 source files"
+    },
+    {
+      "advisory": "GHSA-wfpm-5gcm-94cg",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "835 KB"
+    },
+    {
+      "advisory": "GHSA-9vp8-3hmv-8fgh",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-cfpg-c974-jfhq",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-j4m9-6w36-pw47",
+      "outcome": "skipped",
+      "reason": "no_source_change",
+      "detail": "1 non-source file(s) changed"
+    },
+    {
+      "advisory": "GHSA-pj96-35fp-cfcc",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "452 KB"
+    },
+    {
+      "advisory": "GHSA-xwx6-jjhv-84p8",
+      "outcome": "skipped",
+      "reason": "too_many_files",
+      "detail": "34 source files"
+    },
+    {
+      "advisory": "GHSA-3c93-f73f-qc9h",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "559 KB"
+    },
+    {
+      "advisory": "GHSA-7hxm-f538-3xp6",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-qxc2-j82w-r537",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "4347 KB"
+    },
+    {
+      "advisory": "GHSA-j5xp-7m2f-49jv",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-j8v8-g9cx-5qf4",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-8579-rgg5-ph2m",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-vrf4-mx87-p53w",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "3878 KB"
+    },
+    {
+      "advisory": "GHSA-6c7f-9265-g8fw",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "1818 KB"
+    },
+    {
+      "advisory": "GHSA-mrq8-fv7v-hhjg",
+      "outcome": "skipped",
+      "reason": "too_many_files",
+      "detail": "14 source files"
+    },
+    {
+      "advisory": "GHSA-vjqm-6gcc-62cr",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-28gh-q3gw-pvx8",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "3453 KB"
+    },
+    {
+      "advisory": "GHSA-qgvm-j2hm-6m38",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-rr55-jp92-8wp2",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-38rv-x7px-6hhq",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-r44w-v6gf-x3p6",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "2501 KB"
+    },
+    {
+      "advisory": "GHSA-93qj-5q5v-3c2h",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-r3hx-x5rh-p9vv",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "665 KB"
+    },
+    {
+      "advisory": "GHSA-p9j2-gv94-2wf4",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "2"
+    },
+    {
+      "advisory": "GHSA-ph6f-2cvq-79hq",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-6f5r-5672-72j7",
+      "outcome": "skipped",
+      "reason": "fix_too_large",
+      "detail": "422 changed lines"
+    },
+    {
+      "advisory": "GHSA-jpvj-wpmj-h7rv",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-322x-v876-g883",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "427 KB"
+    },
+    {
+      "advisory": "GHSA-g3r5-9h93-4j2c",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-h535-j5hr-mv56",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-m549-qq94-fvhg",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-cmhj-wh2f-9cgx",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "4345 KB"
+    },
+    {
+      "advisory": "GHSA-jw7q-gvrg-4vj3",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "1765 KB"
+    },
+    {
+      "advisory": "GHSA-7hh5-prp2-mfh5",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-g74q-6g2f-874x",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "2898 KB"
+    },
+    {
+      "advisory": "GHSA-v847-hxxw-3pxg",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-35c4-rvc8-frhm",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-x2ff-v5v8-m75m",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "2"
+    },
+    {
+      "advisory": "GHSA-m8gf-v64p-gfmg",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-vcv2-r9jh-99m5",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-98xx-8mx4-x7cm",
+      "outcome": "skipped",
+      "reason": "fix_too_large",
+      "detail": "175 changed lines"
+    },
+    {
+      "advisory": "GHSA-pm35-fqvh-cq5g",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-92cr-jxw4-5wjg",
+      "outcome": "skipped",
+      "reason": "too_many_files",
+      "detail": "20 source files"
+    },
+    {
+      "advisory": "GHSA-x26h-xmv8-gxf7",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-jgg9-rw32-44pj",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-xgv3-crq2-6f69",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "22001 KB"
+    },
+    {
+      "advisory": "GHSA-x9r9-c232-4q39",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "55134 KB"
+    },
+    {
+      "advisory": "GHSA-v75r-vx73-82pj",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-qhr7-859c-m2p7",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "3"
+    },
+    {
+      "advisory": "GHSA-5846-7qm3-r52j",
+      "outcome": "kept",
+      "package": "dssrf",
+      "class": "ssrf"
+    },
+    {
+      "advisory": "GHSA-ff3f-86qr-9cv3",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "3"
+    },
+    {
+      "advisory": "GHSA-3769-jgqc-cxm7",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "14695 KB"
+    },
+    {
+      "advisory": "GHSA-vhh6-v828-x62f",
+      "outcome": "skipped",
+      "reason": "no_github_source_location",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-g3jj-5cmm-3hxx",
+      "outcome": "kept",
+      "package": "fast-jwt",
+      "class": "crypto"
+    },
+    {
+      "advisory": "GHSA-qjpc-qf9m-xwmr",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-wch5-xp77-fxg4",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-rp9m-7r4c-75qg",
+      "outcome": "kept",
+      "package": "fast-jwt",
+      "class": "other"
+    },
+    {
+      "advisory": "GHSA-78r8-wwqv-r299",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-6p8h-3wgx-97gf",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "773 KB"
+    },
+    {
+      "advisory": "GHSA-rqx4-3f6q-3x2v",
+      "outcome": "skipped",
+      "reason": "too_many_files",
+      "detail": "18 source files"
+    },
+    {
+      "advisory": "GHSA-g4wm-2vf7-vfgr",
+      "outcome": "skipped",
+      "reason": "fix_too_large",
+      "detail": "300 or more files"
+    },
+    {
+      "advisory": "GHSA-525m-7f82-2mf7",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-542p-wvx7-72m4",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-q7q8-3mgw-q67r",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-vjc7-jrh9-9j86",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-62q6-4hv4-vjrw",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-g4qv-2jxx-769h",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "2753 KB"
+    },
+    {
+      "advisory": "GHSA-p7w7-4929-vpj5",
+      "outcome": "skipped",
+      "reason": "fix_too_large",
+      "detail": "105 changed lines"
+    },
+    {
+      "advisory": "GHSA-jj74-hc2q-xrvm",
+      "outcome": "skipped",
+      "reason": "too_many_files",
+      "detail": "33 source files"
+    },
+    {
+      "advisory": "GHSA-r7fv-28h4-cvq7",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "3"
+    },
+    {
+      "advisory": "GHSA-jr2x-6qf6-q5mc",
+      "outcome": "skipped",
+      "reason": "no_source_change",
+      "detail": "10 non-source file(s) changed"
+    },
+    {
+      "advisory": "GHSA-6hm5-jgcp-p838",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-37h2-6p4f-mp3q",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "3746 KB"
+    },
+    {
+      "advisory": "GHSA-v3xr-g6p2-fvgv",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "22825 KB"
+    },
+    {
+      "advisory": "GHSA-48r7-hpm6-gfxm",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "19277 KB"
+    },
+    {
+      "advisory": "GHSA-rcr2-hggw-43wm",
+      "outcome": "skipped",
+      "reason": "no_source_change",
+      "detail": "2 non-source file(s) changed"
+    },
+    {
+      "advisory": "GHSA-2jq4-q6vv-4cp3",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-rrv8-h7p8-rx55",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "4848 KB"
+    },
+    {
+      "advisory": "GHSA-vqx2-fgx2-5wq9",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-9jpv-c7p4-997x",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-mchm-gjx6-7h55",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "3"
+    },
+    {
+      "advisory": "GHSA-4pcv-mg8v-vrgf",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-53xc-49m8-p798",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "2"
+    },
+    {
+      "advisory": "GHSA-xv26-6w52-cph6",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-5xm2-6676-qcp9",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "2777 KB"
+    },
+    {
+      "advisory": "GHSA-86j7-9j95-vpqj",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-f88m-g3jw-g9cj",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-rwj8-pgh3-r573",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "767 KB"
+    },
+    {
+      "advisory": "GHSA-h4mw-j7qp-8mwm",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "478 KB"
+    },
+    {
+      "advisory": "GHSA-cfh6-pv5c-38jv",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "1761 KB"
+    },
+    {
+      "advisory": "GHSA-g734-fhp4-7mfp",
+      "outcome": "skipped",
+      "reason": "too_many_files",
+      "detail": "5 source files"
+    },
+    {
+      "advisory": "GHSA-wm5r-5qp3-5vxf",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-89xv-2m56-2m9x",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "2"
+    },
+    {
+      "advisory": "GHSA-6c8m-q6g9-vrw3",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "1761 KB"
+    },
+    {
+      "advisory": "GHSA-2933-q333-qg83",
+      "outcome": "kept",
+      "package": "i18next-fs-backend",
+      "class": "prototype-pollution"
+    },
+    {
+      "advisory": "GHSA-wm8w-6qjm-cv43",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "1998 KB"
+    },
+    {
+      "advisory": "GHSA-x5vx-c2c8-m3w9",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-r6x4-923q-g947",
+      "outcome": "kept",
+      "package": "PyJWT",
+      "class": "crypto"
+    },
+    {
+      "advisory": "GHSA-f49j-v924-fx9w",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-x92v-rpx6-p6cw",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-v52w-28xh-v562",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-2j8v-hwgc-x698",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-rg5q-pp8p-f7jm",
+      "outcome": "skipped",
+      "reason": "too_many_files",
+      "detail": "14 source files"
+    },
+    {
+      "advisory": "GHSA-587p-w43q-4hjx",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-wmhf-fqc8-vxhh",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-fmh4-wcc4-5jm3",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "4230 KB"
+    },
+    {
+      "advisory": "GHSA-j95f-988m-3j2f",
+      "outcome": "skipped",
+      "reason": "too_many_files",
+      "detail": "10 source files"
+    },
+    {
+      "advisory": "GHSA-qw6m-8fw2-2v64",
+      "outcome": "skipped",
+      "reason": "merge_or_root_commit",
+      "detail": "2 parents"
+    },
+    {
+      "advisory": "GHSA-83w8-p2f5-377r",
+      "outcome": "kept",
+      "package": "@fastify/static",
+      "class": "path-traversal"
+    },
+    {
+      "advisory": "GHSA-6q48-6c7w-9gw2",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-qg25-6gc4-48mg",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-r275-fr43-pm7q",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "3245 KB"
+    },
+    {
+      "advisory": "GHSA-pj5h-5q6c-3pfx",
+      "outcome": "skipped",
+      "reason": "fix_too_large",
+      "detail": "108 changed lines"
+    },
+    {
+      "advisory": "GHSA-658g-p7jg-wx5g",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-hm4w-wwcw-mr6r",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "377 KB"
+    },
+    {
+      "advisory": "GHSA-f7v3-xhm6-w245",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "2"
+    },
+    {
+      "advisory": "GHSA-mpf4-983q-p7j4",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "1036 KB"
+    },
+    {
+      "advisory": "GHSA-p95v-992w-h6c3",
+      "outcome": "skipped",
+      "reason": "too_many_files",
+      "detail": "6 source files"
+    },
+    {
+      "advisory": "GHSA-7vg8-29qx-jgj8",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "21888 KB"
+    },
+    {
+      "advisory": "GHSA-38c3-wv3c-v3xj",
+      "outcome": "skipped",
+      "reason": "too_many_files",
+      "detail": "7 source files"
+    },
+    {
+      "advisory": "GHSA-2xx6-qf7x-grqh",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-8m8r-38jm-f355",
+      "outcome": "skipped",
+      "reason": "fix_too_large",
+      "detail": "104 changed lines"
+    },
+    {
+      "advisory": "GHSA-64xh-79j6-r5v8",
+      "outcome": "skipped",
+      "reason": "too_many_files",
+      "detail": "34 source files"
+    },
+    {
+      "advisory": "GHSA-p75x-jh7p-ppcx",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "2"
+    },
+    {
+      "advisory": "GHSA-cv84-9p8j-fj68",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "2"
+    },
+    {
+      "advisory": "GHSA-284h-m62q-gf8w",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-vv3m-f8x4-7377",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "3"
+    },
+    {
+      "advisory": "GHSA-7g3p-92qq-8wvh",
+      "outcome": "skipped",
+      "reason": "too_many_files",
+      "detail": "14 source files"
+    },
+    {
+      "advisory": "GHSA-gr94-w7qr-f4j3",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "808 KB"
+    },
+    {
+      "advisory": "GHSA-jxw3-mjmx-3pqm",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "42668 KB"
+    },
+    {
+      "advisory": "GHSA-r6gq-whwq-mvg9",
+      "outcome": "skipped",
+      "reason": "fix_too_large",
+      "detail": "173 changed lines"
+    },
+    {
+      "advisory": "GHSA-phv5-334h-mxcw",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-r635-g3xr-vw7x",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "809 KB"
+    },
+    {
+      "advisory": "GHSA-xjgw-4wvw-rgm4",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "1519 KB"
+    },
+    {
+      "advisory": "GHSA-p3m8-78j2-g5p3",
+      "outcome": "skipped",
+      "reason": "fix_too_large",
+      "detail": "271 changed lines"
+    },
+    {
+      "advisory": "GHSA-8mcc-hrx5-hvxc",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "1032 KB"
+    },
+    {
+      "advisory": "GHSA-v2ww-5rh7-2h5v",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-mw8f-w6p8-xrf4",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-436q-jwfr-rm2h",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-xm98-3vcf-fph7",
+      "outcome": "skipped",
+      "reason": "fix_too_large",
+      "detail": "148 changed lines"
+    },
+    {
+      "advisory": "GHSA-h5x8-xp6m-x6q4",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-f2m9-wcf4-cwwx",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "2"
+    },
+    {
+      "advisory": "GHSA-73wf-gq98-2v4g",
+      "outcome": "kept",
+      "package": "browserslist",
+      "class": "prototype-pollution"
+    },
+    {
+      "advisory": "GHSA-5rmq-chc7-m22f",
+      "outcome": "skipped",
+      "reason": "too_many_files",
+      "detail": "22 source files"
+    },
+    {
+      "advisory": "GHSA-7833-fr7j-v32q",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "1033 KB"
+    },
+    {
+      "advisory": "GHSA-hmw2-7cc7-3qxx",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "3"
+    },
+    {
+      "advisory": "GHSA-mqhr-6j6h-74p5",
+      "outcome": "skipped",
+      "reason": "merge_or_root_commit",
+      "detail": "2 parents"
+    },
+    {
+      "advisory": "GHSA-fq2m-6wqh-x44g",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-jjj6-mw9f-p565",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "2754 KB"
+    },
+    {
+      "advisory": "GHSA-wv8v-v4c5-v75j",
+      "outcome": "skipped",
+      "reason": "too_many_files",
+      "detail": "14 source files"
+    },
+    {
+      "advisory": "GHSA-ccv6-r384-xp75",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-6v7p-g79w-8964",
+      "outcome": "skipped",
+      "reason": "no_source_change",
+      "detail": "4 non-source file(s) changed"
+    },
+    {
+      "advisory": "GHSA-xjh9-v7x6-24jw",
+      "outcome": "kept",
+      "package": "@fastify/busboy",
+      "class": "dos"
+    },
+    {
+      "advisory": "GHSA-9xq9-36w5-q796",
+      "outcome": "skipped",
+      "reason": "too_many_files",
+      "detail": "70 source files"
+    },
+    {
+      "advisory": "GHSA-58r4-6rv3-gfh8",
+      "outcome": "skipped",
+      "reason": "no_source_change",
+      "detail": "2 non-source file(s) changed"
+    },
+    {
+      "advisory": "GHSA-6qc9-mqvw-jg7x",
+      "outcome": "skipped",
+      "reason": "too_many_files",
+      "detail": "34 source files"
+    },
+    {
+      "advisory": "GHSA-wphc-7cm7-8mf7",
+      "outcome": "skipped",
+      "reason": "merge_or_root_commit",
+      "detail": "2 parents"
+    },
+    {
+      "advisory": "GHSA-8j6p-r8jg-mxqh",
+      "outcome": "skipped",
+      "reason": "fix_too_large",
+      "detail": "107 changed lines"
+    },
+    {
+      "advisory": "GHSA-cc2g-gq8c-r332",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-qvv5-jq5g-4cgg",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "6662 KB"
+    },
+    {
+      "advisory": "GHSA-q38v-wp89-2w55",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-mr4r-hcgx-8p4h",
+      "outcome": "skipped",
+      "reason": "too_many_files",
+      "detail": "8 source files"
+    },
+    {
+      "advisory": "GHSA-8mgp-746c-j5xp",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "3"
+    },
+    {
+      "advisory": "GHSA-m973-pr9r-hp2w",
+      "outcome": "skipped",
+      "reason": "too_many_files",
+      "detail": "20 source files"
+    },
+    {
+      "advisory": "GHSA-pppj-hq3g-57pj",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "2"
+    },
+    {
+      "advisory": "GHSA-8mcx-5rqc-vhmf",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "3157 KB"
+    },
+    {
+      "advisory": "GHSA-cc5h-2pwp-pvcc",
+      "outcome": "skipped",
+      "reason": "too_many_files",
+      "detail": "14 source files"
+    },
+    {
+      "advisory": "GHSA-pv9q-275h-rh7x",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-v4x9-3549-crwv",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "2"
+    },
+    {
+      "advisory": "GHSA-w37p-236h-pfx3",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-jrw6-7x4q-w25j",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "2"
+    },
+    {
+      "advisory": "GHSA-8hr7-r645-pc6w",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "2"
+    },
+    {
+      "advisory": "GHSA-c3gv-825q-fvmp",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "3878 KB"
+    },
+    {
+      "advisory": "GHSA-mxq5-f9c5-w4p5",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-6mj3-qw4j-hgrw",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "381 KB"
+    },
+    {
+      "advisory": "GHSA-cg8m-r9f2-5wm2",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "4810 KB"
+    },
+    {
+      "advisory": "GHSA-p4rw-rvv2-7xwr",
+      "outcome": "skipped",
+      "reason": "too_many_files",
+      "detail": "10 source files"
+    },
+    {
+      "advisory": "GHSA-wcr3-gm9f-f87q",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-8gmq-j984-vp4r",
+      "outcome": "skipped",
+      "reason": "too_many_files",
+      "detail": "50 source files"
+    },
+    {
+      "advisory": "GHSA-9q9j-q6p8-xq58",
+      "outcome": "skipped",
+      "reason": "fix_too_large",
+      "detail": "190 changed lines"
+    },
+    {
+      "advisory": "GHSA-j4h9-pm27-4rfw",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-g8f2-4f4f-5jqw",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "307 KB"
+    },
+    {
+      "advisory": "GHSA-q38j-6vcm-2f5m",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "2"
+    },
+    {
+      "advisory": "GHSA-v7px-3835-7gjx",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-8vh3-g2qg-2h2c",
+      "outcome": "skipped",
+      "reason": "too_many_files",
+      "detail": "6 source files"
+    },
+    {
+      "advisory": "GHSA-2h44-8472-frjj",
+      "outcome": "skipped",
+      "reason": "merge_or_root_commit",
+      "detail": "2 parents"
+    },
+    {
+      "advisory": "GHSA-x7m8-jrm8-hpvx",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-6g59-gm2v-qhvq",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-gj8w-mvpf-x27x",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-g4w6-vmgf-xqvx",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-c6mw-8xh8-gpq6",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "14069 KB"
+    },
+    {
+      "advisory": "GHSA-9m6g-wc8r-q59c",
+      "outcome": "kept",
+      "package": "scim-patch",
+      "class": "prototype-pollution"
+    },
+    {
+      "advisory": "GHSA-fg7f-2386-8897",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-9643-4qgh-g8mx",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "781 KB"
+    },
+    {
+      "advisory": "GHSA-9837-48hr-q32j",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-gvf2-2rh5-mpgf",
+      "outcome": "skipped",
+      "reason": "fix_too_large",
+      "detail": "222 changed lines"
+    },
+    {
+      "advisory": "GHSA-pj2v-ggqh-cmq2",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-w7wx-5q49-r59w",
+      "outcome": "skipped",
+      "reason": "fix_too_large",
+      "detail": "163 changed lines"
+    },
+    {
+      "advisory": "GHSA-279x-mwfv-vcqv",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-9v98-6g37-x9g6",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "697 KB"
+    },
+    {
+      "advisory": "GHSA-848c-c2cx-j7qx",
+      "outcome": "skipped",
+      "reason": "merge_or_root_commit",
+      "detail": "2 parents"
+    },
+    {
+      "advisory": "GHSA-73jc-5mrq-prw7",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-hxpf-9xvq-wph8",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "1659 KB"
+    },
+    {
+      "advisory": "GHSA-x6p3-m6h9-fx7r",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-6x6h-qqr7-855w",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "3"
+    },
+    {
+      "advisory": "GHSA-3xcq-8mjw-h6mx",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-42h7-m79w-wvg5",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-72qq-p3r5-f7wq",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "4145 KB"
+    },
+    {
+      "advisory": "GHSA-2xgg-r2wc-c5r2",
+      "outcome": "skipped",
+      "reason": "merge_or_root_commit",
+      "detail": "2 parents"
+    },
+    {
+      "advisory": "GHSA-f38v-77qj-h4jq",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-62mm-xwmv-crhg",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "2"
+    },
+    {
+      "advisory": "GHSA-xw77-45gv-p728",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-wvqv-fj8w-qmhm",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "4"
+    },
+    {
+      "advisory": "GHSA-rxjr-6c9q-h67x",
+      "outcome": "skipped",
+      "reason": "fix_too_large",
+      "detail": "133 changed lines"
+    },
+    {
+      "advisory": "GHSA-xcpc-8h2w-3j85",
+      "outcome": "kept",
+      "package": "adm-zip",
+      "class": "dos"
+    },
+    {
+      "advisory": "GHSA-pmpg-2mxq-6xwr",
+      "outcome": "skipped",
+      "reason": "fix_too_large",
+      "detail": "172 changed lines"
+    },
+    {
+      "advisory": "GHSA-rx78-29qr-5hq8",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-p6gq-j5cr-w38f",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "510 KB"
+    },
+    {
+      "advisory": "GHSA-x3hf-7cj6-3r4m",
+      "outcome": "skipped",
+      "reason": "too_many_files",
+      "detail": "15 source files"
+    },
+    {
+      "advisory": "GHSA-cwm5-jh59-mwxr",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "2"
+    },
+    {
+      "advisory": "GHSA-5vjc-7cxw-4w6j",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "7037 KB"
+    },
+    {
+      "advisory": "GHSA-5gmw-xhrv-c9v3",
+      "outcome": "kept",
+      "package": "tinypool",
+      "class": "prototype-pollution"
+    },
+    {
+      "advisory": "GHSA-8qvf-mr4w-9x2c",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "6609 KB"
+    },
+    {
+      "advisory": "GHSA-4936-9hrh-qqpw",
+      "outcome": "skipped",
+      "reason": "fix_too_large",
+      "detail": "87 changed lines"
+    },
+    {
+      "advisory": "GHSA-cp4f-5m9r-5jc2",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-g84c-rxfj-3j2c",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "2"
+    },
+    {
+      "advisory": "GHSA-g5vv-9gxw-82hx",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "1034 KB"
+    },
+    {
+      "advisory": "GHSA-hf68-49fm-59cq",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "2"
+    },
+    {
+      "advisory": "GHSA-x965-fc75-jpqh",
+      "outcome": "skipped",
+      "reason": "fix_too_large",
+      "detail": "130 changed lines"
+    },
+    {
+      "advisory": "GHSA-w8wf-3qvj-6xqf",
+      "outcome": "skipped",
+      "reason": "too_many_files",
+      "detail": "5 source files"
+    },
+    {
+      "advisory": "GHSA-jg4p-g6xj-4qmf",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "1252 KB"
+    },
+    {
+      "advisory": "GHSA-g28h-2cmm-rj9x",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "2574 KB"
+    },
+    {
+      "advisory": "GHSA-8988-9cw3-xx77",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "2"
+    },
+    {
+      "advisory": "GHSA-9h47-pqcx-hjr4",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-hvhp-v2gc-268q",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-fxg7-897c-57mp",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-f29h-2h58-48r7",
+      "outcome": "skipped",
+      "reason": "no_source_change",
+      "detail": "7 non-source file(s) changed"
+    },
+    {
+      "advisory": "GHSA-r9w8-h9r3-54w4",
+      "outcome": "kept",
+      "package": "devalue",
+      "class": "other"
+    },
+    {
+      "advisory": "GHSA-c6hw-5grf-ff96",
+      "outcome": "skipped",
+      "reason": "no_source_change",
+      "detail": "2 non-source file(s) changed"
+    },
+    {
+      "advisory": "GHSA-3w57-8xmc-8v26",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "519 KB"
+    },
+    {
+      "advisory": "GHSA-9v9v-9qvf-h2hj",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "2754 KB"
+    },
+    {
+      "advisory": "GHSA-wrhw-j3f9-8vc6",
+      "outcome": "skipped",
+      "reason": "too_many_files",
+      "detail": "14 source files"
+    },
+    {
+      "advisory": "GHSA-2679-6mx9-h9xc",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "10371 KB"
+    },
+    {
+      "advisory": "GHSA-j3hm-6rg5-mchv",
+      "outcome": "skipped",
+      "reason": "fix_too_large",
+      "detail": "82 changed lines"
+    },
+    {
+      "advisory": "GHSA-jj36-r9w3-3pfh",
+      "outcome": "skipped",
+      "reason": "merge_or_root_commit",
+      "detail": "2 parents"
+    },
+    {
+      "advisory": "GHSA-2gg9-6p7w-6cpj",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-6xp4-cf37-ppjh",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-f2hq-32vh-53cc",
+      "outcome": "kept",
+      "package": "postal-mime",
+      "class": "dos"
+    },
+    {
+      "advisory": "GHSA-855v-hq7w-jmjw",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "20176 KB"
+    },
+    {
+      "advisory": "GHSA-vq4v-j7r6-jq4m",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "2"
+    },
+    {
+      "advisory": "GHSA-x78j-v8h9-3j2q",
+      "outcome": "skipped",
+      "reason": "fix_too_large",
+      "detail": "127 changed lines"
+    },
+    {
+      "advisory": "GHSA-vjg6-gm8m-v5g6",
+      "outcome": "skipped",
+      "reason": "no_source_change",
+      "detail": "5 non-source file(s) changed"
+    },
+    {
+      "advisory": "GHSA-pf56-329r-95rw",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "484 KB"
+    },
+    {
+      "advisory": "GHSA-c39v-8hrw-h448",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "2624 KB"
+    },
+    {
+      "advisory": "GHSA-gv7g-jm28-cr3m",
+      "outcome": "skipped",
+      "reason": "too_many_files",
+      "detail": "34 source files"
+    },
+    {
+      "advisory": "GHSA-537c-gmf6-5ccf",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-wg5p-8h9p-3mr7",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-886q-f44j-h6wh",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-52v5-jr5w-gjxr",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-3qf3-8w2g-rqmx",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-7835-87q9-rgvv",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-3cj3-hqcr-g934",
+      "outcome": "skipped",
+      "reason": "fix_too_large",
+      "detail": "225 changed lines"
+    },
+    {
+      "advisory": "GHSA-f65p-4m7j-42xc",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "3"
+    },
+    {
+      "advisory": "GHSA-v37h-5mfm-c47c",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "3"
+    },
+    {
+      "advisory": "GHSA-8x88-c5mf-7j5w",
+      "outcome": "kept",
+      "package": "tar",
+      "class": "dos"
+    },
+    {
+      "advisory": "GHSA-c4gh-rv8h-q9vw",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "5398 KB"
+    },
+    {
+      "advisory": "GHSA-rvm3-566m-v7fv",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "7"
+    },
+    {
+      "advisory": "GHSA-fqw4-mph7-2vr8",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "43742 KB"
+    },
+    {
+      "advisory": "GHSA-67c5-x5mf-rppq",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "45074 KB"
+    },
+    {
+      "advisory": "GHSA-h754-fxp7-88wx",
+      "outcome": "skipped",
+      "reason": "too_many_files",
+      "detail": "7 source files"
+    },
+    {
+      "advisory": "GHSA-vj5c-m527-mpff",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "2"
+    },
+    {
+      "advisory": "GHSA-52vm-mxx8-f227",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-c9hr-64h3-gxpc",
+      "outcome": "skipped",
+      "reason": "too_many_files",
+      "detail": "12 source files"
+    },
+    {
+      "advisory": "GHSA-7587-9684-52r6",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "2947 KB"
+    },
+    {
+      "advisory": "GHSA-6v3r-4p5c-mrp5",
+      "outcome": "skipped",
+      "reason": "fix_commit_in_another_repository",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-2cmg-v53w-8xfp",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "31225 KB"
+    },
+    {
+      "advisory": "GHSA-8qrg-7j2f-rf2h",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-q45j-58j2-45rg",
+      "outcome": "skipped",
+      "reason": "no_source_change",
+      "detail": "2 non-source file(s) changed"
+    },
+    {
+      "advisory": "GHSA-q986-4x7x-gx39",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "2"
+    },
+    {
+      "advisory": "GHSA-qf28-8hc6-vwrp",
+      "outcome": "skipped",
+      "reason": "too_many_files",
+      "detail": "16 source files"
+    },
+    {
+      "advisory": "GHSA-vmmj-pfw7-fjwp",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-v396-v7q4-x2qj",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-4p62-hqp5-g644",
+      "outcome": "skipped",
+      "reason": "fix_commit_in_another_repository",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-8wv5-x4w7-5gww",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-qwqc-p3q8-wcg9",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-7mwm-ghpf-9vrm",
+      "outcome": "skipped",
+      "reason": "no_source_change",
+      "detail": "2 non-source file(s) changed"
+    },
+    {
+      "advisory": "GHSA-fm8p-53ww-hf6w",
+      "outcome": "skipped",
+      "reason": "fix_too_large",
+      "detail": "321 changed lines"
+    },
+    {
+      "advisory": "GHSA-q3vj-96h2-gwvg",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-386q-5hp3-95m9",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "2568 KB"
+    },
+    {
+      "advisory": "GHSA-m4wx-m65x-ghrr",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "2"
+    },
+    {
+      "advisory": "GHSA-h44j-f5r5-ph73",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-q3j5-8vrg-4p9q",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-wc84-j36w-pw4x",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-8qpj-27x8-pwpq",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "42685 KB"
+    },
+    {
+      "advisory": "GHSA-72r4-9c5j-mj57",
+      "outcome": "skipped",
+      "reason": "fix_too_large",
+      "detail": "151 changed lines"
+    },
+    {
+      "advisory": "GHSA-68qg-g8mg-6pr7",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-3476-c5c2-fr73",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "5743 KB"
+    },
+    {
+      "advisory": "GHSA-8ccj-p46r-jwqq",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-pm4m-ph32-ghv5",
+      "outcome": "kept",
+      "package": "js-yaml",
+      "class": "dos"
+    },
+    {
+      "advisory": "GHSA-c29m-xwm3-cm6r",
+      "outcome": "skipped",
+      "reason": "too_many_files",
+      "detail": "10 source files"
+    },
+    {
+      "advisory": "GHSA-5qw8-f2g9-ff29",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-wvr4-3wq4-gpc5",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-jj27-h5hq-8x99",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "2"
+    },
+    {
+      "advisory": "GHSA-w7pm-9g55-mxfm",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-v6r2-jh58-xx6w",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-4gmw-gg2m-w46p",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "1028 KB"
+    },
+    {
+      "advisory": "GHSA-v2f8-6655-7grj",
+      "outcome": "skipped",
+      "reason": "too_many_files",
+      "detail": "22 source files"
+    },
+    {
+      "advisory": "GHSA-jmg2-rcxh-w8q3",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "2"
+    },
+    {
+      "advisory": "GHSA-rg7c-g689-fr3x",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-4h5r-5jm8-jxjm",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-mhq8-78pj-5j79",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-p4gq-832x-fm9v",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-82r6-8w77-94w6",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "519 KB"
+    },
+    {
+      "advisory": "GHSA-q99w-vh6v-q3v7",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-8pw3-9m7f-q734",
+      "outcome": "skipped",
+      "reason": "too_many_files",
+      "detail": "7 source files"
+    },
+    {
+      "advisory": "GHSA-xwg4-73v4-xw9w",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "3"
+    },
+    {
+      "advisory": "GHSA-52cp-r559-cp3m",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "2"
+    },
+    {
+      "advisory": "GHSA-gcq3-mfvh-3x25",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-p6hp-93wp-fh6p",
+      "outcome": "skipped",
+      "reason": "too_many_files",
+      "detail": "14 source files"
+    },
+    {
+      "advisory": "GHSA-29h2-jr22-frmh",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "3"
+    },
+    {
+      "advisory": "GHSA-p23g-mvhj-jh3j",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-p23g-mvhj-jh3j",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-pvrj-8cg3-j5f8",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-6gr2-qh89-hxwm",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-4v9x-cqc5-j645",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-px3p-vgh9-m57c",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-qxjp-w3pj-48m7",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-gjgq-w2m6-wr5q",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-9qhq-v63v-fv3j",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "18950 KB"
+    },
+    {
+      "advisory": "GHSA-889w-m37p-88m5",
+      "outcome": "skipped",
+      "reason": "too_many_files",
+      "detail": "5 source files"
+    },
+    {
+      "advisory": "GHSA-rqpp-rjj8-7wv8",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "38157 KB"
+    },
+    {
+      "advisory": "GHSA-2m8v-j782-fhvr",
+      "outcome": "skipped",
+      "reason": "several_fix_commits",
+      "detail": "3"
+    },
+    {
+      "advisory": "GHSA-mhc8-p3jx-84mm",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-wx9m-wx4f-4cmg",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-wf8q-wvv8-p8jf",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-g5r6-gv6m-f5jv",
+      "outcome": "skipped",
+      "reason": "too_many_files",
+      "detail": "14 source files"
+    },
+    {
+      "advisory": "GHSA-pjvx-prjx-h659",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "418 KB"
+    },
+    {
+      "advisory": "GHSA-m6c8-jcw2-5r25",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "13527 KB"
+    },
+    {
+      "advisory": "GHSA-5fqc-mrg8-w798",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "3147 KB"
+    },
+    {
+      "advisory": "GHSA-vrxg-gm77-7q5g",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-3rf6-x59v-5jfv",
+      "outcome": "skipped",
+      "reason": "no_fix_commit_in_references",
+      "detail": ""
+    },
+    {
+      "advisory": "GHSA-5f94-x226-ccpm",
+      "outcome": "skipped",
+      "reason": "too_many_files",
+      "detail": "7 source files"
+    },
+    {
+      "advisory": "GHSA-f4vv-55c2-5789",
+      "outcome": "skipped",
+      "reason": "source_too_big_for_one_prompt",
+      "detail": "8326 KB"
+    },
+    {
+      "advisory": "GHSA-c83g-rgw3-j3cx",
+      "outcome": "kept",
+      "package": "browserslist",
+      "class": "dos"
+    }
+  ],
+  "kept": [
+    "GHSA-wc9g-mqfw-jrwm",
+    "GHSA-8r9p-f939-6h3c",
+    "GHSA-6m44-fpc8-c3rq",
+    "GHSA-mxm6-v9r6-r94c",
+    "GHSA-jqcg-44mw-7w3h",
+    "GHSA-9v7f-9g4p-ffgj",
+    "GHSA-pqg4-j6r4-53mv",
+    "GHSA-c96f-x56v-gq3h",
+    "GHSA-5846-7qm3-r52j",
+    "GHSA-g3jj-5cmm-3hxx",
+    "GHSA-2933-q333-qg83",
+    "GHSA-83w8-p2f5-377r",
+    "GHSA-73wf-gq98-2v4g",
+    "GHSA-xjh9-v7x6-24jw",
+    "GHSA-9m6g-wc8r-q59c",
+    "GHSA-xcpc-8h2w-3j85",
+    "GHSA-5gmw-xhrv-c9v3",
+    "GHSA-r9w8-h9r3-54w4",
+    "GHSA-f2hq-32vh-53cc",
+    "GHSA-8x88-c5mf-7j5w",
+    "GHSA-pm4m-ph32-ghv5",
+    "GHSA-c83g-rgw3-j3cx"
+  ],
+  "excluded_after_label_review": [
+    {
+      "advisory": "GHSA-RP9M-7R4C-75QG",
+      "reason": "the advisory itself says the library has no flaw (developer-supplied cacheKeyBuilder); the fix only adds a warning, so no lines are a flaw"
+    },
+    {
+      "advisory": "GHSA-R6X4-923Q-G947",
+      "reason": "the advisory describes a bytes.lstrip() guard that a BOM bypasses; the parent commit already parses with json.loads, and the fix handles a different bypass (RecursionError), so the described flaw is not in the pinned code"
+    }
+  ],
+  "label_review_note": "Every kept set's fix patch was read against its advisory text before any model ran on it. Two were excluded for the reasons above. No model result influenced which sets were kept."
+}

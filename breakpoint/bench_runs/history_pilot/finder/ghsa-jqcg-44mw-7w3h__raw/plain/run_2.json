@@ -1,0 +1,784 @@
+{
+  "schema": 1,
+  "set": "ghsa-jqcg-44mw-7w3h",
+  "variant": "raw",
+  "arm": "plain",
+  "run": 2,
+  "commit": "92e103e3f3ab0467c8846cacea71f27dfc81091d",
+  "started_at": "2026-10-24T10:55:52+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": false,
+  "status": "ok",
+  "candidates": 15,
+  "kept": [
+    {
+      "title": "Insecure CI/CD Configuration for npm Publishing",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `.github/workflows/npm-publish.yml` uses 'npm stage publish', which is a non-standard and potentially dangerous command if relying on untrusted registry configurations or insecure package pre-publish hooks.",
+      "steps_to_exploit": [
+        "Create a malicious release on GitHub",
+        "Trigger the publish workflow",
+        "The workflow upgrades to latest npm and executes the stage process, potentially running arbitrary code defined in package lifecycle scripts"
+      ],
+      "impact": "Account compromise or distribution of malicious packages to the public npm registry.",
+      "evolved_from": [],
+      "attack_category": "supply_chain",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": ".github/workflows/npm-publish.yml",
+          "line": 37,
+          "quote": "run: npm stage publish"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": ".github/workflows/npm-publish.yml",
+          "line": 37,
+          "quote": "run: npm stage publish"
+        }
+      ],
+      "id": "b1ab7060",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unsafe child process execution in benchmark scripts",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "benchmark/index.js uses 'spawn' to execute files from the current directory. Since 'fileNames' comes from readdirSync, any file in the benchmark folder is treated as executable code.",
+      "steps_to_exploit": [
+        "Place a malicious file ending in .js in the benchmark directory",
+        "Run the benchmark script",
+        "The benchmark harness executes the attacker-controlled script with the same privileges as the node process"
+      ],
+      "impact": "Remote code execution on the machine running the benchmarks.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "benchmark/index.js",
+          "line": 21,
+          "quote": "var proc = spawn(exe, [fullPath], {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "benchmark/index.js",
+          "line": 21,
+          "quote": "var proc = spawn(exe, [fullPath], {"
+        }
+      ],
+      "id": "acfb5265",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Disablement of SSL Verification in CI",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The CI pipeline explicitly disables SSL certificate verification when installing dependencies on older Node.js versions.",
+      "steps_to_exploit": [
+        "Perform a Man-in-the-Middle (MitM) attack during a CI run on Node 0.10",
+        "Intercept the npm registry request",
+        "Inject malicious code into the dependencies being installed"
+      ],
+      "impact": "CI/CD pipeline compromise; supply chain attack.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": ".github/workflows/ci.yml",
+          "line": 178,
+          "quote": "npm config set strict-ssl false"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": ".github/workflows/ci.yml",
+          "line": 178,
+          "quote": "npm config set strict-ssl false"
+        }
+      ],
+      "id": "8390d80d",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Arbitrary code execution via test environment",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The test harness in `.github/workflows/ci.yml` modifies the environment and installs external dependencies dynamically, creating an insecure build environment.",
+      "steps_to_exploit": [
+        "Target the repository during a PR",
+        "Ensure the PR triggers dependency installation on an older node version",
+        "Leverage the lack of integrity verification in the dynamic install process"
+      ],
+      "impact": "Injection of unauthorized code into the test/build pipeline.",
+      "evolved_from": [],
+      "attack_category": "supply_chain",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": ".github/workflows/ci.yml",
+          "line": 195,
+          "quote": "run: npm install --save-dev ${{ matrix.npm-i }}"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": ".github/workflows/ci.yml",
+          "line": 195,
+          "quote": "run: npm install --save-dev ${{ matrix.npm-i }}"
+        }
+      ],
+      "id": "6222e1a7",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unsafe usage of 'eval'-like constructs in benchmarks",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Benchmark files use strings for the 'fn' property in the benchmark suite, which are evaluated by the 'benchmark' library, posing a risk if strings are modified.",
+      "steps_to_exploit": [
+        "Modify the source file to include malicious payload in the string",
+        "Run the benchmark test suite",
+        "The 'benchmark' library executes the string as code"
+      ],
+      "impact": "Arbitrary code execution during local performance testing.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "benchmark/compiling.js",
+          "line": 19,
+          "quote": "fn: 'proxyaddr(req, \"loopback\")',"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "benchmark/compiling.js",
+          "line": 19,
+          "quote": "fn: 'proxyaddr(req, \"loopback\")',"
+        }
+      ],
+      "id": "6812ee01",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Dependency risk in CI workflows",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The workflows use hardcoded git commit SHAs for actions, but the build logic itself (npm install) is vulnerable to supply chain attacks due to missing lockfiles.",
+      "steps_to_exploit": [
+        "Wait for a dependency to be hijacked",
+        "Trigger a CI run",
+        "The CI environment pulls the malicious version of the dependency"
+      ],
+      "impact": "Infiltration of malicious code into the development lifecycle.",
+      "evolved_from": [],
+      "attack_category": "supply_chain",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": ".github/workflows/ci.yml",
+          "line": 211,
+          "quote": "run: npm install"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": ".github/workflows/ci.yml",
+          "line": 211,
+          "quote": "run: npm install"
+        }
+      ],
+      "id": "1743cd6b",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insufficient validation of IP ranges",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The library allows arbitrary string inputs to compile into trust lists. While validation exists, it relies on complex parsing logic that might be bypassed.",
+      "steps_to_exploit": [
+        "Pass a specifically crafted string to the compile function",
+        "Attempt to include overlapping or private subnets that were not intended to be trusted"
+      ],
+      "impact": "Misconfiguration leading to bypass of IP-based security controls.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 112,
+          "quote": "return compileTrust(compileRangeSubnets(trust))"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 112,
+          "quote": "return compileTrust(compileRangeSubnets(trust))"
+        }
+      ],
+      "id": "1fdc94a6",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Shell execution in CI",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Usage of `shell: bash -eo pipefail -l {0}` in GitHub Actions allows for shell injection if inputs are ever sourced from external events.",
+      "steps_to_exploit": [
+        "Manipulate a GitHub event payload to include shell metacharacters",
+        "Trigger the CI workflow"
+      ],
+      "impact": "Remote code execution within the CI runner.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": ".github/workflows/ci.yml",
+          "line": 174,
+          "quote": "shell: bash -eo pipefail -l {0}"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": ".github/workflows/ci.yml",
+          "line": 174,
+          "quote": "shell: bash -eo pipefail -l {0}"
+        }
+      ],
+      "id": "023a7436",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of deprecated and vulnerable node versions in CI",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The CI matrix tests against extremely old, EOL node versions, increasing the attack surface of the test environment.",
+      "steps_to_exploit": [
+        "Exploit a known vulnerability in the Node.js 0.10 environment while it is running on the runner"
+      ],
+      "impact": "Sandbox escape or compromise of the CI runner.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": ".github/workflows/ci.yml",
+          "line": 17,
+          "quote": "- Node.js 0.10"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": ".github/workflows/ci.yml",
+          "line": 17,
+          "quote": "- Node.js 0.10"
+        }
+      ],
+      "id": "d8603285",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Missing integrity checks in CI coverage merge",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The coverage merge process blindly trusts files found via `find` and `xargs` to execute `lcov`.",
+      "steps_to_exploit": [
+        "Inject a malicious file named lcov.info into the coverage directory",
+        "Run the workflow",
+        "The shell command will execute against the malicious file"
+      ],
+      "impact": "Potential execution of malicious scripts during coverage report generation.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": ".github/workflows/ci.yml",
+          "line": 264,
+          "quote": "run: find ./coverage -name lcov.info -exec printf '-a %q\\n' {} \\; | xargs lcov -o ./lcov.info"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": ".github/workflows/ci.yml",
+          "line": 264,
+          "quote": "run: find ./coverage -name lcov.info -exec printf '-a %q\\n' {} \\; | xargs lcov -o ./lcov.info"
+        }
+      ],
+      "id": "0ac6926e",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potentially unsafe path joining in benchmarks",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The use of `path.join(__dirname, fileName)` where `fileName` is derived from filesystem listing can lead to path traversal if the directory contains symbolic links or unusual entries.",
+      "steps_to_exploit": [
+        "Create a symlink pointing outside the current directory",
+        "Run benchmark/index.js"
+      ],
+      "impact": "Arbitrary file execution/read access within the scope of the process.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "benchmark/index.js",
+          "line": 17,
+          "quote": "var fullPath = path.join(__dirname, fileName)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "benchmark/index.js",
+          "line": 17,
+          "quote": "var fullPath = path.join(__dirname, fileName)"
+        }
+      ],
+      "id": "43373ecd",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unfiltered input passed to TypeError constructor",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Passing external inputs directly into error messages can lead to log injection or information disclosure.",
+      "steps_to_exploit": [
+        "Provide a specially crafted IP string",
+        "Trigger the validation error"
+      ],
+      "impact": "Injection of malicious sequences into application logs.",
+      "evolved_from": [],
+      "attack_category": "error_handling",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 192,
+          "quote": "throw new TypeError('invalid range on address: ' + note)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 192,
+          "quote": "throw new TypeError('invalid range on address: ' + note)"
+        }
+      ],
+      "id": "78881d8a",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Lack of version pinning for devDependencies",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Dependencies in package.json allow minor version updates, which could pull in malicious code.",
+      "steps_to_exploit": [
+        "Wait for a devDependency to release a compromised update",
+        "Run npm install"
+      ],
+      "impact": "Compromise of the local development environment.",
+      "evolved_from": [],
+      "attack_category": "supply_chain",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "package.json",
+          "line": 22,
+          "quote": "\"benchmark\": \"2.1.4\","
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "package.json",
+          "line": 22,
+          "quote": "\"benchmark\": \"2.1.4\","
+        }
+      ],
+      "id": "60d74a08",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure default configuration for file persistence in Actions",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The workflow uses 'persist-credentials: false' which is good, but doesn't explicitly restrict scope.",
+      "steps_to_exploit": [
+        "An attacker with read access to the repo can modify workflows to exfiltrate secrets if not strictly isolated."
+      ],
+      "impact": "Potential secret leakage.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": ".github/workflows/npm-publish.yml",
+          "line": 24,
+          "quote": "persist-credentials: false"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": ".github/workflows/npm-publish.yml",
+          "line": 24,
+          "quote": "persist-credentials: false"
+        }
+      ],
+      "id": "34994d80",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Weak validation logic for subnet parsing",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The function uses regex for digit validation but parses integers without sufficient checks on the result.",
+      "steps_to_exploit": [
+        "Craft a string that satisfies the regex but exceeds integer limits"
+      ],
+      "impact": "Logic error that could lead to incorrect IP range matching.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 184,
+          "quote": "range = parseInt(range, 10)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 184,
+          "quote": "range = parseInt(range, 10)"
+        }
+      ],
+      "id": "d7858f4c",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "proposed": [
+    {
+      "title": "Insecure CI/CD Configuration for npm Publishing",
+      "code_refs": [
+        {
+          "file": ".github/workflows/npm-publish.yml",
+          "line": 37,
+          "quote": "run: npm stage publish"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unsafe child process execution in benchmark scripts",
+      "code_refs": [
+        {
+          "file": "benchmark/index.js",
+          "line": 21,
+          "quote": "var proc = spawn(exe, [fullPath], {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Disablement of SSL Verification in CI",
+      "code_refs": [
+        {
+          "file": ".github/workflows/ci.yml",
+          "line": 178,
+          "quote": "npm config set strict-ssl false"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Arbitrary code execution via test environment",
+      "code_refs": [
+        {
+          "file": ".github/workflows/ci.yml",
+          "line": 195,
+          "quote": "run: npm install --save-dev ${{ matrix.npm-i }}"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unsafe usage of 'eval'-like constructs in benchmarks",
+      "code_refs": [
+        {
+          "file": "benchmark/compiling.js",
+          "line": 19,
+          "quote": "fn: 'proxyaddr(req, \"loopback\")',"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Dependency risk in CI workflows",
+      "code_refs": [
+        {
+          "file": ".github/workflows/ci.yml",
+          "line": 211,
+          "quote": "run: npm install"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insufficient validation of IP ranges",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 112,
+          "quote": "return compileTrust(compileRangeSubnets(trust))"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure Shell execution in CI",
+      "code_refs": [
+        {
+          "file": ".github/workflows/ci.yml",
+          "line": 174,
+          "quote": "shell: bash -eo pipefail -l {0}"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of deprecated and vulnerable node versions in CI",
+      "code_refs": [
+        {
+          "file": ".github/workflows/ci.yml",
+          "line": 17,
+          "quote": "- Node.js 0.10"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Missing integrity checks in CI coverage merge",
+      "code_refs": [
+        {
+          "file": ".github/workflows/ci.yml",
+          "line": 264,
+          "quote": "run: find ./coverage -name lcov.info -exec printf '-a %q\\n' {} \\; | xargs lcov -o ./lcov.info"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potentially unsafe path joining in benchmarks",
+      "code_refs": [
+        {
+          "file": "benchmark/index.js",
+          "line": 17,
+          "quote": "var fullPath = path.join(__dirname, fileName)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unfiltered input passed to TypeError constructor",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 192,
+          "quote": "throw new TypeError('invalid range on address: ' + note)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Lack of version pinning for devDependencies",
+      "code_refs": [
+        {
+          "file": "package.json",
+          "line": 22,
+          "quote": "\"benchmark\": \"2.1.4\","
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure default configuration for file persistence in Actions",
+      "code_refs": [
+        {
+          "file": ".github/workflows/npm-publish.yml",
+          "line": 24,
+          "quote": "persist-credentials: false"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Weak validation logic for subnet parsing",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 184,
+          "quote": "range = parseInt(range, 10)"
+        }
+      ],
+      "outcome": "unchecked"
+    }
+  ],
+  "rejected": [],
+  "verification": null,
+  "arm_meta": {
+    "baseline": {
+      "model": "gemini/gemini-3.1-flash-lite",
+      "context": "code",
+      "requested": 15,
+      "returned": 15,
+      "files_shown": 14,
+      "chars_shown": 34237,
+      "files_that_did_not_fit": []
+    }
+  },
+  "seconds": {
+    "arm": 8.6,
+    "check": 0.0,
+    "total": 8.6
+  },
+  "usage": {
+    "arm": {
+      "calls": 1,
+      "failed": 0,
+      "est_tokens": 11140,
+      "seconds_in_calls": 8.6,
+      "by_task": {
+        "baseline": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 35297,
+          "completion_chars": 9264,
+          "seconds": 8.577019799966365,
+          "est_tokens": 11140
+        }
+      }
+    },
+    "check": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    }
+  }
+}

@@ -1,0 +1,1371 @@
+{
+  "variant": "raw",
+  "arm": "plain",
+  "rows": [
+    {
+      "set": "ghsa-2933-q333-qg83",
+      "title": "i18next-fs-backend: i18next-fs-backend vulnerable to prototype pollution via crafted missing-key string",
+      "runs": 3,
+      "history": {
+        "advisory": "GHSA-2933-q333-qg83",
+        "advisory_url": "https://github.com/advisories/GHSA-2933-q333-qg83",
+        "severity": "critical",
+        "published": "2026-06-25",
+        "package": "i18next-fs-backend",
+        "ecosystem": "npm",
+        "vulnerable_versions": "< 2.6.6",
+        "patched": "2.6.6",
+        "fix_commit": "3ab0448087da6935a40117f904b7457281f963f4",
+        "fix_url": "https://github.com/i18next/i18next-fs-backend/commit/3ab0448087da6935a40117f904b7457281f963f4",
+        "fix_date": "2026-05-22T05:12:11Z",
+        "changed_lines": 13,
+        "source_files_changed": [
+          "lib/utils.js"
+        ],
+        "other_files_changed": 2,
+        "addition_only": false,
+        "source_bytes": 239958,
+        "fits_in_one_prompt": true,
+        "description": "### Impact\n\n`i18next-fs-backend` \u2264 2.6.5, when used to persist missing translation keys (e.g. via `i18next-http-middleware`'s `missingKeyHandler` exposed to untrusted input), is vulnerable to prototype pollution via crafted missing-key strings.\n\n`Backend.writeFile()` splits each queued missing-key string on the configured `keySeparator` (default `.`) before calling the internal `setPath()` walker. The walker (`getLastOfPath` in `lib/utils.js`) did not guard against unsafe segments, so a key like `\"__proto__.polluted\"` was split into `[\"__proto__\", \"polluted\"]` and walked straight into `Object.prototype`, allowing an attacker to write arbitrary properties onto the global object prototype.\n\nDepending on the host application, polluted prototype properties may cause crashes, corrupted translation behaviour, configuration poisoning, or bypasses of property-based security checks.\n\n### Affected configuration\n\nApplications are directly affected only if **all** of the following hold:\n\n- `i18next-fs-backend` \u2264 2.6.5 is configured as the backend.\n- `i18next-http-middleware`'s `missingKeyHandler` (or another route that forwards untrusted request bodies to `i18next.t(..., { ... })` with `saveMissing: true`) is reachable by untrusted users.\n- The default behaviour of splitting missing-key strings on `keySeparator` is in use (i.e. `keySeparator` is not `false`).\n\nApps that do not expose missing-key persistence to untrusted input are not directly affected through this attack path.\n\n### Patches\n\nFixed in **i18next-fs-backend 2.6.6**. The traversal helper now refuses to descend through `__proto__`, `constructor`, or `prototype` segments and drops the offending write silently. Legitimate dotted keys (e.g. `\"header.title\"`) are unaffected.\n\nA matching defence-in-depth fix has been shipped in `i18next-http-middleware` **3.9.7** \u2014 see the companion advisory.\n\n### Workarounds\n\nIf users cannot upgrade immediately:\n\n- Do not expose `i18next-http-middleware`'s `missingKeyHandler` to untrusted users (mount it behind authentication, or remove the route).\n- Disable missing-key persistence (`saveMissing: false`, or no `backend.create` implementation) when accepting writes from untrusted input.\n- Set `keySeparator: false` in the i18next options to disable backend key splitting (note: this also disables nested translation keys).\n\n### Resources\n\n- Original report by [@codeswhite](https://github.com/codeswhite).\n- Companion advisory in `i18next-http-middleware`: [GHSA-f49m-vf83-692w](https://github.com/i18next/i18next-http-middleware/security/advisories/GHSA-f49m-vf83-692w).\n- Previous `i18next-fs-backend` security release: GHSA-8847-338w-5hcj (path traversal via `lng`/`ns`, fixed in 2.6.4).",
+        "label_review": "Claude read the fix patch against the advisory text on 2026-10-24 and found they match (one reader, not independently reviewed)."
+      },
+      "read": {
+        "yes": 1,
+        "partial": 0,
+        "no": 2,
+        "unread": 0
+      },
+      "class": "prototype-pollution",
+      "proposed": 1,
+      "kept_mechanical": [
+        1,
+        0,
+        0
+      ],
+      "kept_adjudicated": null,
+      "adjudication_complete": false,
+      "kept": {
+        "mean": 15.0,
+        "min": 15,
+        "max": 15
+      },
+      "real_other": null,
+      "wrong": null,
+      "undecided": null,
+      "calls": {
+        "mean": 1.0,
+        "min": 1,
+        "max": 1
+      },
+      "candidates": [
+        15,
+        15,
+        15
+      ]
+    },
+    {
+      "set": "ghsa-5846-7qm3-r52j",
+      "title": "dssrf: dssrf: any users using 1.1.1.1 DNS is impacted by SSRF",
+      "runs": 3,
+      "history": {
+        "advisory": "GHSA-5846-7qm3-r52j",
+        "advisory_url": "https://github.com/advisories/GHSA-5846-7qm3-r52j",
+        "severity": "high",
+        "published": "2026-07-31",
+        "package": "dssrf",
+        "ecosystem": "npm",
+        "vulnerable_versions": "<= 1.0.4",
+        "patched": "1.0.5",
+        "fix_commit": "668c21792cd1252baf779a176aa652e2b4c0067d",
+        "fix_url": "https://github.com/HackingRepo/dssrf-js/commit/668c21792cd1252baf779a176aa652e2b4c0067d",
+        "fix_date": "2026-06-09T11:13:27Z",
+        "changed_lines": 28,
+        "source_files_changed": [
+          "src/helpers.ts"
+        ],
+        "other_files_changed": 0,
+        "addition_only": false,
+        "source_bytes": 30066,
+        "fits_in_one_prompt": true,
+        "description": "## Summary\n\nis_url_safe can treat localhost as safe when DNS resolver 1.1.1.1 returns NXDOMAIN because dns.resolve4 yields no address and no dns.lookup fallback occurs, allowing server-side request forgery.\n\n## POC\n\nExample to simulate 1.1.1.1 in version before 1.5.0 of dssrf:\n\n```js\nimport { is_url_safe } from '../dist/helpers.js';\nimport dns from 'dns';\n\n\ndns.setServers(['1.1.1.1']);\n\nconst TARGET = 'http://localhost/admin';\n\nconsole.log(`Testing: ${TARGET}`);\nconsole.log(`Current DNS Servers: ${dns.getServers()}`);\n\nconst result = await is_url_safe(TARGET);\n\nif (result === true) {\n    console.log('dssrf treated localhost as SAFE because 1.1.1.1 returned NXDOMAIN.');\n} else {\n    console.log('dssrf blocked localhost.');\n}\n```",
+        "label_review": "Claude read the fix patch against the advisory text on 2026-10-24 and found they match (one reader, not independently reviewed). The fix replaces a resolver call, so the label is the resolver function, not a single bad line."
+      },
+      "read": {
+        "yes": 0,
+        "partial": 0,
+        "no": 3,
+        "unread": 0
+      },
+      "class": "ssrf",
+      "proposed": 0,
+      "kept_mechanical": [
+        0,
+        0,
+        0
+      ],
+      "kept_adjudicated": null,
+      "adjudication_complete": false,
+      "kept": {
+        "mean": 15.0,
+        "min": 15,
+        "max": 15
+      },
+      "real_other": null,
+      "wrong": null,
+      "undecided": null,
+      "calls": {
+        "mean": 1.0,
+        "min": 1,
+        "max": 1
+      },
+      "candidates": [
+        15,
+        15,
+        15
+      ]
+    },
+    {
+      "set": "ghsa-5gmw-xhrv-c9v3",
+      "title": "tinypool: Tinypool: Prototype Pollution gadget in worker options leads to Remote Code Execution",
+      "runs": 3,
+      "history": {
+        "advisory": "GHSA-5gmw-xhrv-c9v3",
+        "advisory_url": "https://github.com/advisories/GHSA-5gmw-xhrv-c9v3",
+        "severity": "critical",
+        "published": "2026-10-05",
+        "package": "tinypool",
+        "ecosystem": "npm",
+        "vulnerable_versions": "<= 2.1.0",
+        "patched": "2.1.1",
+        "fix_commit": "24df4e730e7d0857a6d226c9b58f8924227404fd",
+        "fix_url": "https://github.com/tinylibs/tinypool/commit/24df4e730e7d0857a6d226c9b58f8924227404fd",
+        "fix_date": "2026-08-23T14:21:31Z",
+        "changed_lines": 9,
+        "source_files_changed": [
+          "src/index.ts"
+        ],
+        "other_files_changed": 2,
+        "addition_only": false,
+        "source_bytes": 67152,
+        "fits_in_one_prompt": true,
+        "description": "`tinypool` passes worker options to `new Worker()` by reading them off a plain object whose prototype is `Object.prototype`. Options the application did not set are resolved through the prototype chain and then passed explicitly to `worker_threads.Worker`.\n\nNode core ignores `Worker` options inherited from `Object.prototype`. By reading them and passing them explicitly, tinypool re-materialises them as own properties and defeats that protection.\n\n\nTwo keys reach code execution:\n\n1. **`execArgv`** \u2014 polluting `Object.prototype.execArgv = ['--require', '/path/to/attacker.js']` causes every pool worker to load the attacker's script.\n2. **`env`** \u2014 polluting `Object.prototype.env = { NODE_OPTIONS: '--require /path/to/attacker.js' }` achieves the same via environment injection.\n\n## Root cause\n\n`dist/index.js` lines 508-511:\n\n```js\nenv:            this.options.env,\nargv:           this.options.argv,\nexecArgv:       this.options.execArgv,\nresourceLimits: this.options.resourceLimits,\n```\n\n`this.options` is built at line 470 via object spread:\n\n```js\nthis.options = { ...kDefaultOptions, ...options, filename, maxQueue: 0 };\n```\n\n## Impact\n\nArbitrary code execution inside every worker the pool spawns, with the privileges of the host process. Because tinypool is the worker pool behind Vitest (~42M downloads/week), the natural blast radius is developer machines and CI runners \u2014 an attacker who lands a prototype-pollution primitive anywhere in the dependency tree gets code execution in the build/test pipeline, which is a supply-chain foothold (access to CI secrets, signing keys, artifact publishing).\n\n\n## Proof of concept\n\nMinimal reproduction (3 files):\n\n**worker.mjs** \u2014 the application's own legitimate worker:\n```js\nexport default function double(n) { return n * 2 }\n```\n\n**payload.js** \u2014 attacker-controlled code (never referenced by the app):\n```js\nconst fs = require('fs')\nfs.writeFileSync('/tmp/RCE_PROOF.txt', 'code execution achieved, pid=' + process.pid)\nconsole.log('*** RCE ***')\n```\n\n**app.js** \u2014 normal tinypool usage:\n```js\nconst path = require('path')\n\n// Simulates an upstream PP source (lodash/qs/minimist/set-value/deepmerge)\nObject.prototype.execArgv = ['--require', path.join(__dirname, 'payload.js')]\n\nconst { Tinypool } = require('tinypool')\nconst pool = new Tinypool({\n  filename: path.join(__dirname, 'worker.mjs'),\n  minThreads: 1, maxThreads: 1\n})\npool.run(21).then(r => {\n  console.log('pool returned:', r)  // 42 \u2014 app works normally\n  pool.destroy()\n})\n```\n\nRun:\n```\nnpm i tinypool@2.1.0\nnode app.js\ncat /tmp/RCE_PROOF.txt   # attacker's code ran\n```\n\nBoth `execArgv` and `env` vectors confirmed on Node 20.\n\n\n## Suggested fix\n\nResolve worker options with own-property semantics:\n\n```js\nthis.options = Object.assign(Object.create(null),\n  kDefaultOptions, options, { filename, maxQueue: 0 });\n```",
+        "label_review": "Claude read the fix patch against the advisory text on 2026-10-24 and found they match (one reader, not independently reviewed)."
+      },
+      "read": {
+        "yes": 0,
+        "partial": 1,
+        "no": 2,
+        "unread": 0
+      },
+      "class": "prototype-pollution",
+      "proposed": 1,
+      "kept_mechanical": [
+        0,
+        1,
+        0
+      ],
+      "kept_adjudicated": null,
+      "adjudication_complete": false,
+      "kept": {
+        "mean": 15.0,
+        "min": 15,
+        "max": 15
+      },
+      "real_other": null,
+      "wrong": null,
+      "undecided": null,
+      "calls": {
+        "mean": 1.0,
+        "min": 1,
+        "max": 1
+      },
+      "candidates": [
+        15,
+        15,
+        15
+      ]
+    },
+    {
+      "set": "ghsa-6m44-fpc8-c3rq",
+      "title": "mistune: Mistune: Denial of Service \u2014 RecursionError via Excessive Emphasis Markers in Markdown",
+      "runs": 3,
+      "history": {
+        "advisory": "GHSA-6m44-fpc8-c3rq",
+        "advisory_url": "https://github.com/advisories/GHSA-6m44-fpc8-c3rq",
+        "severity": "high",
+        "published": "2026-09-02",
+        "package": "mistune",
+        "ecosystem": "pip",
+        "vulnerable_versions": ">= 3.3.0, < 3.3.3",
+        "patched": "3.3.3",
+        "fix_commit": "0938fb781d0aded99de801b340ec1f8debeae5b2",
+        "fix_url": "https://github.com/lepture/mistune/commit/0938fb781d0aded99de801b340ec1f8debeae5b2",
+        "fix_date": "2026-07-09T05:22:26Z",
+        "changed_lines": 44,
+        "source_files_changed": [
+          "src/mistune/inline_parser.py"
+        ],
+        "other_files_changed": 2,
+        "addition_only": false,
+        "source_bytes": 197694,
+        "fits_in_one_prompt": true,
+        "description": "## Summary\nMistune v3.3.2 is vulnerable to a Denial of Service (DoS) attack via uncontrolled recursion in the HTML rendering of deeply-nested emphasis tokens. By submitting Markdown containing approximately 1,000 consecutive asterisk characters, an attacker causes the Python process to crash with RecursionError.\n\n## Details\nThe InlineParser's _process_emphasis_delimiters() creates deeply nested <strong> tokens from consecutive emphasis markers (every 2 asterisks add one nesting level). With 1,000 consecutive asterisks, approximately 500 levels of nesting are produced. The HTMLRenderer.render_token() method (src/mistune/renderers/html.py:40-57) renders these tokens recursively: when a token has children, line 48 calls self.render_tokens(token['children'], state), entering child rendering. Each nesting level produces ~2 stack frames, so 500 levels \u2248 1,000 frames, exceeding Python's default recursion limit (sys.getrecursionlimit() = 1000). The emphasis() and strong() methods (lines 80-84) wrap recursively rendered child content in <em> and <strong> tags, perpetuating the recursion. This vulnerability affects all mistune APIs including markdown() and html().\n\nCore vulnerable code path:\n\n```python\n# src/mistune/renderers/html.py:40-57\ndef render_token(self, token: Dict[str, Any], state: BlockState) -> str:\n    func = self._get_method(token[\"type\"])\n    attrs = token.get(\"attrs\")\n    if \"raw\" in token:\n        text = token[\"raw\"]\n    elif \"children\" in token:\n        text = self.render_tokens(token[\"children\"], state)\n    else:\n        if attrs:\n            return func(**attrs)\n        else:\n            return func()\n    if attrs:\n        return func(text, **attrs)\n    else:\n        return func(text)\n```\n\nThe recursive call to render_tokens() on line 48 processes nested child tokens. With 500 levels of nested emphasis/strong tokens, this recursion exceeds Python's default recursion limit of 1000, causing a RecursionError.\n\n```python\n# src/mistune/renderers/html.py:80-84\ndef emphasis(self, text: str) -> str:\n    return \"<em>\" + text + \"</em>\"\n\ndef strong(self, text: str) -> str:\n    return \"<strong>\" + text + \"</strong>\"\n```\n\nThe emphasis() and strong() methods wrap their text content (which is itself the recursively-rendered output of nested child tokens) in HTML tags, creating the chain of recursion: each call to strong() includes rendered children that themselves call strong(), etc.\n\n## POC\n\n``` wiki\nfrom mistune import html\n\npayload = '*' * 1000\ntry:\n    result = html(payload)\n    print('No crash - recursion handled')\nexcept RecursionError as e:\n    print(f'[VULN] RecursionError: {e} - Process would crash!')\nexcept Exception as e:\n    print(f'Error: {type(e).__name__}: {e}')\n```\n\n<img width=\"1139\" height=\"664\" alt=\"1\" src=\"https://github.com/user-attachments/assets/d2095b9f-0a6a-4bef-8013-cbc6946cf8f1\" />\n\n\n\n## Impact\nCVSS 3.1: 7.5 (High) \u2014 AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H. An attacker can crash any server process using mistune with approximately 2KB of Markdown input. In web applications, this can be triggered through user-generated content such as forum posts or comments, causing denial of service for all concurrent users sharing the same Python process. Both mistune.markdown() and mistune.html() are affected.\n\n## Remediation\n1. Add a maximum nesting depth limit in the emphasis parsing stage, similar to BlockParser's max_nested_level mechanism (currently at DEFAULT_MAX_NESTED_LEVEL = 20). When the limit is exceeded, treat excess emphasis markers as literal text. 2. Alternatively, refactor HTMLRenderer to use an explicit stack-based iterative approach instead of recursive calls for rendering nested tokens. 3. As a defense-in-depth measure, document the recursion risk and recommend that applications deploying mistune set a higher recursion limit or implement request-level timeouts.",
+        "label_review": "Claude read the fix patch against the advisory text on 2026-10-24 and found they match (one reader, not independently reviewed)."
+      },
+      "read": {
+        "yes": 0,
+        "partial": 0,
+        "no": 3,
+        "unread": 0
+      },
+      "class": "dos",
+      "proposed": 0,
+      "kept_mechanical": [
+        0,
+        0,
+        0
+      ],
+      "kept_adjudicated": null,
+      "adjudication_complete": false,
+      "kept": {
+        "mean": 15.0,
+        "min": 15,
+        "max": 15
+      },
+      "real_other": null,
+      "wrong": null,
+      "undecided": null,
+      "calls": {
+        "mean": 1.0,
+        "min": 1,
+        "max": 1
+      },
+      "candidates": [
+        15,
+        15,
+        15
+      ]
+    },
+    {
+      "set": "ghsa-73wf-gq98-2v4g",
+      "title": "browserslist: Browserslist: Uncaught crash / prototype write via untrusted browserslist-stats.json custom stats (normalizeStats)",
+      "runs": 3,
+      "history": {
+        "advisory": "GHSA-73wf-gq98-2v4g",
+        "advisory_url": "https://github.com/advisories/GHSA-73wf-gq98-2v4g",
+        "severity": "high",
+        "published": "2026-09-01",
+        "package": "browserslist",
+        "ecosystem": "npm",
+        "vulnerable_versions": "<= 4.28.6",
+        "patched": "4.28.7",
+        "fix_commit": "f9914ad9effc865ccc27d816255625890b31ca51",
+        "fix_url": "https://github.com/browserslist/browserslist/commit/f9914ad9effc865ccc27d816255625890b31ca51",
+        "fix_date": "2026-07-21T14:19:03Z",
+        "changed_lines": 9,
+        "source_files_changed": [
+          "node.js"
+        ],
+        "other_files_changed": 0,
+        "addition_only": false,
+        "source_bytes": 77234,
+        "fits_in_one_prompt": true,
+        "description": "## Vulnerability Details\n\n**File**: `node.js`\n**Function**: `normalizeStats()` (line ~214), reached from `getStat()` (called\n**unconditionally** on every `browserslist()` call) and `loadStat()`\n\n### Root Cause\n```js\nfunction normalizeStats(data, stats) {\n  if (!data) { data = {} }\n  if (stats && 'dataByBrowser' in stats) { stats = stats.dataByBrowser }\n  if (typeof stats !== 'object') return undefined\n\n  var normalized = {}\n  for (var i in stats) {\n    var versions = Object.keys(stats[i])\n    if (versions.length === 1 && data[i] && data[i].versions.length === 1) {\n      var normal = data[i].versions[0]\n      normalized[i] = {}\n      normalized[i][normal] = stats[i][versions[0]]\n    } else {\n      normalized[i] = stats[i]\n    }\n  }\n  return normalized\n}\n```\n`stats` is untrusted: it comes from `JSON.parse()`-ing a\n`browserslist-stats.json` file \u2014 auto-discovered by walking up the directory\ntree from the project root **on every `browserslist()` call, regardless of\nthe query** (`env.getStat(opts, browserslist.data)` runs unconditionally\ninside `browserslist()`) \u2014 or from `opts.stats` passed programmatically /\nvia the CLI's `--stats=` flag. `data` is `browserslist.data`, a plain object\npopulated only with real browser names.\n\nTwo independent bugs from the same root cause (unguarded `for...in` over\nuntrusted keys used with plain-object bracket access/assignment):\n\n1. **Crash**: `data[i]` has no `hasOwnProperty` guard. If `stats` contains a\n   key that also happens to be an inherited `Object.prototype` member name \u2014\n   `\"__proto__\"`, `\"toString\"`, `\"valueOf\"`, `\"constructor\"`,\n   `\"hasOwnProperty\"`, `\"isPrototypeOf\"`, etc. \u2014 `data[i]` resolves to that\n   inherited function/object (always truthy), and the code then does\n   `data[i].versions.length` \u2192 `undefined.length` \u2192 **uncaught `TypeError`**,\n   for any such key whose JSON value has exactly one sub-key, e.g.:\n   ```json\n   { \"toString\": { \"onekey\": 5 }, \"chrome\": { \"100\": 50 } }\n   ```\n2. **Prototype write**: `normalized[i] = ...` on the fresh\n   `normalized = {}` \u2014 if `i` is exactly `\"__proto__\"` (and `normalized` has\n   no own property by that name yet), this computed assignment invokes the\n   real `Object.prototype.__proto__` setter, changing `normalized`'s actual\n   `[[Prototype]]` instead of creating a plain property.\n\nBecause this runs on **every** `browserslist()` call regardless of the\nquery, simply committing a poisoned `browserslist-stats.json` anywhere in a\nproject's directory tree breaks every subsequent Browserslist call in that\nproject \u2014 including calls made by Autoprefixer, Babel `preset-env`,\nStylelint, or PostCSS internally, for completely unrelated queries.\n\n### Attack Scenario\n1. Attacker submits a PR (or a compromised dependency) adding a\n   `browserslist-stats.json` file anywhere between the project root and\n   filesystem root, containing e.g.\n   `{\"toString\": {\"onekey\": 5}, \"chrome\": {\"100\": 50}}`.\n2. The victim's build/CI pipeline runs any tool that calls `browserslist()`\n   internally, for **any** query.\n3. The auto-discovered poisoned file crashes the process with an uncaught\n   `TypeError` on the very first call.\n\n### Measured Impact\nConfirmed crash (real `browserslist()` call, v4.28.6) with `stats` keys:\n`__proto__`, `toString`, `valueOf`, `hasOwnProperty`, `constructor`,\n`isPrototypeOf` \u2014 each paired with a one-key JSON object \u2014 for any query,\nincluding `browserslist('defaults')` which never mentions stats.\n\n### Recommended Fix (implemented and verified)\n```js\nvar normalized = Object.create(null)\nfor (var i in stats) {\n  var versions = Object.keys(stats[i])\n  var known = Object.prototype.hasOwnProperty.call(data, i) && data[i]\n  if (versions.length === 1 && known && known.versions.length === 1) {\n    var normal = known.versions[0]\n    normalized[i] = Object.create(null)\n    normalized[i][normal] = stats[i][versions[0]]\n  } else {\n    normalized[i] = stats[i]\n  }\n}\nreturn normalized\n```\n`normalized` uses `Object.create(null)` so a write to `\"__proto__\"` ",
+        "label_review": "Claude read the fix patch against the advisory text on 2026-10-24 and found they match (one reader, not independently reviewed)."
+      },
+      "read": {
+        "yes": 0,
+        "partial": 0,
+        "no": 3,
+        "unread": 0
+      },
+      "class": "prototype-pollution",
+      "proposed": 0,
+      "kept_mechanical": [
+        0,
+        0,
+        0
+      ],
+      "kept_adjudicated": null,
+      "adjudication_complete": false,
+      "kept": {
+        "mean": 15.0,
+        "min": 15,
+        "max": 15
+      },
+      "real_other": null,
+      "wrong": null,
+      "undecided": null,
+      "calls": {
+        "mean": 1.0,
+        "min": 1,
+        "max": 1
+      },
+      "candidates": [
+        15,
+        15,
+        15
+      ]
+    },
+    {
+      "set": "ghsa-83w8-p2f5-377r",
+      "title": "@fastify/static: @fastify/static vulnerable to route guard bypass via path traversal",
+      "runs": 3,
+      "history": {
+        "advisory": "GHSA-83w8-p2f5-377r",
+        "advisory_url": "https://github.com/advisories/GHSA-83w8-p2f5-377r",
+        "severity": "high",
+        "published": "2026-07-24",
+        "package": "@fastify/static",
+        "ecosystem": "npm",
+        "vulnerable_versions": "<= 10.1.0",
+        "patched": "10.1.1",
+        "fix_commit": "db4276f846ba56b21f93768cd6636ee5e2fc58b1",
+        "fix_url": "https://github.com/fastify/fastify-static/commit/db4276f846ba56b21f93768cd6636ee5e2fc58b1",
+        "fix_date": "2026-07-22T07:53:09Z",
+        "changed_lines": 36,
+        "source_files_changed": [
+          "index.js"
+        ],
+        "other_files_changed": 1,
+        "addition_only": false,
+        "source_bytes": 47796,
+        "fits_in_one_prompt": true,
+        "description": "### Impact\n\n`@fastify/static` is vulnerable to a bypass of route-based middleware and guards via non-leading `..` and `%2E%2E` path segments. `find-my-way` does not normalize `..` when matching routes, so a request such as `/foo/../deep/secret.txt` matches the static plugin's catch-all instead of the guarded `/deep/*`. The `getPathnameForSend` helper introduced by the fix for [GHSA-x428-ghpx-8j92](https://github.com/fastify/fastify-static/security/advisories/GHSA-x428-ghpx-8j92) only guards against the `%2F` variant; `..` and `%2E%2E` survive the `decodeURI` + `encodeURI` round-trip and are then collapsed away by `@fastify/send`'s `path.normalize` before its own traversal guard runs.\n\nApplications that rely on route-based middleware or guards to protect files served by `@fastify/static` can be bypassed with non-leading dot-dot path segments.\n\n### Patches\n\nUpgrade to `@fastify/static` 10.1.1.\n\n### Workarounds\n\nDo not use route-based middlewares or guards to protect files served by `@fastify/static`.",
+        "label_review": "Claude read the fix patch against the advisory text on 2026-10-24 and found they match (one reader, not independently reviewed)."
+      },
+      "read": {
+        "yes": 1,
+        "partial": 2,
+        "no": 0,
+        "unread": 0
+      },
+      "class": "path-traversal",
+      "proposed": 3,
+      "kept_mechanical": [
+        1,
+        1,
+        1
+      ],
+      "kept_adjudicated": null,
+      "adjudication_complete": false,
+      "kept": {
+        "mean": 15.0,
+        "min": 15,
+        "max": 15
+      },
+      "real_other": null,
+      "wrong": null,
+      "undecided": null,
+      "calls": {
+        "mean": 1.0,
+        "min": 1,
+        "max": 1
+      },
+      "candidates": [
+        15,
+        15,
+        15
+      ]
+    },
+    {
+      "set": "ghsa-8r9p-f939-6h3c",
+      "title": "follow-redirects: follow-redirects sensitiveHeaders regex escaping can expose credential headers",
+      "runs": 3,
+      "history": {
+        "advisory": "GHSA-8r9p-f939-6h3c",
+        "advisory_url": "https://github.com/advisories/GHSA-8r9p-f939-6h3c",
+        "severity": "high",
+        "published": "2026-10-20",
+        "package": "follow-redirects",
+        "ecosystem": "npm",
+        "vulnerable_versions": ">= 1.16.0, < 1.16.1",
+        "patched": "1.16.1",
+        "fix_commit": "080a76d0e125b37bf81717368a61d5dc37aa56c8",
+        "fix_url": "https://github.com/follow-redirects/follow-redirects/commit/080a76d0e125b37bf81717368a61d5dc37aa56c8",
+        "fix_date": "2026-10-01T13:38:37Z",
+        "changed_lines": 2,
+        "source_files_changed": [
+          "index.js"
+        ],
+        "other_files_changed": 1,
+        "addition_only": false,
+        "source_bytes": 30732,
+        "fits_in_one_prompt": true,
+        "description": "### Summary\nfollow-redirects 1.16.0 introduced the `sensitiveHeaders` option (the fix for CVE-2026-40895 / GHSA-r4q5-vmmm-2653), which lets an application declare extra header names that must be removed when a redirect crosses to a different host or downgrades protocol. The filter is a single case-insensitive regular expression built by concatenating the declared header names into an alternation after passing each through `escapeRegex`. `escapeRegex` escapes only a partial set of metacharacters and leaves `^`, `|`, `[`, `{`, and `}` unescaped. Header names may legitimately contain `^` and `|` (both are valid RFC 9110 token characters that Node accepts and sends), and for a declared name containing either, the generated pattern can never match the intended header. As a result, an application that adopts this option to protect a custom credential header, then follows an attacker-controlled cross-origin redirect, forwards that credential to the attacker with no error or warning, while believing it is protected. The failure is silent: the protection simply does not exist for the affected names. The built-in list (Authorization, Proxy-Authorization, Cookie) contains no metacharacters and is not affected by this defect.\n\n### Details\nThe filter is constructed once, in the `RedirectableRequest` constructor at `index.js:118-120`:\n\n```js\nthis._headerFilter = new RegExp(\"^(?:\" +\n    sensitiveHeaders.concat(options.sensitiveHeaders).map(escapeRegex).join(\"|\") +\n  \")$\", \"i\");\n```\n\n`escapeRegex` at `index.js:703-705`:\n\n```js\nfunction escapeRegex(regex) {\n  return regex.replace(/[\\]\\\\/()*+?.$]/g, \"\\\\$&\");   // escapes ] \\ / ( ) * + ? . $  -- NOT ^ | [ { }\n}\n```\n\nThe character class escapes `]`, `\\`, `/`, `(`, `)`, `*`, `+`, `?`, `.`, and `$`. It omits `^`, `|`, `[`, `{`, and `}`. Of these, Node's `http.ClientRequest` accepts `^` and `|` in header names (they are valid `tchar` values under RFC 9110) and rejects `[`, `{`, `}` with `ERR_INVALID_HTTP_TOKEN`, so `^` and `|` are the reachable vectors for a silent credential leak. Separately, although `[`, `{`, `}` cannot appear as live header names, declaring a `sensitiveHeaders` entry that contains one of them injects an unbalanced token into the alternation (for example an unterminated character class), so the filter `RegExp` throws a `SyntaxError` in the `RedirectableRequest` constructor and the request fails to start. That case is a loud request-time crash from the same incomplete-escaping root cause rather than a silent bypass, and the canonical escaper below fixes it as well.\n\nFor a declared sensitive header name containing an unescaped metacharacter, the alternation is broken in a fail-open way:\n\n- A name containing `^`, for example `X-Api^Key`, yields the alternative `X-Api^Key` inside the pattern. The `^` becomes a mid-pattern start-of-string anchor, so the alternative can never match any real header name. `test(\"X-Api^Key\")` returns `false`, and the header is not stripped.\n- A name containing `|`, for example `X-Token|Secret`, is split into two separate alternatives `X-Token` and `Secret`. The real header `X-Token|Secret` is never matched (not stripped), while unrelated headers literally named `X-Token` or `Secret` would be stripped instead.\n\nThe generated filter source, reproduced from the exact library logic, is:\n```\n^(?:Authorization|Proxy-Authorization|Cookie|X-Api^Key|X-Token|Secret|X-Control-Key)$\n```\nDirect matching results against this filter: `X-Api^Key` -> false, `X-Token|Secret` -> false, `X-Control-Key` (normal name) -> true, and the split-off `X-Token` -> true and `Secret` -> true (collateral wrong-stripping). The built-ins Authorization, Proxy-Authorization, Cookie all -> true.\n\nSecondary, related weakness (filter snapshot not refreshed after `beforeRedirect`): the filter is built once at construction and applied at `index.js:490`, which runs before the `beforeRedirect(this._options, ...)` hook and the subsequent `_sanitizeOptions` at `index.js:494-506`. Because the strip h",
+        "label_review": "Claude read the fix patch against the advisory text on 2026-10-24 and found they match (one reader, not independently reviewed)."
+      },
+      "read": {
+        "yes": 0,
+        "partial": 2,
+        "no": 1,
+        "unread": 0
+      },
+      "class": "disclosure",
+      "proposed": 0,
+      "kept_mechanical": [
+        0,
+        0,
+        0
+      ],
+      "kept_adjudicated": null,
+      "adjudication_complete": false,
+      "kept": {
+        "mean": 15.0,
+        "min": 15,
+        "max": 15
+      },
+      "real_other": null,
+      "wrong": null,
+      "undecided": null,
+      "calls": {
+        "mean": 1.0,
+        "min": 1,
+        "max": 1
+      },
+      "candidates": [
+        15,
+        15,
+        15
+      ]
+    },
+    {
+      "set": "ghsa-8x88-c5mf-7j5w",
+      "title": "tar: node-tar: Negative tar entry size causes infinite loop in archive replace",
+      "runs": 3,
+      "history": {
+        "advisory": "GHSA-8x88-c5mf-7j5w",
+        "advisory_url": "https://github.com/advisories/GHSA-8x88-c5mf-7j5w",
+        "severity": "high",
+        "published": "2026-07-20",
+        "package": "tar",
+        "ecosystem": "npm",
+        "vulnerable_versions": "<= 7.5.17",
+        "patched": "7.5.18",
+        "fix_commit": "9e78bf058b2c22dd4d52e00d8922d5c06fc2f7b5",
+        "fix_url": "https://github.com/isaacs/node-tar/commit/9e78bf058b2c22dd4d52e00d8922d5c06fc2f7b5",
+        "fix_date": "2026-06-27T22:22:15Z",
+        "changed_lines": 19,
+        "source_files_changed": [
+          "src/header.ts",
+          "src/pax.ts"
+        ],
+        "other_files_changed": 2,
+        "addition_only": false,
+        "source_bytes": 195090,
+        "fits_in_one_prompt": true,
+        "description": "### Summary\n\nA checksum-valid tar archive with a negative base-256 encoded entry size can make `tar.replace()` loop forever while scanning the existing archive. Applications that update attacker-controlled tar archives can have a worker process pinned indefinitely, causing denial of service.\n\n### Details\n\nThe public `tar.replace()` API scans the existing archive before appending replacement entries. During this scan, it parses each tar header and advances the archive position by the parsed entry size rounded to a 512-byte block boundary.\n\nTar supports base-256 encoded numeric fields. A crafted header can encode the entry size as `-512` while still carrying a valid checksum. The replace scan accepts that parsed negative size and uses it in the position-advance calculation.\n\nFor a size of `-512`, the computed body skip is `-512`. The scan then adds the normal 512-byte header step, resulting in no net progress. The scanner repeatedly parses the same header forever and never reaches the append step.\n\nThis is reachable through the supported package API when the existing archive file is attacker controlled. It does not rely on extraction, dependency behavior, or an uncaught exception.\n\n### PoC\n\nSave as `poc.mjs` in a project with the vulnerable package installed and run:\n\n```bash\nnode poc.mjs\n```\n\n```js\nimport fs from 'node:fs'\nimport os from 'node:os'\nimport path from 'node:path'\nimport { spawnSync } from 'node:child_process'\n\nconst oct = (b, n, off, len) =>\n  b.write(n.toString(8).padStart(len - 1, '0') + '\\0', off, len, 'ascii')\n\nconst badHeader = () => {\n  const h = Buffer.alloc(512)\n\n  h.write('x', 0)\n  oct(h, 0o644, 100, 8)\n  oct(h, 0, 108, 8)\n  oct(h, 0, 116, 8)\n\n  // base-256 encoded -512 in the size field\n  Buffer.alloc(10, 0xff).copy(h, 124)\n  h[134] = 0xfe\n  h[135] = 0x00\n\n  oct(h, 0, 136, 12)\n  h.fill(0x20, 148, 156)\n  h[156] = 0x30\n  h.write('ustar\\0' + '00', 257, 8, 'binary')\n\n  let sum = 0\n  for (const c of h) sum += c\n  h.write(sum.toString(8).padStart(6, '0') + '\\0 ', 148, 8, 'ascii')\n\n  return h\n}\n\nconst dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tar-loop-'))\nconst file = path.join(dir, 'poc.tar')\n\nfs.writeFileSync(file, badHeader())\nfs.writeFileSync(path.join(dir, 'add.txt'), 'x')\n\nconst r = spawnSync(\n  process.execPath,\n  [\n    '--input-type=module',\n    '-e',\n    `\n      import * as tar from 'tar'\n      tar.replace({ file: ${JSON.stringify(file)}, cwd: ${JSON.stringify(dir)}, sync: true }, ['add.txt'])\n      console.log('completed')\n    `,\n  ],\n  { timeout: 20_000 }\n)\n\nconsole.log(r.error?.code === 'ETIMEDOUT')\n\n// Output: true\n```\n\n### Impact\n\nAn application that calls `tar.replace()` on an existing archive supplied or controlled by an attacker can be forced into a non-terminating archive scan. This can consume a worker process indefinitely and cause denial of service. Plain extraction-only workflows are not affected by this finding.",
+        "label_review": "Claude read the fix patch against the advisory text on 2026-10-24 and found they match (one reader, not independently reviewed)."
+      },
+      "read": {
+        "yes": 0,
+        "partial": 0,
+        "no": 3,
+        "unread": 0
+      },
+      "class": "dos",
+      "proposed": 0,
+      "kept_mechanical": [
+        0,
+        0,
+        0
+      ],
+      "kept_adjudicated": null,
+      "adjudication_complete": false,
+      "kept": {
+        "mean": 15.0,
+        "min": 15,
+        "max": 15
+      },
+      "real_other": null,
+      "wrong": null,
+      "undecided": null,
+      "calls": {
+        "mean": 1.0,
+        "min": 1,
+        "max": 1
+      },
+      "candidates": [
+        15,
+        15,
+        15
+      ]
+    },
+    {
+      "set": "ghsa-9m6g-wc8r-q59c",
+      "title": "scim-patch: scimPatch vulnerable to prototype pollution via unfiltered keys in patch",
+      "runs": 3,
+      "history": {
+        "advisory": "GHSA-9m6g-wc8r-q59c",
+        "advisory_url": "https://github.com/advisories/GHSA-9m6g-wc8r-q59c",
+        "severity": "critical",
+        "published": "2026-06-22",
+        "package": "scim-patch",
+        "ecosystem": "npm",
+        "vulnerable_versions": "<= 0.9.0",
+        "patched": "0.9.1",
+        "fix_commit": "260f9cd2ac5ceac3976978850bb47dcb391720f6",
+        "fix_url": "https://github.com/thomaspoignant/scim-patch/commit/260f9cd2ac5ceac3976978850bb47dcb391720f6",
+        "fix_date": "2026-05-21T12:55:31Z",
+        "changed_lines": 34,
+        "source_files_changed": [
+          "src/scimPatch.ts"
+        ],
+        "other_files_changed": 1,
+        "addition_only": false,
+        "source_bytes": 30905,
+        "fits_in_one_prompt": true,
+        "description": "## Summary\n\n`scim-patch` performs prototype pollution when applying a SCIM PATCH operation whose `value` object contains a key like `\"__proto__.someProp\"`. After one such patch,\n`Object.prototype.someProp` is set process-wide, affecting every plain object in the Node process.\n\nAny service that calls `scimPatch()` on attacker-controlled JSON (i.e. any SCIM endpoint accepting `PATCH` from an external IdP) is exploitable on a stock Node runtime.\n\n## Impact\n\n- **Class:** Prototype pollution ([CWE-1321](https://cwe.mitre.org/data/definitions/1321.html))\n- **Affected versions:** `<= 0.9.0` (current HEAD `871b1e2`)\n- **Attack vector:** Network \u2014 sent as part of a normal SCIM `PATCH /Users/:id` request body.\n- **Privileges required:** Whatever the SCIM endpoint requires. For most integrations that's a provisioned IdP, which is \"low\" in CVSS terms (any authenticated provisioning client).\n- **Scope:** Changed \u2014 the bug is in a SCIM library but the side effect (`Object.prototype` mutation) leaks into the entire Node process.\n\nDownstream consequences depend on what other code reads from plain objects. Realistic outcomes observed in similar bugs:\n- **Privilege escalation** if any auth/middleware code checks `actor.isAdmin` / `req.user.admin` / similar boolean flags against a plain object that *expects* the key to be absent.\n- **Logic bypass / DoS** if any code branches on `obj.name`, `obj.type`, `obj.id` etc. against plain objects (e.g. `pg`'s prepared-statement naming check \u2014 a real incident at one consumer).\n- **Persistence:** lasts until the Node process restarts, so the blast radius is *every* request that container handles after the pollution.\n\n## Root cause\n\nIn `src/scimPatch.ts:415-427`, `addOrReplaceObjectAttribute` iterates the user-supplied `patch.value` with `Object.entries` and feeds each key to `resolvePaths`, which splits on `.`:\n\n```ts\nfunction addOrReplaceObjectAttribute(property: any, patch: ScimPatchAddReplaceOperation, multiValuedPathFilter?: boolean): any {\n    if (typeof patch.value !== 'object') { ... }\n\n    // src/scimPatch.ts:423-427\n    for (const [key, value] of Object.entries(patch.value)) {\n        assign(property, resolvePaths(key), value, patch.op);\n    }\n    return property;\n}\n```\n\n`assign` then walks the resulting key path with no filtering on dangerous keys (`src/scimPatch.ts:437-445`):\n\n```ts\nfunction assign(obj: any, keyPath: Array<string>, value: any, op: string) {\n    const lastKeyIndex = keyPath.length - 1;\n    for (let i = 0; i < lastKeyIndex; ++i) {\n        const key = keyPath[i];\n        if (!(key in obj)) {\n            obj[key] = {};\n        }\n        obj = obj[key];   // \u2190 obj[\"__proto__\"] === Object.prototype\n    }\n    // ... assigns into Object.prototype\n}\n```\n\nFor `keyPath = [\"__proto__\", \"polluted\"]`:\n- `\"__proto__\" in obj` is always true, so the fresh-object branch is skipped.\n- `obj = obj[\"__proto__\"]` now points to `Object.prototype`.\n- The final write lands on `Object.prototype.polluted`.\n\nThe same shape works for `constructor.prototype` keys.\n\n## Proof of concept\n\nDrop this in `test/prototypePollution.test.ts` and run `npm run build && npx mocha lib/test/prototypePollution.test.js`. Both tests pass against HEAD `871b1e2`:\n\n```ts\nimport { scimPatch } from '../src/scimPatch';\nimport { ScimUser } from './types/types.test';\nimport { expect } from 'chai';\n\ndescribe('Prototype pollution via scim-patch', () => {\n    let scimUser: ScimUser;\n\n    beforeEach(() => {\n        scimUser = JSON.parse(`{\n          \"schemas\": [\"urn:ietf:params:scim:schemas:core:2.0:User\"],\n          \"id\": \"tea_4\",\n          \"userName\": \"spiderman\",\n          \"name\": { \"familyName\": \"Parker\", \"givenName\": \"Peter\" },\n          \"active\": true,\n          \"emails\": [{ \"value\": \"spiderman@superheroes.com\", \"primary\": true }],\n          \"roles\": [],\n          \"meta\": { \"resourceType\": \"User\", \"created\": \"x\", \"lastModified\": \"x\", \"location\": \"x\" }\n        }`);\n    });\n\n    afterEach(() => {\n        delete (Object.prototype as any",
+        "label_review": "Claude read the fix patch against the advisory text on 2026-10-24 and found they match (one reader, not independently reviewed)."
+      },
+      "read": {
+        "yes": 3,
+        "partial": 0,
+        "no": 0,
+        "unread": 0
+      },
+      "class": "prototype-pollution",
+      "proposed": 0,
+      "kept_mechanical": [
+        0,
+        0,
+        0
+      ],
+      "kept_adjudicated": null,
+      "adjudication_complete": false,
+      "kept": {
+        "mean": 15.0,
+        "min": 15,
+        "max": 15
+      },
+      "real_other": null,
+      "wrong": null,
+      "undecided": null,
+      "calls": {
+        "mean": 1.0,
+        "min": 1,
+        "max": 1
+      },
+      "candidates": [
+        15,
+        15,
+        15
+      ]
+    },
+    {
+      "set": "ghsa-9v7f-9g4p-ffgj",
+      "title": "PyJWT: PyJWT: PyJWKClient follows redirects when fetching JWKS",
+      "runs": 3,
+      "history": {
+        "advisory": "GHSA-9v7f-9g4p-ffgj",
+        "advisory_url": "https://github.com/advisories/GHSA-9v7f-9g4p-ffgj",
+        "severity": "high",
+        "published": "2026-09-29",
+        "package": "PyJWT",
+        "ecosystem": "pip",
+        "vulnerable_versions": "<= 2.13.0",
+        "patched": "2.14.0",
+        "fix_commit": "0a795b8e1f6ef08f634aa7086fc41cc6d5ce3e56",
+        "fix_url": "https://github.com/jpadilla/pyjwt/commit/0a795b8e1f6ef08f634aa7086fc41cc6d5ce3e56",
+        "fix_date": "2026-09-10T00:20:46Z",
+        "changed_lines": 21,
+        "source_files_changed": [
+          "jwt/jwks_client.py"
+        ],
+        "other_files_changed": 1,
+        "addition_only": false,
+        "source_bytes": 123324,
+        "fits_in_one_prompt": true,
+        "description": "### Summary\n\nPyJWT 2.13.0 `PyJWKClient` followed HTTP redirects while fetching a JWKS,\nwithout validating the redirect destination. A configured trusted endpoint\ncould therefore redirect the client to a different host.\n\n### Impact\n\nWhen an application uses `PyJWKClient` with caller-supplied request headers and\nan attacker can influence the configured endpoint's response, the redirected\nrequest could expose those headers and the redirected response could be used as\nauthoritative key material. This could cause JWKS trust poisoning and, in\naffected mixed-configuration applications, forged JWT acceptance. The issue\nrequires an attacker-influenced redirect from the configured JWKS endpoint; it\nis not triggered by a token `kid` alone.\n\n### Affected versions\n\nPyJWT `<= 2.13.0`.\n\n### Fix\n\nThe issue is fixed on `master` in commit\n[`0a795b8e1f6ef08f634aa7086fc41cc6d5ce3e56`](https://github.com/jpadilla/pyjwt/commit/0a795b8e1f6ef08f634aa7086fc41cc6d5ce3e56).\n`PyJWKClient` now disables automatic redirects for JWKS fetches. Regression\ntests verify that a redirect is rejected without contacting its destination,\nwhile normal fetches, headers, caching, errors, timeouts, and SSL context remain\ncovered.\n\nThe fix is present in the unreleased development branch. The patched version\nwill be recorded after a released PyJWT 2.x version containing the fix is\nconfirmed.\n\n### Credit\n\nCredit: the original reporter of GHSA-9v7f-9g4p-ffgj. Additional redirect\nheader-leak and cache-poisoning evidence from the newer duplicate report\nGHSA-43g3-98cx-x446 is preserved in the duplicate record and informed this\ncanonical advisory update.\n\n## Maintainer update \u2014 2026-09-11\n\nThe verified fix for this advisory is included in PyJWT 2.14.0, released on 2026-09-11 and available on PyPI. PyJWT 2.14.0 is the first release containing the fix. This advisory is now published with 2.14.0 recorded as the patched version.",
+        "label_review": "Claude read the fix patch against the advisory text on 2026-10-24 and found they match (one reader, not independently reviewed)."
+      },
+      "read": {
+        "yes": 0,
+        "partial": 2,
+        "no": 1,
+        "unread": 0
+      },
+      "class": "disclosure",
+      "proposed": 0,
+      "kept_mechanical": [
+        0,
+        0,
+        0
+      ],
+      "kept_adjudicated": null,
+      "adjudication_complete": false,
+      "kept": {
+        "mean": 15.0,
+        "min": 15,
+        "max": 15
+      },
+      "real_other": null,
+      "wrong": null,
+      "undecided": null,
+      "calls": {
+        "mean": 1.0,
+        "min": 1,
+        "max": 1
+      },
+      "candidates": [
+        15,
+        15,
+        15
+      ]
+    },
+    {
+      "set": "ghsa-c83g-rgw3-j3cx",
+      "title": "browserslist: Browserslist: Unbounded memory growth (no cache eviction) via distinct query results, leading to eventual OOM",
+      "runs": 3,
+      "history": {
+        "advisory": "GHSA-c83g-rgw3-j3cx",
+        "advisory_url": "https://github.com/advisories/GHSA-c83g-rgw3-j3cx",
+        "severity": "high",
+        "published": "2026-09-01",
+        "package": "browserslist",
+        "ecosystem": "npm",
+        "vulnerable_versions": "<= 4.28.6",
+        "patched": "4.28.7",
+        "fix_commit": "f2931a3ff2a3a31abf84ef01a7400b270aad6405",
+        "fix_url": "https://github.com/browserslist/browserslist/commit/f2931a3ff2a3a31abf84ef01a7400b270aad6405",
+        "fix_date": "2026-07-21T14:14:29Z",
+        "changed_lines": 21,
+        "source_files_changed": [
+          "index.js"
+        ],
+        "other_files_changed": 1,
+        "addition_only": false,
+        "source_bytes": 76993,
+        "fits_in_one_prompt": true,
+        "description": "## Vulnerability Details\n\n**File**: `index.js`\n**Location**: `cache` (browserslist()'s result cache, line ~402) and\n`parseCache` (parseQueries()'s AST cache)\n\n### Root Cause\n```js\nvar cache = {}\nvar parseCache = {}\n\nfunction browserslist(queries, opts) {\n  ...\n  var cacheKey = JSON.stringify([queries, context])\n  if (cache[cacheKey]) return cache[cacheKey]\n  ...\n  if (!env.env.BROWSERSLIST_DISABLE_CACHE) { cache[cacheKey] = result }\n  return result\n}\n\nfunction parseQueries(queries) {\n  var cacheKey = JSON.stringify(queries)\n  if (cacheKey in parseCache) return parseCache[cacheKey]\n  var result = parseWithoutCache(QUERIES, queries)\n  if (!env.env.BROWSERSLIST_DISABLE_CACHE) { parseCache[cacheKey] = result }\n  ...\n}\n```\nEvery distinct `(queries, context)` pair is cached forever \u2014 no size cap,\nTTL, or eviction. `browserslist.clearCaches()` never resets either object\n(it only resets `node.js`'s own filesystem caches); the only opt-out is the\n`BROWSERSLIST_DISABLE_CACHE` env var, controlled by the *calling\napplication*, not an attacker.\n\nSome short, valid queries amplify this badly. The `since <year>-<month>-<day>`\nquery type (`/^since (\\d+)-(\\d+)-(\\d+)$/i`) accepts **any** digit\ncombination \u2014 `Date.UTC()` normalizes rather than rejects out-of-range\nvalues \u2014 giving an effectively unbounded space of ~17-byte distinct cache\nkeys, each of which resolves to (and caches) a result close to the full\n~8.5 KB browser list for any sufficiently old year.\n\n### Measured Impact\n20,000 distinct `since <year>-<month>-<day>` queries (~330 KB total input,\n`--expose-gc` before/after measurement to rule out uncollected garbage)\nretained **over 50 MB** of heap permanently \u2014 roughly **150x**\namplification, growing linearly with no cap observed up to 40,000 queries\n(52.3 MB).\n\n### Attack Scenario\nAny long-running process (server, daemon, warm CI worker) that calls\n`browserslist()` with a query value that varies across requests/items and is\ninfluenced, even partially, by external input accumulates one cache entry\nper distinct value ever seen. An attacker who can influence that value\nacross *many* requests (this is a volumetric attack, unlike the\nsingle-request DoS findings from this same research pass) sends a stream of\ncheap, distinct queries (e.g. `since 1900-01-01`, `since 1900-01-02`, ...)\nuntil the process runs out of memory and crashes.\n\n### Recommended Fix (implemented and verified)\nReplace both plain-object caches with `Map`s bounded to a fixed maximum\nentry count, evicting the oldest entry once the cap is reached (`Map`\npreserves insertion order, so `.keys().next().value` is always oldest):\n\n```js\nvar CACHE_MAX_ENTRIES = 500\n\nfunction boundedCacheSet(map, key, value) {\n  if (map.size >= CACHE_MAX_ENTRIES) {\n    map.delete(map.keys().next().value)\n  }\n  map.set(key, value)\n}\n\nvar cache = new Map()\nvar parseCache = new Map()\n```\n(read sites changed to `.has()`/`.get()`, write sites to `boundedCacheSet()`)\n\n**Verification**:\n- `NODE_ENV=test npx uvu test .test.js` \u2192 301/301 pass unmodified\n  (`test/cache.test.js` exercises `clearCaches()`/`BROWSERSLIST_DISABLE_CACHE`\n  against `node.js`'s separate filesystem caches, unaffected here); confirmed\n  a repeated identical call still returns the cached reference.\n- Re-ran the memory PoC post-fix: heap stayed flat at ~4.9 MB after 5,000,\n  10,000, 20,000, and 40,000 distinct `since`-date queries (was\n  10.5 \u2192 16.5 \u2192 28.4 \u2192 52.3 MB pre-fix).\n\n### Impact\n- **Who is affected**: Long-running processes calling `browserslist()` with\n  query values that vary across requests/items and are influenced by\n  external input.\n- **What an attacker achieves**: DoS via eventual out-of-memory crash, given\n  sustained traffic over time (not a single small payload).\n- **Conditions required**: No authentication; requires volume rather than a\n  single request, hence Medium rather than High severity.\n\n### Verification Environment\nbrowserslist @ HEAD (== v4.28.6, current latest stable release) under local\nNode.js v20.19.5, run wit",
+        "label_review": "Claude read the fix patch against the advisory text on 2026-10-24 and found they match (one reader, not independently reviewed)."
+      },
+      "read": {
+        "yes": 0,
+        "partial": 0,
+        "no": 3,
+        "unread": 0
+      },
+      "class": "dos",
+      "proposed": 0,
+      "kept_mechanical": [
+        0,
+        0,
+        0
+      ],
+      "kept_adjudicated": null,
+      "adjudication_complete": false,
+      "kept": {
+        "mean": 15.0,
+        "min": 15,
+        "max": 15
+      },
+      "real_other": null,
+      "wrong": null,
+      "undecided": null,
+      "calls": {
+        "mean": 1.0,
+        "min": 1,
+        "max": 1
+      },
+      "candidates": [
+        15,
+        15,
+        15
+      ]
+    },
+    {
+      "set": "ghsa-c96f-x56v-gq3h",
+      "title": "find-my-way: find-my-way: DDoS with HTTP2",
+      "runs": 3,
+      "history": {
+        "advisory": "GHSA-c96f-x56v-gq3h",
+        "advisory_url": "https://github.com/advisories/GHSA-c96f-x56v-gq3h",
+        "severity": "high",
+        "published": "2026-07-23",
+        "package": "find-my-way",
+        "ecosystem": "npm",
+        "vulnerable_versions": "<= 9.6.0",
+        "patched": "9.7.0",
+        "fix_commit": "cfe3fd6168b5ac1594c0820fb83fce251a533fc1",
+        "fix_url": "https://github.com/delvedor/find-my-way/commit/cfe3fd6168b5ac1594c0820fb83fce251a533fc1",
+        "fix_date": "2026-05-19T06:40:13Z",
+        "changed_lines": 4,
+        "source_files_changed": [
+          "index.js"
+        ],
+        "other_files_changed": 2,
+        "addition_only": false,
+        "source_bytes": 81995,
+        "fits_in_one_prompt": true,
+        "description": "### Impact\nRemotely triggerable DoS in find-my-way when it is used with Node's HTTP/2 server.\n\nThe short version is that `lookup()` passes `req.method` into `find()`, and `find()` indexes `this.trees[method]`. Since `this.trees` is a normal object, HTTP/2 method values like constructor, `toString`, or `__proto__` can resolve inherited object properties instead of returning undefined. The code then treats that value like a router node and crashes when it reaches `currentNode.prefix.length`.\n\n### Patches\n\nUpgrade to v9.7.0.\n\n### Workarounds\n\nDo not use find-my-way with HTTP/2 servers, or validate that the http method is valid beforehand.",
+        "label_review": "Claude read the fix patch against the advisory text on 2026-10-24 and found they match (one reader, not independently reviewed)."
+      },
+      "read": {
+        "yes": 0,
+        "partial": 0,
+        "no": 3,
+        "unread": 0
+      },
+      "class": "prototype-pollution",
+      "proposed": 1,
+      "kept_mechanical": [
+        0,
+        0,
+        1
+      ],
+      "kept_adjudicated": null,
+      "adjudication_complete": false,
+      "kept": {
+        "mean": 15.0,
+        "min": 15,
+        "max": 15
+      },
+      "real_other": null,
+      "wrong": null,
+      "undecided": null,
+      "calls": {
+        "mean": 1.0,
+        "min": 1,
+        "max": 1
+      },
+      "candidates": [
+        15,
+        15,
+        15
+      ]
+    },
+    {
+      "set": "ghsa-f2hq-32vh-53cc",
+      "title": "postal-mime: postal-mime: Quadratic CPU consumption when decoding a header of many joinable RFC 2047 base64 encoded words",
+      "runs": 3,
+      "history": {
+        "advisory": "GHSA-f2hq-32vh-53cc",
+        "advisory_url": "https://github.com/advisories/GHSA-f2hq-32vh-53cc",
+        "severity": "high",
+        "published": "2026-10-23",
+        "package": "postal-mime",
+        "ecosystem": "npm",
+        "vulnerable_versions": ">= 3.0.0, < 4.0.8",
+        "patched": "4.0.8",
+        "fix_commit": "9eb25a66bb3cc8b631421be651b9648796f19136",
+        "fix_url": "https://github.com/postalsys/postal-mime/commit/9eb25a66bb3cc8b631421be651b9648796f19136",
+        "fix_date": "2026-10-17T14:55:11Z",
+        "changed_lines": 23,
+        "source_files_changed": [
+          "src/decode-strings.ts"
+        ],
+        "other_files_changed": 2,
+        "addition_only": false,
+        "source_bytes": 248893,
+        "fits_in_one_prompt": true,
+        "description": "### Impact\n\nDecoding a header that holds a long run of joinable RFC 2047 base64 encoded words, such as `=?utf-8?B?QUJD?=` repeated tens of thousands of times in a `Subject`, `From`, `To`, a filename or a description, took time quadratic in the number of words. The join check ran a regex over the text joined so far for every word, which flattens the accumulated string each time. A single well formed message of about 1.6 MB blocked the event loop for one to twenty seconds depending on the host, and inline `message/rfc822` parts multiplied the cost, since each nested message carried its own header budget.\n\nAny application that parses untrusted mail with postal-mime 3.0.0 through 4.0.7, including the exported `decodeWords()` helper, is affected. There is no confidentiality or integrity impact.\n\n### Patches\n\nFixed in 4.0.8. The pad check now tracks the last appended word instead of testing the joined text, so decoding is linear in the header length. The same release also counts the parts and header bytes of inline `message/rfc822` sub-messages against the limits of the message as a whole, counts every header line for at least 64 bytes of `maxHeadersSize`, and adds a scaling test that measures every stage of the parser at two input sizes.\n\n### Workarounds\n\nLower `maxHeadersSize` from its 2 MiB default to bound the cost per message, or parse untrusted mail in a worker that can be terminated.\n\n### Credits\n\nReported by Felipe Fern\u00e1ndez.",
+        "label_review": "Claude read the fix patch against the advisory text on 2026-10-24 and found they match (one reader, not independently reviewed)."
+      },
+      "read": {
+        "yes": 0,
+        "partial": 0,
+        "no": 3,
+        "unread": 0
+      },
+      "class": "dos",
+      "proposed": 0,
+      "kept_mechanical": [
+        0,
+        0,
+        0
+      ],
+      "kept_adjudicated": null,
+      "adjudication_complete": false,
+      "kept": {
+        "mean": 15.0,
+        "min": 15,
+        "max": 15
+      },
+      "real_other": null,
+      "wrong": null,
+      "undecided": null,
+      "calls": {
+        "mean": 1.0,
+        "min": 1,
+        "max": 1
+      },
+      "candidates": [
+        15,
+        15,
+        15
+      ]
+    },
+    {
+      "set": "ghsa-g3jj-5cmm-3hxx",
+      "title": "fast-jwt: fast-jwt treats raw public JWK JSON as an HMAC secret, enabling HS256 token forgery",
+      "runs": 3,
+      "history": {
+        "advisory": "GHSA-g3jj-5cmm-3hxx",
+        "advisory_url": "https://github.com/advisories/GHSA-g3jj-5cmm-3hxx",
+        "severity": "high",
+        "published": "2026-10-08",
+        "package": "fast-jwt",
+        "ecosystem": "npm",
+        "vulnerable_versions": "= 6.2.4",
+        "patched": "6.3.0",
+        "fix_commit": "10f9591349199ed2ab9fa1748ce92cdca697f6cf",
+        "fix_url": "https://github.com/nearform/fast-jwt/commit/10f9591349199ed2ab9fa1748ce92cdca697f6cf",
+        "fix_date": "2026-07-28T14:29:22Z",
+        "changed_lines": 48,
+        "source_files_changed": [
+          "src/crypto.js"
+        ],
+        "other_files_changed": 1,
+        "addition_only": true,
+        "source_bytes": 81803,
+        "fits_in_one_prompt": true,
+        "description": "### Summary\n\n`fast-jwt` 6.2.4 silently classifies raw serialized public JWK JSON\nas an HMAC secret.\n\nIf an application supplies public JWK JSON text as the verifier key and\nHS256 is explicitly allowed or automatically inferred, an attacker who\nknows the same public JSON text can use it as an HMAC key and create an\narbitrary HS256 token that `fast-jwt` accepts as valid.\n\nThis can result in authentication or authorization bypass through forged\nJWT claims.\n\nThe PoC demonstrates the issue with a serialized RSA public JWK. The same\nnon-PEM classification also applies to raw JWKS JSON text, although the\nattached standalone PoC focuses on the smallest JWK case.\n\n### Details\n\nThe verifier accepts a string or Buffer as key material. In\n`src/crypto.js`, `performDetectPublicKeyAlgorithms()` attempts to infer\nthe permitted algorithm family from the supplied string.\n\nStrings matching supported PEM public-key formats are classified as\nasymmetric keys. Any other non-empty string is assumed to be an HMAC\nsecret:\n\n```js\nfunction performDetectPublicKeyAlgorithms(key) {\n  const trimmedKey = key.trim()\n  const publicKeyPemMatch = trimmedKey.match(publicKeyPemMatcher)\n\n  if (trimmedKey.match(privateKeyPemMatcher)) {\n    throw new TokenError(\n      TokenError.codes.invalidKey,\n      'Private keys are not supported for verifying.'\n    )\n  } else if (\n    publicKeyPemMatch &&\n    publicKeyPemMatch[1] === 'RSA'\n  ) {\n    return rsaAlgorithms\n  } else if (\n    !publicKeyPemMatch &&\n    !trimmedKey.includes(publicKeyX509CertMatcher)\n  ) {\n    // Not a PEM, assume a plain secret\n    return hsAlgorithms\n  }\n\n  // ...\n}\n\nA serialized RSA, EC, or OKP public JWK is valid JSON, but it is not PEM\nand does not contain a certificate header. It therefore reaches:\n\nreturn hsAlgorithms\n\nThe HS256 verification path then uses the complete public JSON string as\nthe HMAC key.\n\nBecause JWK public-key material is public by design, an attacker can know\nthe verifier's cryptographic key material. When that public material is\nreinterpreted as an HMAC secret, the attacker can calculate a valid\nHS256 signature over arbitrary claims.\n\nThe vulnerable transition is:\n\nPublic asymmetric JWK JSON\n        |\n        v\nDoes not match PEM detection\n        |\n        v\nClassified as a plain secret\n        |\n        v\nHS256 permitted or inferred\n        |\n        v\nAttacker signs using public JSON bytes\n        |\n        v\nForged token accepted\n\nThe attached PoC demonstrates both relevant configurations:\n\nAn explicit mixed-family allowlist:\ncreateVerifier({\n  key: rawJwk,\n  algorithms: ['HS256', 'RS256']\n})\nNo explicit algorithm allowlist:\ncreateVerifier({\n  key: rawJwk\n})\n\nIn the second configuration, fast-jwt detects the raw non-PEM string as\nsymmetric key material and permits the HS algorithm family.\n\nAn RS256-only verifier rejects the same forged token, providing a\nnegative control:\n\ncreateVerifier({\n  key: rawJwk,\n  algorithms: ['RS256']\n})\n\nThe documentation describes asymmetric verifier keys as PEM-encoded\npublic keys. The security issue is not that the raw JWK is successfully\nparsed as an asymmetric key. It is that ambiguous structured public-key\ntext is silently reclassified as a symmetric secret rather than being\nrejected, and that this classification permits an attacker-controlled\nHS256 token.\n\nPoC\n\nRequirements:\n\nNode.js 20 or newer\nnpm\nThe attached submission ZIP\n\nExtract the attachment and run:\n\ncd poc\nnpm install\nnode poc.js\n\nThe PoC performs the following steps:\n\nGenerates a fresh RSA key pair locally.\nExports only the public key as a JWK.\nAdds ordinary public JWK metadata such as kid, use, and alg.\nSerializes the public JWK as JSON.\nUses the serialized public JWK text as an HS256 HMAC key.\nCreates a token containing attacker-selected administrative claims.\nSupplies the same raw public JSON string to the real\nfast-jwt verifier.\nConfirms acceptance with a mixed HS256/RS256 allowlist.\nConfirms acceptance when algorithm detection is left enabled.\nConfirms rejection with an RS",
+        "label_review": "Claude read the fix patch against the advisory text on 2026-10-24 and found they match (one reader, not independently reviewed)."
+      },
+      "read": {
+        "yes": 0,
+        "partial": 1,
+        "no": 2,
+        "unread": 0
+      },
+      "class": "crypto",
+      "proposed": 1,
+      "kept_mechanical": [
+        0,
+        0,
+        1
+      ],
+      "kept_adjudicated": null,
+      "adjudication_complete": false,
+      "kept": {
+        "mean": 15.0,
+        "min": 15,
+        "max": 15
+      },
+      "real_other": null,
+      "wrong": null,
+      "undecided": null,
+      "calls": {
+        "mean": 1.0,
+        "min": 1,
+        "max": 1
+      },
+      "candidates": [
+        15,
+        15,
+        15
+      ]
+    },
+    {
+      "set": "ghsa-jqcg-44mw-7w3h",
+      "title": "proxy-addr: proxy-addr vulnerable to IP spoofing via IPv4-mapped IPv6 trust subnet",
+      "runs": 3,
+      "history": {
+        "advisory": "GHSA-jqcg-44mw-7w3h",
+        "advisory_url": "https://github.com/advisories/GHSA-jqcg-44mw-7w3h",
+        "severity": "critical",
+        "published": "2026-10-05",
+        "package": "proxy-addr",
+        "ecosystem": "npm",
+        "vulnerable_versions": ">= 1.1.0, < 2.0.8",
+        "patched": "2.0.8",
+        "fix_commit": "780911d84d18e2c5fa008ed0c0d387631ec11965",
+        "fix_url": "https://github.com/jshttp/proxy-addr/commit/780911d84d18e2c5fa008ed0c0d387631ec11965",
+        "fix_date": "2026-09-15T06:02:32Z",
+        "changed_lines": 32,
+        "source_files_changed": [
+          "index.js"
+        ],
+        "other_files_changed": 1,
+        "addition_only": true,
+        "source_bytes": 26245,
+        "fits_in_one_prompt": true,
+        "description": "### Impact\n\n`proxy-addr` determines which network hops are trusted proxies so that `X-Forwarded-For` can be believed. When an application configures a trust subnet as an IPv4-mapped IPv6 address with a short prefix, such as `::ffff:10.0.0.0/8` (the correct spelling is `::ffff:10.0.0.0/104`), the subnet compiles with all-zero leading bits and matches every IPv4 address instead of the block it names. The same happens for any IPv6 trust subnet with zero leading bits, such as `::/1`.\n\nEvery unauthenticated client is then trusted as a proxy at hop 0, so `proxyaddr(req, trust)`, and therefore `req.ip` and `req.ips` in Express, returns whatever the client sends in `X-Forwarded-For`. This defeats IP-based access control, rate limiting, geolocation, and audit logging. The misconfiguration compiles without any error, and the same block written correctly behaves correctly, so the difference is not visible from the configuration.\n\n### Patches\n\nUpgrade to `proxy-addr` 2.0.8. An IPv4 address now matches an IPv6 trust subnet only when that subnet is a genuine IPv4-mapped subnet whose prefix covers the mapped marker.\n\n### Workarounds\n\nWrite IPv4 trust subnets in plain IPv4 notation (for example `10.0.0.0/8`). If IPv4-mapped IPv6 notation is required, use the full form so the prefix covers the mapped marker (for example `::ffff:10.0.0.0/104` for the `10.0.0.0/8` block).",
+        "label_review": "Claude read the fix patch against the advisory text on 2026-10-24 and found they match (one reader, not independently reviewed)."
+      },
+      "read": {
+        "yes": 0,
+        "partial": 0,
+        "no": 3,
+        "unread": 0
+      },
+      "class": "authentication",
+      "proposed": 0,
+      "kept_mechanical": [
+        0,
+        0,
+        0
+      ],
+      "kept_adjudicated": null,
+      "adjudication_complete": false,
+      "kept": {
+        "mean": 15.0,
+        "min": 15,
+        "max": 15
+      },
+      "real_other": null,
+      "wrong": null,
+      "undecided": null,
+      "calls": {
+        "mean": 1.0,
+        "min": 1,
+        "max": 1
+      },
+      "candidates": [
+        15,
+        15,
+        15
+      ]
+    },
+    {
+      "set": "ghsa-mxm6-v9r6-r94c",
+      "title": "@nuxtjs/mdc: @nuxtjs/mdc's URL sanitizer misses SVG xlink:href and data:text/html, allowing XSS from untrusted markdown at the default configuration",
+      "runs": 3,
+      "history": {
+        "advisory": "GHSA-mxm6-v9r6-r94c",
+        "advisory_url": "https://github.com/advisories/GHSA-mxm6-v9r6-r94c",
+        "severity": "high",
+        "published": "2026-09-16",
+        "package": "@nuxtjs/mdc",
+        "ecosystem": "npm",
+        "vulnerable_versions": "< 0.22.1",
+        "patched": "0.22.1",
+        "fix_commit": "61d636c2983f021288e4fc5c4006733b38cf0d53",
+        "fix_url": "https://github.com/nuxt-content/mdc/commit/61d636c2983f021288e4fc5c4006733b38cf0d53",
+        "fix_date": "2026-06-21T18:59:08Z",
+        "changed_lines": 4,
+        "source_files_changed": [
+          "src/runtime/parser/utils/props.ts"
+        ],
+        "other_files_changed": 1,
+        "addition_only": false,
+        "source_bytes": 164204,
+        "fits_in_one_prompt": true,
+        "description": "## Summary\n\n`@nuxtjs/mdc` renders untrusted markdown (including raw HTML) to a Vue component tree. Across two prior advisories it added a URL/attribute sanitizer to block dangerous links in that HTML: `validateProps` / `validateProp` and an `unsafeLinkPrefix` deny-list (`dist/runtime/parser/utils/props.js`). The sanitizer runs at parse time (`dist/runtime/parser/compiler.js`) and `parseMarkdown` enables raw HTML by default (`allowDangerousHtml: true`, `dist/runtime/parser/options.js`), so the sanitizer is the only barrier and it applies with no configuration required.\n\nTwo sibling vectors bypass that sanitizer at the default configuration:\n\n1. SVG anchor `xlink:href`. `validateProp` only scheme-checks attributes named exactly `href` or `src`:\n\n   ```\n   if (attribute === \"href\" || attribute === \"src\") return isAnchorLinkAllowed(value);\n   return true;\n   ```\n\n   An `xlink:href` (parsed to the hast property `xLinkHref`) is neither, so a `javascript:` URL on an SVG `<a>` is passed through. The renderer maps the property back to the real attribute (`MDCRenderer.vue`: `find(html, \"xLinkHref\").attribute` is `xlink:href`), so the output element is `<a xlink:href=\"javascript:...\">`. Clicking it runs the script in the page origin. Plain `<a href=\"javascript:...\">` is correctly stripped, which is what makes this the un-patched sibling.\n\n2. `<iframe src=\"data:text/html,...\">`. `data:text/html` is present in `unsafeLinkPrefix`, but the check compares it against `url.protocol`:\n\n   ```\n   if (unsafeLinkPrefix.some((prefix) => url.protocol.toLowerCase().startsWith(prefix))) return false;\n   ```\n\n   For any data URI `url.protocol` is just `\"data:\"`, so `\"data:\".startsWith(\"data:text/html\")` is always false. Every `data:text/*` entry in the deny-list is therefore dead code, and `<iframe src=\"data:text/html,<script>...</script>\">` is allowed (iframe is not in the render-time `dangerousTags`, which is only `[\"script\",\"base\"]`). The framed document executes script in an opaque origin. For contrast, `srcdoc` and `object` are blocked, so this is a precise gap rather than a general absence of filtering.\n\n## Reproduction\n\nI will attach the zip file for POC, you can simply extract and run `./poc.sh` to install mdc and show the poc in the html file.\n[nuxtjs-mdc-xss_poc.zip](https://github.com/user-attachments/files/29175603/nuxtjs-mdc-xss_poc.zip)\n\nTwo zero-argument checks:\n\n1. `sh poc/poc.sh` installs `@nuxtjs/mdc` and runs `parseMarkdown` (the documented API) at default. It shows the parsed tree retains `a { xLinkHref: \"javascript:...\" }` and `iframe { src: \"data:text/html,...\" }`, while the control payloads `href=\"javascript:...\"` and `srcdoc=...` are removed by the sanitizer. This isolates the sanitizer bypass deterministically.\n2. `poc/poc.sh` also serves `poc/poc.html` over http (data: iframes and javascript: links are restricted under the file:// origin, so http is used). Open the printed URL and click the blue SVG link. The page contains the exact DOM the renderer produces for those parsed nodes; clicking the SVG link executes script in the page origin (same-origin), and the data:text/html iframe executes on load. The page prints VULNERABLE for each that fires.\n\nBoth vectors were confirmed executing in a current Chromium build: the SVG `xlink:href` link runs script in the document origin on click, and the data:text/html iframe runs script on load.\n\n## Suggested fix\n\nIn `validateProp`, scheme-check `xlink:href` (and the hast `xLinkHref`) the same way as `href`/`src`. In `isAnchorLinkAllowed`, compare the dangerous MIME-typed entries against the full URL (or `href`), not against `url.protocol`, so `data:text/html` is actually matched; or add `iframe` to the render-time dangerous-tag set / restrict iframe `src` schemes.",
+        "label_review": "Claude read the fix patch against the advisory text on 2026-10-24 and found they match (one reader, not independently reviewed)."
+      },
+      "read": {
+        "yes": 0,
+        "partial": 2,
+        "no": 1,
+        "unread": 0
+      },
+      "class": "xss",
+      "proposed": 2,
+      "kept_mechanical": [
+        1,
+        1,
+        0
+      ],
+      "kept_adjudicated": null,
+      "adjudication_complete": false,
+      "kept": {
+        "mean": 15.0,
+        "min": 15,
+        "max": 15
+      },
+      "real_other": null,
+      "wrong": null,
+      "undecided": null,
+      "calls": {
+        "mean": 1.0,
+        "min": 1,
+        "max": 1
+      },
+      "candidates": [
+        15,
+        15,
+        15
+      ]
+    },
+    {
+      "set": "ghsa-pm4m-ph32-ghv5",
+      "title": "js-yaml: js-yaml: Exponential parsing time in flow collections leads to denial of service",
+      "runs": 3,
+      "history": {
+        "advisory": "GHSA-pm4m-ph32-ghv5",
+        "advisory_url": "https://github.com/advisories/GHSA-pm4m-ph32-ghv5",
+        "severity": "high",
+        "published": "2026-07-24",
+        "package": "js-yaml",
+        "ecosystem": "npm",
+        "vulnerable_versions": ">= 5.0.0, <= 5.2.1",
+        "patched": "5.2.2",
+        "fix_commit": "3e5240f9cbe645ce5afb58524954a13c8539c853",
+        "fix_url": "https://github.com/nodeca/js-yaml/commit/3e5240f9cbe645ce5afb58524954a13c8539c853",
+        "fix_date": "2026-07-23T22:33:42Z",
+        "changed_lines": 27,
+        "source_files_changed": [
+          "src/parser/parser.ts"
+        ],
+        "other_files_changed": 1,
+        "addition_only": false,
+        "source_bytes": 212186,
+        "fits_in_one_prompt": true,
+        "description": "### Summary\nParsing a small YAML document can take exponential time. An application that calls `load()` or `loadAll()` on untrusted input can be hung by a payload under 200 bytes.\n\n### Details\nWhen an entry in a flow sequence turns out to be a `key: value` pair, the parser rewinds and parses that entry a second time as the key.\nIf the key is itself a nested flow sequence of the same shape, every level is parsed twice, so the total work is O(2^n) in the nesting depth. The default `maxDepth` of 100 does not help, because the time is already unmanageable at about 30 to 40 levels.\n\nRoot cause, potentially the: `readFlowCollection` in [parser.ts](https://github.com/nodeca/js-yaml/blob/master/src/parser/parser.ts), the `restoreState` followed by a second `parseNode` further down.\n\n\n### PoC\n\n```javascript\nconst yaml = require('js-yaml')\nconst n = 30\nyaml.load('[ '.repeat(n) + '1' + ' ]: 0'.repeat(n))\n```\n\nWith default options: 22 levels takes about 1 second, 26 levels about 17 seconds, 30 levels over 2 minutes. The input stays under 200 bytes and grows linearly with `n`.\n\n### Impact\nDenial of service. A single small request can keep one CPU busy for minutes or longer and blocks the Node event loop, so one request can stall the whole process. No anchors, aliases, merges, tags, or non default options are required, and it reproduces on the default schema.",
+        "label_review": "Claude read the fix patch against the advisory text on 2026-10-24 and found they match (one reader, not independently reviewed)."
+      },
+      "read": {
+        "yes": 0,
+        "partial": 0,
+        "no": 3,
+        "unread": 0
+      },
+      "class": "dos",
+      "proposed": 0,
+      "kept_mechanical": [
+        0,
+        0,
+        0
+      ],
+      "kept_adjudicated": null,
+      "adjudication_complete": false,
+      "kept": {
+        "mean": 15.0,
+        "min": 15,
+        "max": 15
+      },
+      "real_other": null,
+      "wrong": null,
+      "undecided": null,
+      "calls": {
+        "mean": 1.0,
+        "min": 1,
+        "max": 1
+      },
+      "candidates": [
+        15,
+        15,
+        15
+      ]
+    },
+    {
+      "set": "ghsa-pqg4-j6r4-53mv",
+      "title": "shell-quote: shell-quote: `quote()` command injection via a line terminator in a token after a `{ comment }` token",
+      "runs": 3,
+      "history": {
+        "advisory": "GHSA-pqg4-j6r4-53mv",
+        "advisory_url": "https://github.com/advisories/GHSA-pqg4-j6r4-53mv",
+        "severity": "critical",
+        "published": "2026-10-06",
+        "package": "shell-quote",
+        "ecosystem": "npm",
+        "vulnerable_versions": ">= 1.8.4, < 1.11.0",
+        "patched": "1.11.0",
+        "fix_commit": "6002b2ed90c6b83095eb272b6b0adaf3a172b0bc",
+        "fix_url": "https://github.com/ljharb/shell-quote/commit/6002b2ed90c6b83095eb272b6b0adaf3a172b0bc",
+        "fix_date": "2026-09-27T09:05:08Z",
+        "changed_lines": 8,
+        "source_files_changed": [
+          "quote.d.ts",
+          "quote.js"
+        ],
+        "other_files_changed": 2,
+        "addition_only": false,
+        "source_bytes": 23528,
+        "fits_in_one_prompt": true,
+        "description": "### Impact\n\n`quote()` emits a `{ comment }` token as `#` followed by its text, which comments out the rest of the shell line, including the opening quote of any later string token. A line terminator in that later string ends the comment, and the rest of the string is parsed as shell input:\n\n```js\nquote(['echo', 'ok', { comment: 'x' }, 'a\\nid;#']);\n// echo ok #x 'a\n// id;#'\n```\n\nPassed to `sh`, `bash`, `dash`, `ksh`, or `zsh`, this runs `id`.\n\n`parse()` emits a comment token for a `#` in the middle of a word (for example `http://example.com/#frag`), so callers that combine `parse()` output with another untrusted string, such as `quote(parse(untrustedCommand).concat(untrustedArg))`, are affected. The fix for CVE-2026-9277 rejected line terminators in the comment's own text, but not in the tokens after it.\n\nExploitation requires an attacker-controlled string containing a line terminator that follows a `{ comment }` token in the same `quote()` call.\n\n### Patches\n\nFixed in v1.11.0: `quote()` throws a `TypeError` when a string after a `{ comment }` token contains a line terminator (`\\n`, `\\r`, U+2028, or U+2029).\n\n### Workarounds\n\nDrop every token after a `{ comment }` token before calling `quote()`, or reject line terminators in untrusted strings. Separately, do not append other shell text after `quote()` output that contains a comment, since the comment swallows it.",
+        "label_review": "Claude read the fix patch against the advisory text on 2026-10-24 and found they match (one reader, not independently reviewed)."
+      },
+      "read": {
+        "yes": 0,
+        "partial": 2,
+        "no": 1,
+        "unread": 0
+      },
+      "class": "injection",
+      "proposed": 0,
+      "kept_mechanical": [
+        0,
+        0,
+        0
+      ],
+      "kept_adjudicated": null,
+      "adjudication_complete": false,
+      "kept": {
+        "mean": 15.0,
+        "min": 15,
+        "max": 15
+      },
+      "real_other": null,
+      "wrong": null,
+      "undecided": null,
+      "calls": {
+        "mean": 1.0,
+        "min": 1,
+        "max": 1
+      },
+      "candidates": [
+        15,
+        15,
+        15
+      ]
+    },
+    {
+      "set": "ghsa-r9w8-h9r3-54w4",
+      "title": "devalue: devalue: Custom ArrayBuffer revivers can bypass typed-array allocation validation",
+      "runs": 3,
+      "history": {
+        "advisory": "GHSA-r9w8-h9r3-54w4",
+        "advisory_url": "https://github.com/advisories/GHSA-r9w8-h9r3-54w4",
+        "severity": "high",
+        "published": "2026-10-01",
+        "package": "devalue",
+        "ecosystem": "npm",
+        "vulnerable_versions": "<= 5.9.2",
+        "patched": "5.9.3",
+        "fix_commit": "8f8d78e173f8a00023d009c7677ccc600dee0b99",
+        "fix_url": "https://github.com/sveltejs/devalue/commit/8f8d78e173f8a00023d009c7677ccc600dee0b99",
+        "fix_date": "2026-09-18T18:40:34Z",
+        "changed_lines": 26,
+        "source_files_changed": [
+          "src/operations.js",
+          "src/types.d.ts"
+        ],
+        "other_files_changed": 2,
+        "addition_only": true,
+        "source_bytes": 80147,
+        "fits_in_one_prompt": true,
+        "description": "Under very specific circumstances, `parse` could create massive ArrayBuffers with very small input. This required a malformed `ArrayBuffer` custom reviver.",
+        "label_review": "Claude read the fix patch against the advisory text on 2026-10-24 and found they match (one reader, not independently reviewed). Weak: the advisory is two sentences and the fix only adds validation before a typed-array constructor."
+      },
+      "read": {
+        "yes": 0,
+        "partial": 2,
+        "no": 1,
+        "unread": 0
+      },
+      "class": "other",
+      "proposed": 3,
+      "kept_mechanical": [
+        1,
+        1,
+        1
+      ],
+      "kept_adjudicated": null,
+      "adjudication_complete": false,
+      "kept": {
+        "mean": 15.0,
+        "min": 15,
+        "max": 15
+      },
+      "real_other": null,
+      "wrong": null,
+      "undecided": null,
+      "calls": {
+        "mean": 1.0,
+        "min": 1,
+        "max": 1
+      },
+      "candidates": [
+        15,
+        15,
+        15
+      ]
+    },
+    {
+      "set": "ghsa-wc9g-mqfw-jrwm",
+      "title": "multer: multer vulnerable to Denial of Service via crafted multipart field names",
+      "runs": 3,
+      "history": {
+        "advisory": "GHSA-wc9g-mqfw-jrwm",
+        "advisory_url": "https://github.com/advisories/GHSA-wc9g-mqfw-jrwm",
+        "severity": "high",
+        "published": "2026-09-08",
+        "package": "multer",
+        "ecosystem": "npm",
+        "vulnerable_versions": "< 2.3.0",
+        "patched": "2.3.0",
+        "fix_commit": "87a584e8c8d4da873292635fa1d8c4d78d985b76",
+        "fix_url": "https://github.com/expressjs/multer/commit/87a584e8c8d4da873292635fa1d8c4d78d985b76",
+        "fix_date": "2026-08-28T18:57:07Z",
+        "changed_lines": 9,
+        "source_files_changed": [
+          "lib/make-middleware.js",
+          "lib/multer-error.js"
+        ],
+        "other_files_changed": 1,
+        "addition_only": false,
+        "source_bytes": 34810,
+        "fits_in_one_prompt": true,
+        "description": "### Impact\n\nA vulnerability in multer allows a remote, unauthenticated attacker to crash the Node.js process with a single `multipart/form-data` request. Two specially crafted text field names cause an uncaught `RangeError: Invalid array length` inside multer's field parsing, which is not routed to the application error handler and terminates the process. All applications using multer to parse multipart requests are affected.\n\n### Patches\n\nUsers should upgrade to `2.3.0`.\n\n### Workarounds\n\nNone.",
+        "label_review": "Claude read the fix patch against the advisory text on 2026-10-24 and found they match (one reader, not independently reviewed)."
+      },
+      "read": {
+        "yes": 0,
+        "partial": 3,
+        "no": 0,
+        "unread": 0
+      },
+      "class": "other",
+      "proposed": 3,
+      "kept_mechanical": [
+        1,
+        1,
+        1
+      ],
+      "kept_adjudicated": null,
+      "adjudication_complete": false,
+      "kept": {
+        "mean": 15.0,
+        "min": 15,
+        "max": 15
+      },
+      "real_other": null,
+      "wrong": null,
+      "undecided": null,
+      "calls": {
+        "mean": 1.0,
+        "min": 1,
+        "max": 1
+      },
+      "candidates": [
+        15,
+        15,
+        15
+      ]
+    },
+    {
+      "set": "ghsa-xcpc-8h2w-3j85",
+      "title": "adm-zip: adm-zip: Crafted ZIP file triggers 4GB memory allocation",
+      "runs": 3,
+      "history": {
+        "advisory": "GHSA-xcpc-8h2w-3j85",
+        "advisory_url": "https://github.com/advisories/GHSA-xcpc-8h2w-3j85",
+        "severity": "high",
+        "published": "2026-07-10",
+        "package": "adm-zip",
+        "ecosystem": "npm",
+        "vulnerable_versions": "< 0.6.0",
+        "patched": "0.6.0",
+        "fix_commit": "2450dcf417aa29df49270237d18c5245794da3e2",
+        "fix_url": "https://github.com/cthackers/adm-zip/commit/2450dcf417aa29df49270237d18c5245794da3e2",
+        "fix_date": "2026-07-10T18:13:12Z",
+        "changed_lines": 16,
+        "source_files_changed": [
+          "zipEntry.js"
+        ],
+        "other_files_changed": 1,
+        "addition_only": false,
+        "source_bytes": 128190,
+        "fits_in_one_prompt": true,
+        "description": "adm-zip before 0.5.18 is vulnerable to denial of service via a crafted ZIP file with a manipulated uncompressed size header field. In zipEntry.js line 103, Buffer.alloc(_centralHeader.size) allocates memory based on the declared uncompressed size from the ZIP central directory header without validating it against the actual compressed data size or imposing any upper bound. The size value is read directly from the binary header at entryHeader.js line 266 with no bounds check. An attacker can craft a ~120-byte ZIP file that declares ~4GB uncompressed size, causing a memory allocation amplification ratio of over 33 million to 1. The allocation occurs before CRC validation, so the malicious payload cannot be rejected early. All extraction and read methods are affected: readFile(), readAsText(), extractEntryTo(), extractAllTo(), extractAllToAsync(), test(), and entry.getData(). Any application accepting untrusted ZIP files via adm-zip is vulnerable to immediate process crash.",
+        "label_review": "Claude read the fix patch against the advisory text on 2026-10-24 and found they match (one reader, not independently reviewed)."
+      },
+      "read": {
+        "yes": 1,
+        "partial": 0,
+        "no": 2,
+        "unread": 0
+      },
+      "class": "dos",
+      "proposed": 1,
+      "kept_mechanical": [
+        0,
+        0,
+        1
+      ],
+      "kept_adjudicated": null,
+      "adjudication_complete": false,
+      "kept": {
+        "mean": 15.0,
+        "min": 15,
+        "max": 15
+      },
+      "real_other": null,
+      "wrong": null,
+      "undecided": null,
+      "calls": {
+        "mean": 1.0,
+        "min": 1,
+        "max": 1
+      },
+      "candidates": [
+        15,
+        15,
+        15
+      ]
+    },
+    {
+      "set": "ghsa-xjh9-v7x6-24jw",
+      "title": "@fastify/busboy: @fastify/busboy vulnerable to Denial of Service via oversized multipart boundary",
+      "runs": 3,
+      "history": {
+        "advisory": "GHSA-xjh9-v7x6-24jw",
+        "advisory_url": "https://github.com/advisories/GHSA-xjh9-v7x6-24jw",
+        "severity": "high",
+        "published": "2026-10-02",
+        "package": "@fastify/busboy",
+        "ecosystem": "npm",
+        "vulnerable_versions": ">= 3.1.0, < 3.2.1",
+        "patched": "3.2.1",
+        "fix_commit": "632a237e7fb6b3b7a30e0de8fab2ee72ca5bf722",
+        "fix_url": "https://github.com/fastify/busboy/commit/632a237e7fb6b3b7a30e0de8fab2ee72ca5bf722",
+        "fix_date": "2026-08-12T19:56:33Z",
+        "changed_lines": 2,
+        "source_files_changed": [
+          "deps/streamsearch/sbmh.js"
+        ],
+        "other_files_changed": 2,
+        "addition_only": false,
+        "source_bytes": 122798,
+        "fits_in_one_prompt": true,
+        "description": "### Impact\n\nVersions of `@fastify/busboy` from 3.1.0 and prior to 3.2.1 are vulnerable to a Denial of Service. The vendored streaming multipart search stores its default skip distance in a `Uint8Array(256)`. A multipart boundary of exactly 252 bytes makes the search needle 256 bytes, and the table entry wraps to zero, so a crafted request keeps the search in a CPU-bound loop and stalls the Node.js event loop. An unauthenticated client can trigger this with a single small request. Applications that use `@fastify/busboy` to parse multipart/form-data, directly or through `@fastify/multipart`, are affected.\n\n### Patches\n\nFixed in version 3.2.1.\n\n### Workarounds\n\nValidate the multipart boundary before parsing and reject any boundary longer than the RFC 2046 limit of 70 characters (for example at a reverse proxy or in an onRequest hook). Upgrading to 3.2.1 removes the issue.",
+        "label_review": "Claude read the fix patch against the advisory text on 2026-10-24 and found they match (one reader, not independently reviewed)."
+      },
+      "read": {
+        "yes": 0,
+        "partial": 0,
+        "no": 3,
+        "unread": 0
+      },
+      "class": "dos",
+      "proposed": 0,
+      "kept_mechanical": [
+        0,
+        0,
+        0
+      ],
+      "kept_adjudicated": null,
+      "adjudication_complete": false,
+      "kept": {
+        "mean": 15.0,
+        "min": 15,
+        "max": 15
+      },
+      "real_other": null,
+      "wrong": null,
+      "undecided": null,
+      "calls": {
+        "mean": 1.0,
+        "min": 1,
+        "max": 1
+      },
+      "candidates": [
+        15,
+        15,
+        15
+      ]
+    }
+  ],
+  "not_run": [],
+  "totals": {
+    "sets": 22,
+    "set_runs": 66,
+    "read": {
+      "sets": 22,
+      "runs": 66,
+      "yes": 6,
+      "partial": 17,
+      "sets_with_yes": 4,
+      "sets_with_yes_or_partial": 12
+    },
+    "proposed": 16,
+    "kept_mechanical": 16,
+    "kept_adjudicated": null,
+    "adjudicated_sets": 0,
+    "kept_issues_total": 990,
+    "calls_total": 66
+  }
+}

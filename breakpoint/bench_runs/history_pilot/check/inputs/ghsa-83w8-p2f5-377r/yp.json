@@ -1,0 +1,117 @@
+{
+ "findings": [
+  {
+   "title": "Lack of Strict Path Normalization",
+   "generation": 1,
+   "discovered_by": "single-prompt baseline",
+   "description": "The code uses `decodeURI` on pathnames before passing them to the filesystem layer via `send`. While standard, double-decoding or encoding-based attacks could potentially bypass filter checks that look for specific characters.",
+   "steps_to_exploit": [
+    "Supply a URI-encoded traversal string.",
+    "The server decodes it and performs check on the decoded result, but if it re-encodes, it might cause inconsistencies.",
+    "Bypass logic that relies on literal path strings."
+   ],
+   "impact": "Security filter bypass.",
+   "evolved_from": [],
+   "attack_category": "code_quality",
+   "confidence": 1.0,
+   "exploitability": 0.0,
+   "impact_score": 0.0,
+   "spread": 0.0,
+   "fix_difficulty": 1.0,
+   "verification": "",
+   "evidence": [
+    {
+     "file": "index.js",
+     "line": 743,
+     "quote": "return decodeURI(pathname)"
+    }
+   ],
+   "code_refs": [
+    {
+     "file": "index.js",
+     "line": 743,
+     "quote": "return decodeURI(pathname)"
+    }
+   ],
+   "id": "3556271c",
+   "bss": 0.0,
+   "severity_band": "LOW",
+   "fix_priority": "MONITOR"
+  },
+  {
+   "title": "Improper Input Sanitization in `getPathnameForSend`",
+   "generation": 1,
+   "discovered_by": "single-prompt baseline",
+   "description": "Decoding URI components in `getPathnameForSend` after path prefix matching might allow traversal if the decoding results in '..' sequences.",
+   "steps_to_exploit": [
+    "Encode path traversal sequences (e.g., %2e%2e%2f).",
+    "Send request to the server.",
+    "The server decodes the sequence, bypassing filters, and accesses the file."
+   ],
+   "impact": "Bypassing path restrictions to read unauthorized files.",
+   "evolved_from": [],
+   "attack_category": "injection",
+   "confidence": 1.0,
+   "exploitability": 0.0,
+   "impact_score": 0.0,
+   "spread": 0.0,
+   "fix_difficulty": 1.0,
+   "verification": "",
+   "evidence": [
+    {
+     "file": "index.js",
+     "line": 743,
+     "quote": "return decodeURI(pathname)"
+    }
+   ],
+   "code_refs": [
+    {
+     "file": "index.js",
+     "line": 743,
+     "quote": "return decodeURI(pathname)"
+    }
+   ],
+   "id": "904e9255",
+   "bss": 0.0,
+   "severity_band": "LOW",
+   "fix_priority": "MONITOR"
+  },
+  {
+   "title": "Unsafe consumption of `req.raw.url`",
+   "generation": 1,
+   "discovered_by": "single-prompt baseline",
+   "description": "The plugin frequently accesses `req.raw.url` without consistent normalization before path resolution. This can lead to bypasses where different web servers or proxies interpret encoded URLs differently than the application.",
+   "steps_to_exploit": [
+    "Craft a URL with unusual encoding or path separators (e.g., `//`),",
+    "Verify if the `pumpSendToReply` logic processes it differently than the upstream proxy"
+   ],
+   "impact": "Security control bypass; access to unintended resources.",
+   "evolved_from": [],
+   "attack_category": "injection",
+   "confidence": 1.0,
+   "exploitability": 0.0,
+   "impact_score": 0.0,
+   "spread": 0.0,
+   "fix_difficulty": 1.0,
+   "verification": "",
+   "evidence": [
+    {
+     "file": "index.js",
+     "line": 142,
+     "quote": "const pathname = getPathnameForSend(req.raw.url, matchRoutePrefix)"
+    }
+   ],
+   "code_refs": [
+    {
+     "file": "index.js",
+     "line": 142,
+     "quote": "const pathname = getPathnameForSend(req.raw.url, matchRoutePrefix)"
+    }
+   ],
+   "id": "3b274e6a",
+   "bss": 0.0,
+   "severity_band": "LOW",
+   "fix_priority": "MONITOR"
+  }
+ ]
+}

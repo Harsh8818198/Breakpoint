@@ -1,0 +1,786 @@
+{
+  "schema": 1,
+  "set": "ghsa-r9w8-h9r3-54w4",
+  "variant": "raw",
+  "arm": "plain",
+  "run": 3,
+  "commit": "dae8153e9d7541b975cc4018138d6cebec6c1199",
+  "started_at": "2026-10-24T11:00:29+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": false,
+  "status": "ok",
+  "candidates": 15,
+  "kept": [
+    {
+      "title": "Arbitrary Command Injection in Benchmarking Utility",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `exec` function in `benchmarking/compare/index.js` constructs shell commands using unvalidated user-provided input from `process.argv`.",
+      "steps_to_exploit": [
+        "Craft a branch argument containing shell metacharacters, e.g., 'main; rm -rf /'.",
+        "Pass the malicious string to `pnpm bench:compare <malicious_input>`.",
+        "The `checkout` function executes the unsanitized input via `execSync`."
+      ],
+      "impact": "Remote Code Execution (RCE) on the developer machine or CI environment running the benchmarks.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "benchmarking/compare/index.js",
+          "line": 6,
+          "quote": "const exec = (command) => execSync(command).toString().trim();"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "benchmarking/compare/index.js",
+          "line": 6,
+          "quote": "const exec = (command) => execSync(command).toString().trim();"
+        }
+      ],
+      "id": "c5811281",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Use of --allow-natives-syntax in Benchmarks",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The benchmark scripts are run with `--allow-natives-syntax`, which exposes V8 internal functions like `%CollectGarbage`, increasing the attack surface for potential V8 exploits.",
+      "steps_to_exploit": [
+        "Access the benchmarking environment where this flag is enabled.",
+        "Inject a payload utilizing V8-specific natives to perform out-of-bounds access or memory corruption.",
+        "Execute the script via `pnpm bench`."
+      ],
+      "impact": "Exploitation of the JavaScript engine, potentially leading to privilege escalation or sandbox escapes.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "package.json",
+          "line": 35,
+          "quote": "\"bench\": \"node --allow-natives-syntax ./benchmarking/run.js\","
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "package.json",
+          "line": 35,
+          "quote": "\"bench\": \"node --allow-natives-syntax ./benchmarking/run.js\","
+        }
+      ],
+      "id": "f4777770",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Prototype Pollution through Unsafe Object Reconstruction",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `unflatten` function in `src/parse.js` lacks comprehensive checks against '__proto__' or other prototype-modifying keys when building objects, potentially enabling prototype pollution.",
+      "steps_to_exploit": [
+        "Prepare a malicious JSON payload with a key set to '__proto__'.",
+        "Pass the payload to `devalue.parse()`.",
+        "The parser manually assigns keys to objects without fully sanitizing the target key name, potentially modifying `Object.prototype`."
+      ],
+      "impact": "Prototype pollution can lead to Denial of Service or downstream XSS/RCE depending on how the application handles objects.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/parse.js",
+          "line": 166,
+          "quote": "if (key === '__proto__') {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/parse.js",
+          "line": 166,
+          "quote": "if (key === '__proto__') {"
+        }
+      ],
+      "id": "9ccf51f3",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Deserialization of untrusted input causing memory exhaustion",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The parser uses `new Array(length)` based on the `length` property found in the serialized input, which can be manipulated to cause massive memory allocation (DoS).",
+      "steps_to_exploit": [
+        "Craft a serialized payload indicating an extremely large array length (e.g., 2^32 - 1).",
+        "Call `devalue.parse()` on the payload.",
+        "The engine attempts to allocate a massive amount of memory for the array."
+      ],
+      "impact": "Application process crash due to Out-Of-Memory (OOM) errors, causing a Denial of Service.",
+      "evolved_from": [],
+      "attack_category": "scalability",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/parse.js",
+          "line": 230,
+          "quote": "const len = value[1];"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/parse.js",
+          "line": 230,
+          "quote": "const len = value[1];"
+        }
+      ],
+      "id": "4c8cda7a",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Lack of Input Validation on Parsed Values",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The parser relies heavily on the structure of the input array without sufficient validation of indices or types within nested structures.",
+      "steps_to_exploit": [
+        "Submit a specially crafted array index that points to an invalid structure.",
+        "The logic fails to properly validate the `index` before accessing `values[index]`.",
+        "This could lead to type confusion during hydration."
+      ],
+      "impact": "Unexpected application state, crashes, or potential logic vulnerabilities.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/parse.js",
+          "line": 68,
+          "quote": "if (index >= values.length) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/parse.js",
+          "line": 68,
+          "quote": "if (index >= values.length) {"
+        }
+      ],
+      "id": "595a6713",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Exposure of Internals in benchmarking/compare/runner.js",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The runner uses `process.send` to pass results, but it does not validate the structure or contents of the results retrieved from the benchmarks.",
+      "steps_to_exploit": [
+        "Modify a benchmark file to return malicious data structures that override system objects.",
+        "Run the compare tool.",
+        "The main process deserializes and processes the malicious output."
+      ],
+      "impact": "Information disclosure or malicious code execution within the runner context.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "benchmarking/compare/runner.js",
+          "line": 13,
+          "quote": "process.send?.(results);"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "benchmarking/compare/runner.js",
+          "line": 13,
+          "quote": "process.send?.(results);"
+        }
+      ],
+      "id": "8413c4f9",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potential Integer Overflow in Array Indexing",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The code uses bitwise operations or simple addition to handle array lengths and indices, which may overflow if inputs are not properly checked against JS safe integer limits.",
+      "steps_to_exploit": [
+        "Provide a large numerical input for array lengths/indices.",
+        "The system uses `2 ** 32 - 1` as `MAX_ARRAY_LEN` but fails to check for overflows during arithmetic operations inside `hydrate`."
+      ],
+      "impact": "Incorrect data retrieval or memory management errors.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/constants.js",
+          "line": 11,
+          "quote": "export const MAX_ARRAY_LEN = 2 ** 32 - 1;"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/constants.js",
+          "line": 11,
+          "quote": "export const MAX_ARRAY_LEN = 2 ** 32 - 1;"
+        }
+      ],
+      "id": "8b46d970",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Temporal object construction",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `fromStringValue` method dynamically calls `Temporal[tag.slice(9)].from(text)`, which is highly risky if the tag string is not strictly validated.",
+      "steps_to_exploit": [
+        "Supply a crafted string with a tag that allows access to unintended properties of the global Temporal object.",
+        "The code dynamically accesses a method based on the string."
+      ],
+      "impact": "Unintended function execution or potential information leakage.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/operations.js",
+          "line": 136,
+          "quote": "return Temporal[tag.slice(9)].from(text);"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/operations.js",
+          "line": 136,
+          "quote": "return Temporal[tag.slice(9)].from(text);"
+        }
+      ],
+      "id": "eb69b540",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unsafe buffer creation in base64.js legacy path",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The legacy `decode_legacy` function performs a character-by-character conversion, which can be inefficient and susceptible to memory exhaustion if extremely large strings are processed.",
+      "steps_to_exploit": [
+        "Send an enormous Base64 encoded string.",
+        "The loop iterates over the length of the string, allocating a Uint8Array proportional to the input."
+      ],
+      "impact": "Denial of Service (DoS) via memory exhaustion.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/base64.js",
+          "line": 49,
+          "quote": "for (let i = 0; i < len; i++) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/base64.js",
+          "line": 49,
+          "quote": "for (let i = 0; i < len; i++) {"
+        }
+      ],
+      "id": "7fa300b1",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Missing validation of `byteOffset` and `length` in View creation",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `fromViewInfo` method trusts the `byteOffset` and `length` values provided by the serialized input when calling the TypedArray constructor.",
+      "steps_to_exploit": [
+        "Construct a malformed payload where the `byteOffset` plus `length` exceeds the size of the underlying buffer.",
+        "The TypedArray constructor will throw a range error, which might be caught or handled improperly in the parent routine."
+      ],
+      "impact": "Denial of Service through unhandled exceptions.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/operations.js",
+          "line": 146,
+          "quote": "new Constructor(buffer, byteOffset, length)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/operations.js",
+          "line": 146,
+          "quote": "new Constructor(buffer, byteOffset, length)"
+        }
+      ],
+      "id": "12466790",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Circular reference handling in custom revivers",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The hydration logic for custom revivers attempts to detect circular dependencies with a `Set`, but this could be bypassed if the user reviver is malicious.",
+      "steps_to_exploit": [
+        "Create a custom reviver that initiates its own recursion.",
+        "The check `hydrating.has(i)` may not cover all complex circular dependency scenarios, potentially leading to stack overflow."
+      ],
+      "impact": "Denial of Service via infinite recursion (Stack Overflow).",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/parse.js",
+          "line": 102,
+          "quote": "if (hydrating.has(i)) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/parse.js",
+          "line": 102,
+          "quote": "if (hydrating.has(i)) {"
+        }
+      ],
+      "id": "7d514e63",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure use of String.fromCharCode.apply",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Using `String.fromCharCode.apply` with large chunks can lead to stack overflow on older engines or with large data sizes.",
+      "steps_to_exploit": [
+        "Provide a very large array to `encode_legacy`.",
+        "The `apply` call with a large array of arguments will exceed the call stack size."
+      ],
+      "impact": "Denial of Service via stack overflow.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/base64.js",
+          "line": 37,
+          "quote": "binary += String.fromCharCode.apply(null, chunk);"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/base64.js",
+          "line": 37,
+          "quote": "binary += String.fromCharCode.apply(null, chunk);"
+        }
+      ],
+      "id": "6dca8752",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Reliance on `globalThis` for constructor lookup",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `fromViewInfo` operation performs a dynamic lookup on `globalThis` using an unvalidated tag string.",
+      "steps_to_exploit": [
+        "Supply a tag that refers to an unintended global constructor (e.g., 'Function').",
+        "The parser might attempt to construct a dangerous object."
+      ],
+      "impact": "Code execution or information disclosure.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "src/operations.js",
+          "line": 144,
+          "quote": "const Constructor = /** @type {any} */ (globalThis)[tag];"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "src/operations.js",
+          "line": 144,
+          "quote": "const Constructor = /** @type {any} */ (globalThis)[tag];"
+        }
+      ],
+      "id": "b3e6929e",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure performance tracking",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The performance tracker uses `setTimeout(f, 10)` which, if run in a high-frequency loop, can cause significant event loop lag.",
+      "steps_to_exploit": [
+        "Run the benchmark tool repeatedly or in an environment where resource exhaustion is prioritized.",
+        "The event loop is blocked by numerous small timeouts."
+      ],
+      "impact": "Denial of Service by starving the Node.js event loop.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "benchmarking/utils.js",
+          "line": 19,
+          "quote": "await new Promise((f) => setTimeout(f, 10));"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "benchmarking/utils.js",
+          "line": 19,
+          "quote": "await new Promise((f) => setTimeout(f, 10));"
+        }
+      ],
+      "id": "b91496f6",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unbounded output from benchmark stringify results",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The benchmark output formatting logic `console.log` doesn't limit the output size, allowing massive JSON objects to be printed to the console.",
+      "steps_to_exploit": [
+        "Generate massive results from a benchmark run.",
+        "The `fs.writeFileSync` or `console.log` call will attempt to buffer the entire large string."
+      ],
+      "impact": "Memory consumption increase, leading to system degradation or DoS.",
+      "evolved_from": [],
+      "attack_category": "scalability",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "benchmarking/compare/index.js",
+          "line": 62,
+          "quote": "fs.writeFileSync(file, JSON.stringify(results, null, ' '));"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "benchmarking/compare/index.js",
+          "line": 62,
+          "quote": "fs.writeFileSync(file, JSON.stringify(results, null, ' '));"
+        }
+      ],
+      "id": "374e429c",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "proposed": [
+    {
+      "title": "Arbitrary Command Injection in Benchmarking Utility",
+      "code_refs": [
+        {
+          "file": "benchmarking/compare/index.js",
+          "line": 6,
+          "quote": "const exec = (command) => execSync(command).toString().trim();"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure Use of --allow-natives-syntax in Benchmarks",
+      "code_refs": [
+        {
+          "file": "package.json",
+          "line": 35,
+          "quote": "\"bench\": \"node --allow-natives-syntax ./benchmarking/run.js\","
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Prototype Pollution through Unsafe Object Reconstruction",
+      "code_refs": [
+        {
+          "file": "src/parse.js",
+          "line": 166,
+          "quote": "if (key === '__proto__') {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Deserialization of untrusted input causing memory exhaustion",
+      "code_refs": [
+        {
+          "file": "src/parse.js",
+          "line": 230,
+          "quote": "const len = value[1];"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Lack of Input Validation on Parsed Values",
+      "code_refs": [
+        {
+          "file": "src/parse.js",
+          "line": 68,
+          "quote": "if (index >= values.length) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Exposure of Internals in benchmarking/compare/runner.js",
+      "code_refs": [
+        {
+          "file": "benchmarking/compare/runner.js",
+          "line": 13,
+          "quote": "process.send?.(results);"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potential Integer Overflow in Array Indexing",
+      "code_refs": [
+        {
+          "file": "src/constants.js",
+          "line": 11,
+          "quote": "export const MAX_ARRAY_LEN = 2 ** 32 - 1;"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure Temporal object construction",
+      "code_refs": [
+        {
+          "file": "src/operations.js",
+          "line": 136,
+          "quote": "return Temporal[tag.slice(9)].from(text);"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unsafe buffer creation in base64.js legacy path",
+      "code_refs": [
+        {
+          "file": "src/base64.js",
+          "line": 49,
+          "quote": "for (let i = 0; i < len; i++) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Missing validation of `byteOffset` and `length` in View creation",
+      "code_refs": [
+        {
+          "file": "src/operations.js",
+          "line": 146,
+          "quote": "new Constructor(buffer, byteOffset, length)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Circular reference handling in custom revivers",
+      "code_refs": [
+        {
+          "file": "src/parse.js",
+          "line": 102,
+          "quote": "if (hydrating.has(i)) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure use of String.fromCharCode.apply",
+      "code_refs": [
+        {
+          "file": "src/base64.js",
+          "line": 37,
+          "quote": "binary += String.fromCharCode.apply(null, chunk);"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Reliance on `globalThis` for constructor lookup",
+      "code_refs": [
+        {
+          "file": "src/operations.js",
+          "line": 144,
+          "quote": "const Constructor = /** @type {any} */ (globalThis)[tag];"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure performance tracking",
+      "code_refs": [
+        {
+          "file": "benchmarking/utils.js",
+          "line": 19,
+          "quote": "await new Promise((f) => setTimeout(f, 10));"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unbounded output from benchmark stringify results",
+      "code_refs": [
+        {
+          "file": "benchmarking/compare/index.js",
+          "line": 62,
+          "quote": "fs.writeFileSync(file, JSON.stringify(results, null, ' '));"
+        }
+      ],
+      "outcome": "unchecked"
+    }
+  ],
+  "rejected": [],
+  "verification": null,
+  "arm_meta": {
+    "baseline": {
+      "model": "gemini/gemini-3.1-flash-lite",
+      "context": "code",
+      "requested": 15,
+      "returned": 15,
+      "files_shown": 23,
+      "chars_shown": 100750,
+      "files_that_did_not_fit": []
+    }
+  },
+  "seconds": {
+    "arm": 11.3,
+    "check": 0.0,
+    "total": 11.3
+  },
+  "usage": {
+    "arm": {
+      "calls": 1,
+      "failed": 0,
+      "est_tokens": 28330,
+      "seconds_in_calls": 11.2,
+      "by_task": {
+        "baseline": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 101828,
+          "completion_chars": 11494,
+          "seconds": 11.235955199925229,
+          "est_tokens": 28330
+        }
+      }
+    },
+    "check": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    }
+  }
+}

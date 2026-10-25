@@ -1,0 +1,779 @@
+{
+  "schema": 1,
+  "set": "ghsa-pqg4-j6r4-53mv",
+  "variant": "raw",
+  "arm": "plain",
+  "run": 3,
+  "commit": "36f23944db50dd3f0df4da9c7cba0bb63df05f64",
+  "started_at": "2026-10-24T11:06:10+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": false,
+  "status": "ok",
+  "candidates": 15,
+  "kept": [
+    {
+      "title": "Unsafe Deserialization via JSON.parse",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The parser uses JSON.parse() on arbitrary strings returned by an environment lookup function, which could be exploited if an attacker controls the environment variable values.",
+      "steps_to_exploit": [
+        "Attacker identifies that the application uses `shell-quote` to parse shell commands with an environment lookup function.",
+        "Attacker compromises an environment variable that the lookup function accesses.",
+        "Attacker sets the environment variable value to a JSON string that triggers unexpected behavior when parsed.",
+        "The library executes `JSON.parse` on this value, potentially leading to prototype pollution or unexpected object instantiation."
+      ],
+      "impact": "Remote code execution or object injection via prototype pollution if the object structure is manipulated.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "parse.js",
+          "line": 324,
+          "quote": "JSON.parse(x.split(TOKEN)[1])"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "parse.js",
+          "line": 324,
+          "quote": "JSON.parse(x.split(TOKEN)[1])"
+        }
+      ],
+      "id": "0895784f",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of Disabled SSL/TLS Verification in CI",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "CI pipelines explicitly disable strict SSL for npm downloads, allowing for Man-in-the-Middle (MITM) attacks during dependency installation.",
+      "steps_to_exploit": [
+        "Attacker intercepts network traffic to the npm registry during the CI job execution.",
+        "Attacker provides a malicious package version signed with a self-signed certificate.",
+        "The CI job ignores the invalid certificate and installs the compromised package.",
+        "Malicious code is executed in the build/test environment."
+      ],
+      "impact": "Supply chain compromise via malicious dependency injection into the build pipeline.",
+      "evolved_from": [],
+      "attack_category": "supply_chain",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": ".github/workflows/nodejs.yml",
+          "line": 71,
+          "quote": "NPM_CONFIG_STRICT_SSL: false"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": ".github/workflows/nodejs.yml",
+          "line": 71,
+          "quote": "NPM_CONFIG_STRICT_SSL: false"
+        }
+      ],
+      "id": "73747e8d",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure Randomness for Token Generation",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The library generates 'tokens' for parsing using Math.random(), which is cryptographically insecure and predictable.",
+      "steps_to_exploit": [
+        "Attacker determines the internal state of Math.random() by observing enough tokens.",
+        "Attacker predicts the next generated token sequence.",
+        "Attacker injects a malicious shell command string crafted to include the predicted token.",
+        "The parser incorrectly interprets parts of the command as environment variable results, bypassing security checks."
+      ],
+      "impact": "Bypass of parser security boundaries leading to command injection.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "parse.js",
+          "line": 38,
+          "quote": "TOKEN += (mult * Math.random()).toString(16);"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "parse.js",
+          "line": 38,
+          "quote": "TOKEN += (mult * Math.random()).toString(16);"
+        }
+      ],
+      "id": "126a33b5",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Excessive Scope of Rebase Permission",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The rebase workflow grants 'contents: write' permission to the GITHUB_TOKEN, which is overly broad and exposes the repository to unauthorized modification.",
+      "steps_to_exploit": [
+        "Attacker submits a malicious PR designed to trigger the automated rebase workflow.",
+        "The workflow gains write access to the repository contents.",
+        "Attacker leverages a secondary vulnerability (like a script injection in the rebase action itself) to push malicious code to the main branch."
+      ],
+      "impact": "Unauthorized modification of repository source code.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": ".github/workflows/rebase.yml",
+          "line": 6,
+          "quote": "contents: write # for ljharb/rebase to push code to rebase"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": ".github/workflows/rebase.yml",
+          "line": 6,
+          "quote": "contents: write # for ljharb/rebase to push code to rebase"
+        }
+      ],
+      "id": "e0cd139a",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Logic Flaw in Quote Escaping",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The quote function uses a flawed regex-based replacement that may fail to properly escape shell metacharacters in certain edge cases.",
+      "steps_to_exploit": [
+        "Attacker passes a specially crafted input that contains combinations of backslashes and quotes.",
+        "The `quote` function incorrectly identifies the escaping context.",
+        "The function returns an improperly escaped shell string.",
+        "The downstream consumer executes the resulting string, leading to command injection."
+      ],
+      "impact": "Command injection in applications consuming the library's output.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [],
+      "code_refs": [],
+      "id": "149f3575",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Improper Handling of Line Terminators",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "While there are some checks, the logic surrounding line terminator validation is inconsistent across different parsing contexts, potentially allowing CRLF injection.",
+      "steps_to_exploit": [
+        "Attacker crafts a glob pattern containing non-standard line terminators not fully covered by the regex.",
+        "The input passes the validation step.",
+        "The output is passed to a shell that treats these characters as command separators.",
+        "The attacker executes additional unauthorized shell commands."
+      ],
+      "impact": "Command injection via unexpected line termination characters.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "quote.js",
+          "line": 24,
+          "quote": "var LINE_TERMINATORS = /[\\n\\r\\u2028\\u2029]/;"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "quote.js",
+          "line": 24,
+          "quote": "var LINE_TERMINATORS = /[\\n\\r\\u2028\\u2029]/;"
+        }
+      ],
+      "id": "68add283",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of 'eval' in Scripts",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The 'prelint' script executes 'evalmd', which essentially evaluates Markdown content, potentially leading to arbitrary code execution if the README is compromised.",
+      "steps_to_exploit": [
+        "Attacker submits a PR modifying the README.md to contain malicious executable content.",
+        "The CI pipeline runs 'npm run prelint'.",
+        "The malicious code inside README.md is executed by the build environment."
+      ],
+      "impact": "Build-time code execution.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "package.json",
+          "line": 32,
+          "quote": "\"prelint\": \"evalmd README.md\","
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "package.json",
+          "line": 32,
+          "quote": "\"prelint\": \"evalmd README.md\","
+        }
+      ],
+      "id": "441ccb12",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unsafe Parsing of Environment Variables",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The parser performs string concatenation with results from environment lookups without adequate sanitization, allowing for character injection.",
+      "steps_to_exploit": [
+        "Attacker provides an environment variable containing shell metacharacters (e.g., '; rm -rf /').",
+        "The `getVar` function returns this string concatenated into the command buffer.",
+        "The resulting parsed object is used as part of a shell command execution."
+      ],
+      "impact": "Command injection via unsanitized environment variables.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "parse.js",
+          "line": 80,
+          "quote": "return pre + r;"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "parse.js",
+          "line": 80,
+          "quote": "return pre + r;"
+        }
+      ],
+      "id": "8e87b98c",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Lack of Input Validation on 'op' values",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The quote function allows arbitrary string values to pass through if they are objects, provided they contain an 'op' key that is not in the restricted OPS list (or if handled incorrectly).",
+      "steps_to_exploit": [
+        "Attacker provides a token object with a crafted 'op' string.",
+        "The code checks if the op is in OPS, but the logic at line 46 allows objects with string 'op' properties to bypass strict validation if not properly typed.",
+        "The output is used to construct a malicious command string."
+      ],
+      "impact": "Bypass of security constraints on shell operators.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "quote.js",
+          "line": 46,
+          "quote": "if ('op' in s && typeof s.op === 'string') {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "quote.js",
+          "line": 46,
+          "quote": "if ('op' in s && typeof s.op === 'string') {"
+        }
+      ],
+      "id": "532073dd",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potential Prototype Pollution via Object Merging",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The library creates objects and arrays based on user input, and the lack of prototype protection might lead to pollution.",
+      "steps_to_exploit": [
+        "Attacker provides an input that is parsed as an object.",
+        "The parser assigns properties to this object.",
+        "If the input contains '__proto__' keys, the parser may set properties on the Object prototype, affecting all objects in the environment."
+      ],
+      "impact": "Denial of service or privilege escalation in the node process.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "parse.js",
+          "line": 300,
+          "quote": "prev[prev.length] = entry;"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "parse.js",
+          "line": 300,
+          "quote": "prev[prev.length] = entry;"
+        }
+      ],
+      "id": "e5b99ce8",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Weak ESLint Rules",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The configuration disables complexity, max-statements, and other critical code quality checks, increasing the likelihood of undiscovered security bugs.",
+      "steps_to_exploit": [
+        "Attacker identifies complex code segments that are difficult to audit.",
+        "Attacker exploits hidden logic bugs resulting from the high complexity permitted by the disabled linting rules."
+      ],
+      "impact": "Increased maintenance risk and higher likelihood of security regressions.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "eslint.config.mjs",
+          "line": 8,
+          "quote": "complexity: 'off',"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "eslint.config.mjs",
+          "line": 8,
+          "quote": "complexity: 'off',"
+        }
+      ],
+      "id": "9e208d21",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Missing Security Headers or Policies",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The configuration does not enforce any security headers or strict policies on CI workflows, leaving the environment vulnerable.",
+      "steps_to_exploit": [
+        "Attacker finds a way to introduce a dependency that exfiltrates secrets.",
+        "No security policies exist in the CI environment to prevent outbound network connections for the build process."
+      ],
+      "impact": "Exfiltration of secrets from the build environment.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": ".github/workflows/nodejs.yml",
+          "line": 1,
+          "quote": "name: Node CI"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": ".github/workflows/nodejs.yml",
+          "line": 1,
+          "quote": "name: Node CI"
+        }
+      ],
+      "id": "e968d59e",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Path Traversal potential in token generation",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The token generation mechanism is exposed to potential manipulation if the runtime environment allows access to Math methods.",
+      "steps_to_exploit": [
+        "Attacker overrides Math.random in the global scope.",
+        "Attacker ensures that the token generated is a known value.",
+        "Attacker uses this knowledge to manipulate the parsing logic."
+      ],
+      "impact": "Bypass of security logic dependent on token uniqueness.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "parse.js",
+          "line": 38,
+          "quote": "TOKEN += (mult * Math.random()).toString(16);"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "parse.js",
+          "line": 38,
+          "quote": "TOKEN += (mult * Math.random()).toString(16);"
+        }
+      ],
+      "id": "02649cac",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure npm scripts",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The 'posttest' script runs an audit with '--production', which is incomplete and may miss security vulnerabilities in devDependencies.",
+      "steps_to_exploit": [
+        "Attacker introduces a vulnerable dependency into devDependencies.",
+        "The 'posttest' command reports no issues, providing a false sense of security.",
+        "Attacker uses the vulnerable devDependency to escalate privileges in the environment."
+      ],
+      "impact": "false sense of security leading to unpatched vulnerabilities in the build chain.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "package.json",
+          "line": 38,
+          "quote": "\"posttest\": \"npx npm@'>=10.2' audit --production\","
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "package.json",
+          "line": 38,
+          "quote": "\"posttest\": \"npx npm@'>=10.2' audit --production\","
+        }
+      ],
+      "id": "b3bd2b53",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Dependency on Deprecated/Unsafe Packages",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The project relies on various development tools that might have their own security vulnerabilities due to outdated versions or lack of maintenance.",
+      "steps_to_exploit": [
+        "Attacker identifies a vulnerable devDependency (e.g., old versions of tape or nyc).",
+        "Attacker leverages an exploit in the test runner to execute code during the test execution phase."
+      ],
+      "impact": "Compromised test environment execution.",
+      "evolved_from": [],
+      "attack_category": "supply_chain",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "package.json",
+          "line": 52,
+          "quote": "\"nyc\": \"^10.3.2\","
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "package.json",
+          "line": 52,
+          "quote": "\"nyc\": \"^10.3.2\","
+        }
+      ],
+      "id": "39d9ebd3",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "proposed": [
+    {
+      "title": "Unsafe Deserialization via JSON.parse",
+      "code_refs": [
+        {
+          "file": "parse.js",
+          "line": 324,
+          "quote": "JSON.parse(x.split(TOKEN)[1])"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of Disabled SSL/TLS Verification in CI",
+      "code_refs": [
+        {
+          "file": ".github/workflows/nodejs.yml",
+          "line": 71,
+          "quote": "NPM_CONFIG_STRICT_SSL: false"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure Randomness for Token Generation",
+      "code_refs": [
+        {
+          "file": "parse.js",
+          "line": 38,
+          "quote": "TOKEN += (mult * Math.random()).toString(16);"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Excessive Scope of Rebase Permission",
+      "code_refs": [
+        {
+          "file": ".github/workflows/rebase.yml",
+          "line": 6,
+          "quote": "contents: write # for ljharb/rebase to push code to rebase"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Logic Flaw in Quote Escaping",
+      "code_refs": [],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Improper Handling of Line Terminators",
+      "code_refs": [
+        {
+          "file": "quote.js",
+          "line": 24,
+          "quote": "var LINE_TERMINATORS = /[\\n\\r\\u2028\\u2029]/;"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of 'eval' in Scripts",
+      "code_refs": [
+        {
+          "file": "package.json",
+          "line": 32,
+          "quote": "\"prelint\": \"evalmd README.md\","
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unsafe Parsing of Environment Variables",
+      "code_refs": [
+        {
+          "file": "parse.js",
+          "line": 80,
+          "quote": "return pre + r;"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Lack of Input Validation on 'op' values",
+      "code_refs": [
+        {
+          "file": "quote.js",
+          "line": 46,
+          "quote": "if ('op' in s && typeof s.op === 'string') {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potential Prototype Pollution via Object Merging",
+      "code_refs": [
+        {
+          "file": "parse.js",
+          "line": 300,
+          "quote": "prev[prev.length] = entry;"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Weak ESLint Rules",
+      "code_refs": [
+        {
+          "file": "eslint.config.mjs",
+          "line": 8,
+          "quote": "complexity: 'off',"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Missing Security Headers or Policies",
+      "code_refs": [
+        {
+          "file": ".github/workflows/nodejs.yml",
+          "line": 1,
+          "quote": "name: Node CI"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Path Traversal potential in token generation",
+      "code_refs": [
+        {
+          "file": "parse.js",
+          "line": 38,
+          "quote": "TOKEN += (mult * Math.random()).toString(16);"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure npm scripts",
+      "code_refs": [
+        {
+          "file": "package.json",
+          "line": 38,
+          "quote": "\"posttest\": \"npx npm@'>=10.2' audit --production\","
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Dependency on Deprecated/Unsafe Packages",
+      "code_refs": [
+        {
+          "file": "package.json",
+          "line": 52,
+          "quote": "\"nyc\": \"^10.3.2\","
+        }
+      ],
+      "outcome": "unchecked"
+    }
+  ],
+  "rejected": [],
+  "verification": null,
+  "arm_meta": {
+    "baseline": {
+      "model": "gemini/gemini-3.1-flash-lite",
+      "context": "code",
+      "requested": 15,
+      "returned": 15,
+      "files_shown": 19,
+      "chars_shown": 30340,
+      "files_that_did_not_fit": []
+    }
+  },
+  "seconds": {
+    "arm": 10.3,
+    "check": 0.0,
+    "total": 10.3
+  },
+  "usage": {
+    "arm": {
+      "calls": 1,
+      "failed": 0,
+      "est_tokens": 10918,
+      "seconds_in_calls": 10.2,
+      "by_task": {
+        "baseline": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 31410,
+          "completion_chars": 12264,
+          "seconds": 10.212962300051004,
+          "est_tokens": 10918
+        }
+      }
+    },
+    "check": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    }
+  }
+}

@@ -1,0 +1,798 @@
+{
+  "schema": 1,
+  "set": "ghsa-jqcg-44mw-7w3h",
+  "variant": "raw",
+  "arm": "plain",
+  "run": 3,
+  "commit": "92e103e3f3ab0467c8846cacea71f27dfc81091d",
+  "started_at": "2026-10-24T10:56:01+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": false,
+  "status": "ok",
+  "candidates": 15,
+  "kept": [
+    {
+      "title": "Insecure CI configuration disables SSL verification",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The CI workflow .github/workflows/ci.yml explicitly disables SSL verification for Node 0.x via `npm config set strict-ssl false`, exposing the supply chain to man-in-the-middle attacks.",
+      "steps_to_exploit": [
+        "Perform a Man-in-the-Middle (MitM) attack on the CI network traffic",
+        "Intercept requests to the npm registry",
+        "Inject malicious code into the dependencies fetched during the build",
+        "CI pipeline will trust and execute the malicious package"
+      ],
+      "impact": "CI/CD environment compromise, allowing injection of backdoors into the published package.",
+      "evolved_from": [],
+      "attack_category": "supply_chain",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": ".github/workflows/ci.yml",
+          "line": 178,
+          "quote": "npm config set strict-ssl false"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": ".github/workflows/ci.yml",
+          "line": 178,
+          "quote": "npm config set strict-ssl false"
+        }
+      ],
+      "id": "54d76e11",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unsafe child process execution in benchmark runner",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "benchmark/index.js uses `spawn` with unsanitized file names fetched from the filesystem, which could lead to command injection if malicious files are present in the directory.",
+      "steps_to_exploit": [
+        "Place a file with a malicious name (e.g., shell commands) into the benchmark folder",
+        "Wait for the benchmark script to run",
+        "The script triggers the file via `spawn(exe, [fullPath])`, potentially executing shell sequences"
+      ],
+      "impact": "Arbitrary command execution in the development environment.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "benchmark/index.js",
+          "line": 21,
+          "quote": "var proc = spawn(exe, [fullPath], {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "benchmark/index.js",
+          "line": 21,
+          "quote": "var proc = spawn(exe, [fullPath], {"
+        }
+      ],
+      "id": "af8318a1",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potential prototype pollution via IP_RANGES lookup",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The code uses `Object.prototype.hasOwnProperty.call` correctly but the `IP_RANGES` object is mutable and could be polluted if the environment is shared.",
+      "steps_to_exploit": [
+        "Exploit a separate vulnerability to pollute the global Object prototype",
+        "The logic in `compile` may then incorrectly access or modify the hardcoded `IP_RANGES` map",
+        "Modify the range values to bypass security checks in `trust`"
+      ],
+      "impact": "Security logic bypass by manipulating internal trust configurations.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 102,
+          "quote": "if (!Object.prototype.hasOwnProperty.call(IP_RANGES, val)) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 102,
+          "quote": "if (!Object.prototype.hasOwnProperty.call(IP_RANGES, val)) {"
+        }
+      ],
+      "id": "3470321d",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure use of `apply` for argument injection",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "In `index.js`, the code uses `trust.splice.apply(trust, [i, 1].concat(val))` to insert subnets. If `val` (from `IP_RANGES`) contains unexpected data, it could lead to stack overflows or logic errors.",
+      "steps_to_exploit": [
+        "Target an environment where `IP_RANGES` can be modified",
+        "Inject a massive array of values into `IP_RANGES`",
+        "Trigger the `compile` function, causing the `apply` operation to exceed stack limits or cause denial of service"
+      ],
+      "impact": "Denial of Service (DoS) via crash.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 108,
+          "quote": "trust.splice.apply(trust, [i, 1].concat(val))"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 108,
+          "quote": "trust.splice.apply(trust, [i, 1].concat(val))"
+        }
+      ],
+      "id": "292841d8",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potential integer overflow in parseipNotation",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The range parsing logic converts substrings to integers using `parseInt(range, 10)` without strict bounds checking until after conversion, potentially allowing negative or extremely large values.",
+      "steps_to_exploit": [
+        "Provide a specially crafted IP string with a high range value",
+        "The `parseInt` logic processes it, potentially hitting edge cases in logic validation",
+        "Trigger errors in `parseipNotation` or bypass validation checks"
+      ],
+      "impact": "Logic error leading to misconfigured IP trust ranges.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 184,
+          "quote": "range = parseInt(range, 10)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 184,
+          "quote": "range = parseInt(range, 10)"
+        }
+      ],
+      "id": "494a938e",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Dependency on vulnerable version of ipaddr.js",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The package uses `ipaddr.js` version 1.9.1, which has had known issues with regex-based IP parsing that could lead to ReDoS in certain contexts.",
+      "steps_to_exploit": [
+        "Identify an input vector that reaches `ipaddr.js` parsing logic",
+        "Send a long, complex, or specifically crafted malicious IP address string",
+        "Observe high CPU usage in the Node.js event loop"
+      ],
+      "impact": "Denial of Service via ReDoS.",
+      "evolved_from": [],
+      "attack_category": "supply_chain",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "package.json",
+          "line": 19,
+          "quote": "\"ipaddr.js\": \"1.9.1\""
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "package.json",
+          "line": 19,
+          "quote": "\"ipaddr.js\": \"1.9.1\""
+        }
+      ],
+      "id": "c54816bb",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Unsafe handling of untrusted input in parseipNotation",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The function `parseipNotation` concatenates raw input `str` directly into an error message, which is then thrown. This could lead to information disclosure or log poisoning.",
+      "steps_to_exploit": [
+        "Pass a malicious crafted string as an IP argument",
+        "Trigger the `TypeError`",
+        "Observe the stack trace and error message in server logs",
+        "Potentially extract internal file paths or server-side state"
+      ],
+      "impact": "Information exposure via error logs.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 163,
+          "quote": "throw new TypeError('invalid IP address: ' + str)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 163,
+          "quote": "throw new TypeError('invalid IP address: ' + str)"
+        }
+      ],
+      "id": "984a121a",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of `npm rm --save-dev` on CI might break build parity",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The CI workflow dynamically removes development dependencies, which can lead to unpredictable builds that do not match local development environments.",
+      "steps_to_exploit": [
+        "The CI environment modifies its own dependency tree dynamically",
+        "A developer might be testing with local plugins that the CI pipeline explicitly removes",
+        "Security vulnerabilities or bugs are masked in the production build"
+      ],
+      "impact": "Loss of build consistency and potential security regression.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": ".github/workflows/ci.yml",
+          "line": 191,
+          "quote": "run: npm rm --silent --save-dev ${{ matrix.npm-rm }}"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": ".github/workflows/ci.yml",
+          "line": 191,
+          "quote": "run: npm rm --silent --save-dev ${{ matrix.npm-rm }}"
+        }
+      ],
+      "id": "6e0f7fc5",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Lack of input sanitization for X-Forwarded-For header",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The library relies on `forwarded` package to parse `X-Forwarded-For` without performing strict validation on the headers provided by the client, trusting proxy headers blindly.",
+      "steps_to_exploit": [
+        "Craft a request with spoofed `X-Forwarded-For` headers",
+        "The library parses these headers to determine the client IP",
+        "An attacker bypasses IP-based access control or rate limiting"
+      ],
+      "impact": "Access control bypass and security policy enforcement failure.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 57,
+          "quote": "var addrs = forwarded(req)"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 57,
+          "quote": "var addrs = forwarded(req)"
+        }
+      ],
+      "id": "39f999b2",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Insecure use of `apply` in `trustMulti`",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Similar to the compilation step, the `trust` logic performs complex array operations that are opaque and could be prone to resource exhaustion if the input is highly manipulated.",
+      "steps_to_exploit": [
+        "Define an excessively large trust array",
+        "Execute the `trust` function on many incoming requests",
+        "Consume memory resources on the Node.js process"
+      ],
+      "impact": "Resource exhaustion and performance degradation.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 285,
+          "quote": "if (trusted.match(subnetip, subnetrange)) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 285,
+          "quote": "if (trusted.match(subnetip, subnetrange)) {"
+        }
+      ],
+      "id": "3bf5a81b",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Implicitly trusting all forwarded addresses",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "If `trust` is not provided to `proxyaddr`, it defaults to returning all addresses, which might be misused by developers as a source of truth for security decisions.",
+      "steps_to_exploit": [
+        "Developer uses `proxyaddr(req)` without a trust function",
+        "The application trusts the last element of the list as the client IP",
+        "The attacker provides a forged `X-Forwarded-For` chain",
+        "Application grants permissions based on the forged IP"
+      ],
+      "impact": "Authorization bypass.",
+      "evolved_from": [],
+      "attack_category": "authz",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 222,
+          "quote": "function proxyaddr (req, trust) {"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 222,
+          "quote": "function proxyaddr (req, trust) {"
+        }
+      ],
+      "id": "8542ce06",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Potential ReDoS in IP notation string parsing",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The logic performs string manipulation and regex testing using `DIGIT_REGEXP` on user-provided strings for range identification.",
+      "steps_to_exploit": [
+        "Supply an extremely long string for the 'range' part of an IP notation",
+        "The regex engine processes the input, potentially leading to excessive CPU usage during evaluation"
+      ],
+      "impact": "Denial of Service (DoS) via regex complexity.",
+      "evolved_from": [],
+      "attack_category": "code_quality",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "index.js",
+          "line": 31,
+          "quote": "var DIGIT_REGEXP = /^[0-9]+$/"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 31,
+          "quote": "var DIGIT_REGEXP = /^[0-9]+$/"
+        }
+      ],
+      "id": "f48f55bf",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Outdated development dependencies in package.json",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "Many devDependencies (e.g., mocha 8.4.0) have known vulnerabilities that, while not affecting production, could compromise the security of the build server.",
+      "steps_to_exploit": [
+        "Target the development machine or build server",
+        "Use an exploit directed at a specific vulnerable version of one of the devDependencies",
+        "Gain access to the source code repository or build environment"
+      ],
+      "impact": "Build pipeline compromise.",
+      "evolved_from": [],
+      "attack_category": "supply_chain",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "package.json",
+          "line": 32,
+          "quote": "\"mocha\": \"8.4.0\""
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "package.json",
+          "line": 32,
+          "quote": "\"mocha\": \"8.4.0\""
+        }
+      ],
+      "id": "6bee15c4",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of shell expansion in CI environment",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The script uses bash expansion and pipes in `.github/workflows/ci.yml` that could be influenced by environment variables or manipulated files in the repo.",
+      "steps_to_exploit": [
+        "Modify a local config file or environment variable recognized by the CI environment",
+        "The bash script `npm config get package-lock` interprets the shell input",
+        "Execute unauthorized code during the build process"
+      ],
+      "impact": "CI/CD pipeline compromise.",
+      "evolved_from": [],
+      "attack_category": "config",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": ".github/workflows/ci.yml",
+          "line": 184,
+          "quote": "if [[ \"$(npm config get package-lock)\" == \"true\" ]]; then"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": ".github/workflows/ci.yml",
+          "line": 184,
+          "quote": "if [[ \"$(npm config get package-lock)\" == \"true\" ]]; then"
+        }
+      ],
+      "id": "e494ca6b",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Reliance on `process.cwd()` in benchmark tool",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The benchmark script uses `process.cwd()` to resolve paths, which can be inconsistent if the script is executed from different locations, leading to accidental execution of wrong scripts.",
+      "steps_to_exploit": [
+        "Navigate to a different directory",
+        "Run the benchmark from there",
+        "The tool might resolve paths relative to the current working directory instead of the intended benchmark directory",
+        "Execute local scripts with potentially harmful content"
+      ],
+      "impact": "Unexpected local file execution.",
+      "evolved_from": [],
+      "attack_category": "architecture",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "",
+      "evidence": [
+        {
+          "file": "benchmark/index.js",
+          "line": 6,
+          "quote": "var cwd = process.cwd()"
+        }
+      ],
+      "code_refs": [
+        {
+          "file": "benchmark/index.js",
+          "line": 6,
+          "quote": "var cwd = process.cwd()"
+        }
+      ],
+      "id": "124cdd0f",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "proposed": [
+    {
+      "title": "Insecure CI configuration disables SSL verification",
+      "code_refs": [
+        {
+          "file": ".github/workflows/ci.yml",
+          "line": 178,
+          "quote": "npm config set strict-ssl false"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unsafe child process execution in benchmark runner",
+      "code_refs": [
+        {
+          "file": "benchmark/index.js",
+          "line": 21,
+          "quote": "var proc = spawn(exe, [fullPath], {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potential prototype pollution via IP_RANGES lookup",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 102,
+          "quote": "if (!Object.prototype.hasOwnProperty.call(IP_RANGES, val)) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure use of `apply` for argument injection",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 108,
+          "quote": "trust.splice.apply(trust, [i, 1].concat(val))"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potential integer overflow in parseipNotation",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 184,
+          "quote": "range = parseInt(range, 10)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Dependency on vulnerable version of ipaddr.js",
+      "code_refs": [
+        {
+          "file": "package.json",
+          "line": 19,
+          "quote": "\"ipaddr.js\": \"1.9.1\""
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Unsafe handling of untrusted input in parseipNotation",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 163,
+          "quote": "throw new TypeError('invalid IP address: ' + str)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of `npm rm --save-dev` on CI might break build parity",
+      "code_refs": [
+        {
+          "file": ".github/workflows/ci.yml",
+          "line": 191,
+          "quote": "run: npm rm --silent --save-dev ${{ matrix.npm-rm }}"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Lack of input sanitization for X-Forwarded-For header",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 57,
+          "quote": "var addrs = forwarded(req)"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Insecure use of `apply` in `trustMulti`",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 285,
+          "quote": "if (trusted.match(subnetip, subnetrange)) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Implicitly trusting all forwarded addresses",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 222,
+          "quote": "function proxyaddr (req, trust) {"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Potential ReDoS in IP notation string parsing",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 31,
+          "quote": "var DIGIT_REGEXP = /^[0-9]+$/"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Outdated development dependencies in package.json",
+      "code_refs": [
+        {
+          "file": "package.json",
+          "line": 32,
+          "quote": "\"mocha\": \"8.4.0\""
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Use of shell expansion in CI environment",
+      "code_refs": [
+        {
+          "file": ".github/workflows/ci.yml",
+          "line": 184,
+          "quote": "if [[ \"$(npm config get package-lock)\" == \"true\" ]]; then"
+        }
+      ],
+      "outcome": "unchecked"
+    },
+    {
+      "title": "Reliance on `process.cwd()` in benchmark tool",
+      "code_refs": [
+        {
+          "file": "benchmark/index.js",
+          "line": 6,
+          "quote": "var cwd = process.cwd()"
+        }
+      ],
+      "outcome": "unchecked"
+    }
+  ],
+  "rejected": [],
+  "verification": null,
+  "arm_meta": {
+    "baseline": {
+      "model": "gemini/gemini-3.1-flash-lite",
+      "context": "code",
+      "requested": 15,
+      "returned": 15,
+      "files_shown": 14,
+      "chars_shown": 34237,
+      "files_that_did_not_fit": []
+    }
+  },
+  "seconds": {
+    "arm": 9.2,
+    "check": 0.0,
+    "total": 9.2
+  },
+  "usage": {
+    "arm": {
+      "calls": 1,
+      "failed": 0,
+      "est_tokens": 11500,
+      "seconds_in_calls": 9.2,
+      "by_task": {
+        "baseline": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 35297,
+          "completion_chars": 10702,
+          "seconds": 9.218573000049219,
+          "est_tokens": 11500
+        }
+      }
+    },
+    "check": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    }
+  }
+}
