@@ -5,7 +5,7 @@
   "arm": "import-y",
   "run": 1,
   "commit": "8592b1574e7e6e72d06e1afee5d7f0588d541950",
-  "started_at": "2026-10-25T08:21:41+00:00",
+  "started_at": "2026-10-25T08:21:36+00:00",
   "model": "gemini/gemini-3.1-flash-lite",
   "verify": true,
   "verify_config": {
@@ -42,18 +42,18 @@
         }
       ],
       "exploit": {
-        "tier": "exploitable",
-        "code": "exploitable",
+        "tier": "conditional",
+        "code": "conditional",
         "attacker": "untrusted_content",
         "entry_point": {
-          "file": "zipEntry.js",
-          "line": 6,
-          "quote": "module.exports = function (/** object */ options, /*Buffer*/ input) {"
+          "file": "zipFile.js",
+          "line": 5,
+          "quote": "module.exports = function (/*Buffer|null*/ inBuffer, /** object */ options) {"
         },
-        "path": "The application provides a zip archive Buffer to the AdmZip constructor. The 'getData' method in zipEntry.js calls 'decompress', which reads '_centralHeader.size' and uses it to allocate a buffer via 'Buffer.alloc(_centralHeader.size)' at line 103.",
-        "harm": "Memory exhaustion via allocation of an arbitrarily large buffer, leading to a process crash (Denial of Service).",
-        "condition": "None",
-        "reasoning": "The library accepts an untrusted buffer as input and immediately trusts the uncompressed size field declared in the zip header to allocate memory without validation, allowing a malicious zip file to crash the host process.",
+        "path": "The application passes an untrusted buffer to AdmZip constructor. The library calls readEntries which initializes ZipEntry objects, and finally calls decompress() in zipEntry.js at line 103.",
+        "harm": "Denial of Service (DoS) via memory exhaustion by causing an Out-of-Memory (OOM) crash.",
+        "condition": "The application must be configured to process or decompress untrusted zip archives.",
+        "reasoning": "The vulnerability is a classic resource exhaustion. It relies on the library's design to trust the uncompressed size field in the zip header. An application using this library on untrusted files is vulnerable to crashing due to uncontrolled memory allocation.",
         "agreement": "2/2"
       },
       "votes": {
@@ -102,15 +102,15 @@
           "quote": "return input.slice(_centralHeader.realDataOffset, _centralHeader.realDataOffset + _centralHeader.compressedSize);"
         }
       ],
-      "outcome": "REFUTED:defence_found"
+      "outcome": "OBSERVATION:not_a_vulnerability"
     }
   ],
   "rejected": [
     {
       "title": "Implicit Trust in Zip Header Metadata",
-      "status": "REFUTED",
-      "code": "defence_found",
-      "why": "a protection enforced in the code defeats the claim"
+      "status": "OBSERVATION",
+      "code": "not_a_vulnerability",
+      "why": "accurate about the code, but a feature, a debug aid or a speculation rather than a vulnerability"
     }
   ],
   "verification": {
@@ -118,8 +118,8 @@
     "files_indexed": 47,
     "checked": 2,
     "confirmed": 1,
-    "observations": 0,
-    "refuted": 1,
+    "observations": 1,
+    "refuted": 0,
     "unverified": 0,
     "errors": 0,
     "defender_pass": true,
@@ -134,8 +134,8 @@
   },
   "seconds": {
     "arm": 0.0,
-    "check": 97.7,
-    "total": 97.7
+    "check": 158.2,
+    "total": 158.2
   },
   "usage": {
     "arm": {
@@ -146,50 +146,50 @@
       "by_task": {}
     },
     "check": {
-      "calls": 17,
+      "calls": 19,
       "failed": 0,
-      "est_tokens": 224586,
-      "seconds_in_calls": 97.1,
+      "est_tokens": 259651,
+      "seconds_in_calls": 157.5,
       "by_task": {
         "exploit": {
-          "calls": 2,
+          "calls": 4,
           "failed": 0,
-          "prompt_chars": 138800,
-          "completion_chars": 2256,
-          "seconds": 5.205117200035602,
-          "est_tokens": 35264
+          "prompt_chars": 275294,
+          "completion_chars": 5002,
+          "seconds": 9.306253100163303,
+          "est_tokens": 70074
         },
         "verify_appeal": {
           "calls": 3,
           "failed": 0,
-          "prompt_chars": 243784,
-          "completion_chars": 3113,
-          "seconds": 8.981291399919428,
-          "est_tokens": 61724
+          "prompt_chars": 244890,
+          "completion_chars": 3116,
+          "seconds": 62.92767759994604,
+          "est_tokens": 62002
         },
         "verify_defend": {
           "calls": 4,
           "failed": 0,
-          "prompt_chars": 321441,
-          "completion_chars": 2653,
-          "seconds": 10.788316200021654,
-          "est_tokens": 81024
+          "prompt_chars": 324182,
+          "completion_chars": 1566,
+          "seconds": 51.921342699904926,
+          "est_tokens": 81437
         },
         "verify_judge": {
           "calls": 4,
           "failed": 0,
-          "prompt_chars": 169803,
-          "completion_chars": 4644,
-          "seconds": 63.62792199989781,
-          "est_tokens": 43612
+          "prompt_chars": 167583,
+          "completion_chars": 5105,
+          "seconds": 12.727313899900764,
+          "est_tokens": 43172
         },
         "verify_locate": {
           "calls": 4,
           "failed": 0,
           "prompt_chars": 10632,
-          "completion_chars": 1216,
-          "seconds": 8.466294500161894,
-          "est_tokens": 2962
+          "completion_chars": 1234,
+          "seconds": 20.569909299956635,
+          "est_tokens": 2966
         }
       }
     }

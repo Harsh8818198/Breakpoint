@@ -1,0 +1,550 @@
+{
+ "findings": [
+  {
+   "title": "Remote Code Execution via arbitrary module loading",
+   "generation": 1,
+   "discovered_by": "single-prompt baseline",
+   "description": "The function `loadQueries` in node.js:257 uses `require.resolve` and `require` on user-controlled input `name` (via `node.config`), allowing an attacker to execute arbitrary local JavaScript files.",
+   "steps_to_exploit": [
+    "Create a malicious browserslist-config-malicious package or file",
+    "Set the browserslist config to point to this package",
+    "Invoke browserslist in a context that processes the configuration"
+   ],
+   "impact": "Full arbitrary code execution with the privileges of the Node.js process.",
+   "evolved_from": [],
+   "attack_category": "injection",
+   "confidence": 1.0,
+   "exploitability": 0.0,
+   "impact_score": 0.0,
+   "spread": 0.0,
+   "fix_difficulty": 1.0,
+   "verification": "",
+   "evidence": [
+    {
+     "file": "node.js",
+     "line": 257,
+     "quote": "var queries = require(require.resolve(name, { paths: ['.', ctx.path] }))"
+    }
+   ],
+   "code_refs": [
+    {
+     "file": "node.js",
+     "line": 257,
+     "quote": "var queries = require(require.resolve(name, { paths: ['.', ctx.path] }))"
+    }
+   ],
+   "id": "0c025bbc",
+   "bss": 0.0,
+   "severity_band": "LOW",
+   "fix_priority": "MONITOR"
+  },
+  {
+   "title": "Path Traversal in config file loading",
+   "generation": 1,
+   "discovered_by": "single-prompt baseline",
+   "description": "The `eachParent` function in node.js:72 processes directory traversals without sufficient sanitization, allowing an attacker to escape intended project root boundaries if `BROWSERSLIST_ROOT_PATH` is not strictly configured.",
+   "steps_to_exploit": [
+    "Target an application that processes user-provided paths",
+    "Supply a path containing '..' to reach outside the project root",
+    "Ensure the target has readable files like .env or configuration files"
+   ],
+   "impact": "Unauthorized access to sensitive system or application configuration files outside the project root.",
+   "evolved_from": [],
+   "attack_category": "injection",
+   "confidence": 1.0,
+   "exploitability": 0.0,
+   "impact_score": 0.0,
+   "spread": 0.0,
+   "fix_difficulty": 1.0,
+   "verification": "",
+   "evidence": [
+    {
+     "file": "node.js",
+     "line": 72,
+     "quote": "function eachParent(file, callback, cache) {"
+    }
+   ],
+   "code_refs": [
+    {
+     "file": "node.js",
+     "line": 72,
+     "quote": "function eachParent(file, callback, cache) {"
+    }
+   ],
+   "id": "deee90c5",
+   "bss": 0.0,
+   "severity_band": "LOW",
+   "fix_priority": "MONITOR"
+  },
+  {
+   "title": "Unsafe deserialization of stats file",
+   "generation": 1,
+   "discovered_by": "single-prompt baseline",
+   "description": "cli.js:116 performs `JSON.parse(fs.readFileSync(opts.stats))` on a file path controlled via the `--stats` command line argument.",
+   "steps_to_exploit": [
+    "Attacker provides a path to a large or malicious JSON file",
+    "The application parses this JSON",
+    "Resource exhaustion or potential prototype pollution via object construction"
+   ],
+   "impact": "Denial of Service (DoS) or potential manipulation of application logic via prototype pollution.",
+   "evolved_from": [],
+   "attack_category": "injection",
+   "confidence": 1.0,
+   "exploitability": 0.0,
+   "impact_score": 0.0,
+   "spread": 0.0,
+   "fix_difficulty": 1.0,
+   "verification": "",
+   "evidence": [
+    {
+     "file": "cli.js",
+     "line": 116,
+     "quote": "stats = JSON.parse(fs.readFileSync(opts.stats))"
+    }
+   ],
+   "code_refs": [
+    {
+     "file": "cli.js",
+     "line": 116,
+     "quote": "stats = JSON.parse(fs.readFileSync(opts.stats))"
+    }
+   ],
+   "id": "7598e24f",
+   "bss": 0.0,
+   "severity_band": "LOW",
+   "fix_priority": "MONITOR"
+  },
+  {
+   "title": "Prototype Pollution in object cloning",
+   "generation": 1,
+   "discovered_by": "single-prompt baseline",
+   "description": "index.js:262 attempts to block 'prototype' but uses a simple array lookup `DANGEROUS_KEYS.indexOf(key)` on a shallow object copy, which may be insufficient to prevent recursive or deep prototype pollution in deeper data structures.",
+   "steps_to_exploit": [
+    "Supply a JSON input with nested __proto__ properties",
+    "Ensure the input is processed by `copyObject`",
+    "Inject properties into the Object prototype"
+   ],
+   "impact": "Cross-request state manipulation, which can lead to privilege escalation or application bypass.",
+   "evolved_from": [],
+   "attack_category": "code_quality",
+   "confidence": 1.0,
+   "exploitability": 0.0,
+   "impact_score": 0.0,
+   "spread": 0.0,
+   "fix_difficulty": 1.0,
+   "verification": "",
+   "evidence": [
+    {
+     "file": "index.js",
+     "line": 262,
+     "quote": "if (DANGEROUS_KEYS.indexOf(key) === -1) {"
+    }
+   ],
+   "code_refs": [
+    {
+     "file": "index.js",
+     "line": 262,
+     "quote": "if (DANGEROUS_KEYS.indexOf(key) === -1) {"
+    }
+   ],
+   "id": "9413ebc8",
+   "bss": 0.0,
+   "severity_band": "LOW",
+   "fix_priority": "MONITOR"
+  },
+  {
+   "title": "Use of unsafe shell commands in CI",
+   "generation": 1,
+   "discovered_by": "single-prompt baseline",
+   "description": ".github/workflows/test.yml:66 enables `ACTIONS_ALLOW_UNSECURE_COMMANDS`, which allows legacy runner commands (like `set-env`) that are susceptible to injection attacks.",
+   "steps_to_exploit": [
+    "Submit a pull request with a malicious branch name or input",
+    "The workflow script processes this input without sanitization",
+    "Command injection via legacy runner commands"
+   ],
+   "impact": "Complete compromise of the GitHub Actions runner environment.",
+   "evolved_from": [],
+   "attack_category": "supply_chain",
+   "confidence": 1.0,
+   "exploitability": 0.0,
+   "impact_score": 0.0,
+   "spread": 0.0,
+   "fix_difficulty": 1.0,
+   "verification": "",
+   "evidence": [
+    {
+     "file": ".github/workflows/test.yml",
+     "line": 66,
+     "quote": "ACTIONS_ALLOW_UNSECURE_COMMANDS: true"
+    }
+   ],
+   "code_refs": [
+    {
+     "file": ".github/workflows/test.yml",
+     "line": 66,
+     "quote": "ACTIONS_ALLOW_UNSECURE_COMMANDS: true"
+    }
+   ],
+   "id": "3a26af76",
+   "bss": 0.0,
+   "severity_band": "LOW",
+   "fix_priority": "MONITOR"
+  },
+  {
+   "title": "Hardcoded insecure dependencies in CI/CD",
+   "generation": 1,
+   "discovered_by": "single-prompt baseline",
+   "description": ".github/workflows/test.yml uses outdated pnpm setups and legacy `ACTIONS_ALLOW_UNSECURE_COMMANDS`, increasing the surface area for dependency-based supply chain attacks.",
+   "steps_to_exploit": [
+    "Exploit known vulnerabilities in the pinned versions of actions",
+    "Infiltrate the CI pipeline"
+   ],
+   "impact": "Compromise of the software delivery pipeline and artifact integrity.",
+   "evolved_from": [],
+   "attack_category": "supply_chain",
+   "confidence": 1.0,
+   "exploitability": 0.0,
+   "impact_score": 0.0,
+   "spread": 0.0,
+   "fix_difficulty": 1.0,
+   "verification": "",
+   "evidence": [
+    {
+     "file": ".github/workflows/test.yml",
+     "line": 17,
+     "quote": "uses: pnpm/setup@5d160c5bc68a09337ad0d5654e237e03253b5879 # v1.0.0"
+    }
+   ],
+   "code_refs": [
+    {
+     "file": ".github/workflows/test.yml",
+     "line": 17,
+     "quote": "uses: pnpm/setup@5d160c5bc68a09337ad0d5654e237e03253b5879 # v1.0.0"
+    }
+   ],
+   "id": "cf85df1c",
+   "bss": 0.0,
+   "severity_band": "LOW",
+   "fix_priority": "MONITOR"
+  },
+  {
+   "title": "Use of unsafe `fs.readFileSync` on user input",
+   "generation": 1,
+   "discovered_by": "single-prompt baseline",
+   "description": "node.js:408 reads configuration files synchronously based on potentially untrusted input, which can be exploited for DoS.",
+   "steps_to_exploit": [
+    "Provide a path to a character device (e.g., /dev/zero on Linux) as a config file path",
+    "The application hangs while attempting to read the file"
+   ],
+   "impact": "Denial of Service.",
+   "evolved_from": [],
+   "attack_category": "code_quality",
+   "confidence": 1.0,
+   "exploitability": 0.0,
+   "impact_score": 0.0,
+   "spread": 0.0,
+   "fix_difficulty": 1.0,
+   "verification": "",
+   "evidence": [
+    {
+     "file": "node.js",
+     "line": 408,
+     "quote": "return module.exports.parseConfig(fs.readFileSync(file))"
+    }
+   ],
+   "code_refs": [
+    {
+     "file": "node.js",
+     "line": 408,
+     "quote": "return module.exports.parseConfig(fs.readFileSync(file))"
+    }
+   ],
+   "id": "ae98cf4b",
+   "bss": 0.0,
+   "severity_band": "LOW",
+   "fix_priority": "MONITOR"
+  },
+  {
+   "title": "Implicit trust in environment variables",
+   "generation": 1,
+   "discovered_by": "single-prompt baseline",
+   "description": "node.js:501 exposes `process.env` via an exported `env` property, potentially leaking sensitive system information to modules that import it.",
+   "steps_to_exploit": [
+    "Import `browserslist/node.js` in a third-party plugin",
+    "Access the `env` object to read sensitive environment variables (e.g., AWS_SECRET_KEY)"
+   ],
+   "impact": "Information disclosure of server environment variables.",
+   "evolved_from": [],
+   "attack_category": "config",
+   "confidence": 1.0,
+   "exploitability": 0.0,
+   "impact_score": 0.0,
+   "spread": 0.0,
+   "fix_difficulty": 1.0,
+   "verification": "",
+   "evidence": [
+    {
+     "file": "node.js",
+     "line": 501,
+     "quote": "env: process.env"
+    }
+   ],
+   "code_refs": [
+    {
+     "file": "node.js",
+     "line": 501,
+     "quote": "env: process.env"
+    }
+   ],
+   "id": "854470bc",
+   "bss": 0.0,
+   "severity_band": "LOW",
+   "fix_priority": "MONITOR"
+  },
+  {
+   "title": "Weak logic for shell command deprecation",
+   "generation": 1,
+   "discovered_by": "single-prompt baseline",
+   "description": "cli.js:47 uses `updateDb` which runs external commands. Relying on CLI tool updates from external sources like `update-browserslist-db` can be a vector for supply chain attacks.",
+   "steps_to_exploit": [
+    "Intercept network traffic to the update-browserslist-db registry",
+    "Serve a malicious package version"
+   ],
+   "impact": "Downstream users receive malicious code updates.",
+   "evolved_from": [],
+   "attack_category": "ux",
+   "confidence": 1.0,
+   "exploitability": 0.0,
+   "impact_score": 0.0,
+   "spread": 0.0,
+   "fix_difficulty": 1.0,
+   "verification": "",
+   "evidence": [
+    {
+     "file": "cli.js",
+     "line": 47,
+     "quote": "updateDb(function (str) {"
+    }
+   ],
+   "code_refs": [
+    {
+     "file": "cli.js",
+     "line": 47,
+     "quote": "updateDb(function (str) {"
+    }
+   ],
+   "id": "f0f00769",
+   "bss": 0.0,
+   "severity_band": "LOW",
+   "fix_priority": "MONITOR"
+  },
+  {
+   "title": "Lack of input sanitization in regex",
+   "generation": 1,
+   "discovered_by": "single-prompt baseline",
+   "description": "parse.js:30 uses `query.match(type.regexp)` against user-supplied query strings without strict length limits, leading to potential Regular Expression Denial of Service (ReDoS).",
+   "steps_to_exploit": [
+    "Craft a long, malicious string that triggers exponential backtracking in the regex engine",
+    "Send it as a browserslist query"
+   ],
+   "impact": "Denial of Service due to CPU exhaustion.",
+   "evolved_from": [],
+   "attack_category": "injection",
+   "confidence": 1.0,
+   "exploitability": 0.0,
+   "impact_score": 0.0,
+   "spread": 0.0,
+   "fix_difficulty": 1.0,
+   "verification": "",
+   "evidence": [
+    {
+     "file": "parse.js",
+     "line": 30,
+     "quote": "var match = query.match(type.regexp)"
+    }
+   ],
+   "code_refs": [
+    {
+     "file": "parse.js",
+     "line": 30,
+     "quote": "var match = query.match(type.regexp)"
+    }
+   ],
+   "id": "3d5f88a4",
+   "bss": 0.0,
+   "severity_band": "LOW",
+   "fix_priority": "MONITOR"
+  },
+  {
+   "title": "Insecure `npm` publish process",
+   "generation": 1,
+   "discovered_by": "single-prompt baseline",
+   "description": ".github/workflows/release.yml:24 runs `npm stage publish` inside a `cleaned-project` directory, which may be vulnerable to race conditions or file injection before publishing.",
+   "steps_to_exploit": [
+    "Inject a malicious script into the `cleaned-project` directory via a parallel process",
+    "Wait for the release workflow to publish the package"
+   ],
+   "impact": "Distribution of malicious code to the NPM registry.",
+   "evolved_from": [],
+   "attack_category": "supply_chain",
+   "confidence": 1.0,
+   "exploitability": 0.0,
+   "impact_score": 0.0,
+   "spread": 0.0,
+   "fix_difficulty": 1.0,
+   "verification": "",
+   "evidence": [
+    {
+     "file": ".github/workflows/release.yml",
+     "line": 24,
+     "quote": "run: npm stage publish"
+    }
+   ],
+   "code_refs": [
+    {
+     "file": ".github/workflows/release.yml",
+     "line": 24,
+     "quote": "run: npm stage publish"
+    }
+   ],
+   "id": "677b8a03",
+   "bss": 0.0,
+   "severity_band": "LOW",
+   "fix_priority": "MONITOR"
+  },
+  {
+   "title": "Insufficient error handling disclosure",
+   "generation": 1,
+   "discovered_by": "single-prompt baseline",
+   "description": "node.js:425 prints full paths and error details to console.warn, which could reveal file structure details to an attacker.",
+   "steps_to_exploit": [
+    "Trigger the error by placing mismatched configuration files",
+    "Observe the output for internal server paths"
+   ],
+   "impact": "Information leakage (file paths).",
+   "evolved_from": [],
+   "attack_category": "error_handling",
+   "confidence": 1.0,
+   "exploitability": 0.0,
+   "impact_score": 0.0,
+   "spread": 0.0,
+   "fix_difficulty": 1.0,
+   "verification": "",
+   "evidence": [],
+   "code_refs": [],
+   "id": "958d0565",
+   "bss": 0.0,
+   "severity_band": "LOW",
+   "fix_priority": "MONITOR"
+  },
+  {
+   "title": "Unsafe use of `eval`-like behavior in custom stats",
+   "generation": 1,
+   "discovered_by": "single-prompt baseline",
+   "description": "index.js:551 uses `env.getStat` which can lead to filesystem operations based on untrusted config strings, potentially facilitating file reads.",
+   "steps_to_exploit": [
+    "Provide a specially crafted stats file path that resolves to a restricted resource"
+   ],
+   "impact": "Arbitrary file read.",
+   "evolved_from": [],
+   "attack_category": "injection",
+   "confidence": 1.0,
+   "exploitability": 0.0,
+   "impact_score": 0.0,
+   "spread": 0.0,
+   "fix_difficulty": 1.0,
+   "verification": "",
+   "evidence": [
+    {
+     "file": "index.js",
+     "line": 551,
+     "quote": "var customStats = env.getStat(opts)"
+    }
+   ],
+   "code_refs": [
+    {
+     "file": "index.js",
+     "line": 551,
+     "quote": "var customStats = env.getStat(opts)"
+    }
+   ],
+   "id": "1ba8115f",
+   "bss": 0.0,
+   "severity_band": "LOW",
+   "fix_priority": "MONITOR"
+  },
+  {
+   "title": "Overly broad `eslint` rules",
+   "generation": 1,
+   "discovered_by": "single-prompt baseline",
+   "description": "eslint.config.mjs disables `no-console` and `no-var`, encouraging potentially unsafe coding practices that increase vulnerability surface.",
+   "steps_to_exploit": [
+    "N/A (Developer productivity risk/Security hygiene)"
+   ],
+   "impact": "Increased likelihood of developer-introduced security flaws.",
+   "evolved_from": [],
+   "attack_category": "code_quality",
+   "confidence": 1.0,
+   "exploitability": 0.0,
+   "impact_score": 0.0,
+   "spread": 0.0,
+   "fix_difficulty": 1.0,
+   "verification": "",
+   "evidence": [
+    {
+     "file": "eslint.config.mjs",
+     "line": 29,
+     "quote": "'no-console': 'off'"
+    }
+   ],
+   "code_refs": [
+    {
+     "file": "eslint.config.mjs",
+     "line": 29,
+     "quote": "'no-console': 'off'"
+    }
+   ],
+   "id": "5938ca25",
+   "bss": 0.0,
+   "severity_band": "LOW",
+   "fix_priority": "MONITOR"
+  },
+  {
+   "title": "Insecure cache key construction",
+   "generation": 1,
+   "discovered_by": "single-prompt baseline",
+   "description": "index.js:443 uses `JSON.stringify([queries, context])` as a cache key. If the context contains sensitive user data, it is persisted in an unprotected `Map`.",
+   "steps_to_exploit": [
+    "Wait for sensitive data to be added to the context",
+    "Access the global `cache` object to dump cached data"
+   ],
+   "impact": "Memory-based data leakage.",
+   "evolved_from": [],
+   "attack_category": "data_privacy",
+   "confidence": 1.0,
+   "exploitability": 0.0,
+   "impact_score": 0.0,
+   "spread": 0.0,
+   "fix_difficulty": 1.0,
+   "verification": "",
+   "evidence": [
+    {
+     "file": "index.js",
+     "line": 443,
+     "quote": "var cacheKey = JSON.stringify([queries, context])"
+    }
+   ],
+   "code_refs": [
+    {
+     "file": "index.js",
+     "line": 443,
+     "quote": "var cacheKey = JSON.stringify([queries, context])"
+    }
+   ],
+   "id": "a858b98f",
+   "bss": 0.0,
+   "severity_band": "LOW",
+   "fix_priority": "MONITOR"
+  }
+ ]
+}

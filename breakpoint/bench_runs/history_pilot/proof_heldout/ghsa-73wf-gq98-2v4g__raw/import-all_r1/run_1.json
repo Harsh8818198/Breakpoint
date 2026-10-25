@@ -1,0 +1,352 @@
+{
+  "schema": 1,
+  "set": "ghsa-73wf-gq98-2v4g",
+  "variant": "raw",
+  "arm": "import-all_r1",
+  "run": 1,
+  "commit": "f2931a3ff2a3a31abf84ef01a7400b270aad6405",
+  "started_at": "2026-10-25T08:25:41+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": true,
+  "verify_config": {
+    "checks": 3,
+    "exploit": true
+  },
+  "status": "ok",
+  "candidates": 15,
+  "kept": [],
+  "proposed": [
+    {
+      "title": "Remote Code Execution via arbitrary module loading",
+      "code_refs": [
+        {
+          "file": "node.js",
+          "line": 257,
+          "quote": "var queries = require(require.resolve(name, { paths: ['.', ctx.path] }))"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    },
+    {
+      "title": "Path Traversal in config file loading",
+      "code_refs": [
+        {
+          "file": "node.js",
+          "line": 72,
+          "quote": "function eachParent(file, callback, cache) {"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    },
+    {
+      "title": "Unsafe deserialization of stats file",
+      "code_refs": [
+        {
+          "file": "cli.js",
+          "line": 116,
+          "quote": "stats = JSON.parse(fs.readFileSync(opts.stats))"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    },
+    {
+      "title": "Prototype Pollution in object cloning",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 262,
+          "quote": "if (DANGEROUS_KEYS.indexOf(key) === -1) {"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    },
+    {
+      "title": "Use of unsafe shell commands in CI",
+      "code_refs": [
+        {
+          "file": ".github/workflows/test.yml",
+          "line": 66,
+          "quote": "ACTIONS_ALLOW_UNSECURE_COMMANDS: true"
+        }
+      ],
+      "outcome": "OBSERVATION:no_new_power"
+    },
+    {
+      "title": "Hardcoded insecure dependencies in CI/CD",
+      "code_refs": [
+        {
+          "file": ".github/workflows/test.yml",
+          "line": 17,
+          "quote": "uses: pnpm/setup@5d160c5bc68a09337ad0d5654e237e03253b5879 # v1.0.0"
+        }
+      ],
+      "outcome": "UNVERIFIED:quote_not_in_code"
+    },
+    {
+      "title": "Use of unsafe `fs.readFileSync` on user input",
+      "code_refs": [
+        {
+          "file": "node.js",
+          "line": 408,
+          "quote": "return module.exports.parseConfig(fs.readFileSync(file))"
+        }
+      ],
+      "outcome": "REFUTED:defence_found"
+    },
+    {
+      "title": "Implicit trust in environment variables",
+      "code_refs": [
+        {
+          "file": "node.js",
+          "line": 501,
+          "quote": "env: process.env"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    },
+    {
+      "title": "Weak logic for shell command deprecation",
+      "code_refs": [
+        {
+          "file": "cli.js",
+          "line": 47,
+          "quote": "updateDb(function (str) {"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    },
+    {
+      "title": "Lack of input sanitization in regex",
+      "code_refs": [
+        {
+          "file": "parse.js",
+          "line": 30,
+          "quote": "var match = query.match(type.regexp)"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    },
+    {
+      "title": "Insecure `npm` publish process",
+      "code_refs": [
+        {
+          "file": ".github/workflows/release.yml",
+          "line": 24,
+          "quote": "run: npm stage publish"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    },
+    {
+      "title": "Insufficient error handling disclosure",
+      "code_refs": [],
+      "outcome": "OBSERVATION:attacker_is_trusted"
+    },
+    {
+      "title": "Unsafe use of `eval`-like behavior in custom stats",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 551,
+          "quote": "var customStats = env.getStat(opts)"
+        }
+      ],
+      "outcome": "REFUTED:defence_found"
+    },
+    {
+      "title": "Overly broad `eslint` rules",
+      "code_refs": [
+        {
+          "file": "eslint.config.mjs",
+          "line": 29,
+          "quote": "'no-console': 'off'"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    },
+    {
+      "title": "Insecure cache key construction",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 443,
+          "quote": "var cacheKey = JSON.stringify([queries, context])"
+        }
+      ],
+      "outcome": "REFUTED:defence_found"
+    }
+  ],
+  "rejected": [
+    {
+      "title": "Remote Code Execution via arbitrary module loading",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    },
+    {
+      "title": "Path Traversal in config file loading",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    },
+    {
+      "title": "Unsafe deserialization of stats file",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    },
+    {
+      "title": "Prototype Pollution in object cloning",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    },
+    {
+      "title": "Use of unsafe shell commands in CI",
+      "status": "OBSERVATION",
+      "code": "no_new_power",
+      "why": "the harm gives the attacker nothing they did not already have"
+    },
+    {
+      "title": "Hardcoded insecure dependencies in CI/CD",
+      "status": "UNVERIFIED",
+      "code": "quote_not_in_code",
+      "why": "the reviewer's quotes do not exist in the files named"
+    },
+    {
+      "title": "Use of unsafe `fs.readFileSync` on user input",
+      "status": "REFUTED",
+      "code": "defence_found",
+      "why": "a protection enforced in the code defeats the claim"
+    },
+    {
+      "title": "Implicit trust in environment variables",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    },
+    {
+      "title": "Weak logic for shell command deprecation",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    },
+    {
+      "title": "Lack of input sanitization in regex",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    },
+    {
+      "title": "Insecure `npm` publish process",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    },
+    {
+      "title": "Insufficient error handling disclosure",
+      "status": "OBSERVATION",
+      "code": "attacker_is_trusted",
+      "why": "the data comes from the operator, the developer or the person running the program, who already has that power"
+    },
+    {
+      "title": "Unsafe use of `eval`-like behavior in custom stats",
+      "status": "REFUTED",
+      "code": "defence_found",
+      "why": "a protection enforced in the code defeats the claim"
+    },
+    {
+      "title": "Overly broad `eslint` rules",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    },
+    {
+      "title": "Insecure cache key construction",
+      "status": "REFUTED",
+      "code": "defence_found",
+      "why": "a protection enforced in the code defeats the claim"
+    }
+  ],
+  "verification": {
+    "mode": "source-code",
+    "files_indexed": 91,
+    "checked": 15,
+    "confirmed": 0,
+    "observations": 2,
+    "refuted": 12,
+    "unverified": 1,
+    "errors": 0,
+    "defender_pass": true,
+    "appeal_pass": true,
+    "checks": 3,
+    "exploitability": true,
+    "split_decisions": 8
+  },
+  "arm_meta": {
+    "imported_from": "bench_runs/history_pilot/proof_heldout/inputs/ghsa-73wf-gq98-2v4g/all_r1.json",
+    "note": "produced elsewhere; not repeatable by this harness"
+  },
+  "seconds": {
+    "arm": 0.0,
+    "check": 748.8,
+    "total": 748.8
+  },
+  "usage": {
+    "arm": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    },
+    "check": {
+      "calls": 123,
+      "failed": 0,
+      "est_tokens": 1332386,
+      "seconds_in_calls": 746.6,
+      "by_task": {
+        "exploit": {
+          "calls": 5,
+          "failed": 0,
+          "prompt_chars": 196201,
+          "completion_chars": 5628,
+          "seconds": 11.299444699776359,
+          "est_tokens": 50457
+        },
+        "verify_appeal": {
+          "calls": 25,
+          "failed": 0,
+          "prompt_chars": 1956668,
+          "completion_chars": 16214,
+          "seconds": 269.7617079997435,
+          "est_tokens": 493220
+        },
+        "verify_defend": {
+          "calls": 17,
+          "failed": 0,
+          "prompt_chars": 1363548,
+          "completion_chars": 9120,
+          "seconds": 75.37407970032655,
+          "est_tokens": 343167
+        },
+        "verify_judge": {
+          "calls": 38,
+          "failed": 0,
+          "prompt_chars": 1576615,
+          "completion_chars": 43580,
+          "seconds": 153.45896720024757,
+          "est_tokens": 405049
+        },
+        "verify_locate": {
+          "calls": 38,
+          "failed": 0,
+          "prompt_chars": 153925,
+          "completion_chars": 8044,
+          "seconds": 236.7268594999332,
+          "est_tokens": 40492
+        }
+      }
+    }
+  }
+}

@@ -83,3 +83,13 @@ The i18next-fs-backend and send candidates were refuted as "a protection enforce
 (`split_decisions` 0). So voting did not rescue them: the defender is wrong the same way every time, which is a systematic miss, not
 noise. Voting fixes instability, not a consistently mistaken defender. Four sets, one run each, one model: direction only.
 Not yet done: the same strict check on all candidates of the 4 sets, to see whether the survivors are now real vulnerabilities.
+
+## Strict check on all candidates, partial (2026-10-25)
+
+Planned: all 15 candidates of finder run 1 for each of the 4 sets that have a real flaw (`proof_all/`). Only the first set finished:
+the Gemini free tier's 500-requests-a-day limit ran out during the second. The unfinished run was stopped.
+
+ghsa-2933-q333-qg83 (i18next-fs-backend): 15 candidates, 0 kept (11 refuted, 3 unverified because the quote was not in the code,
+1 observation: accurate but no new power for the attacker). 99 calls, about 930k tokens, 15 minutes. 3 of the 15 had split votes.
+This run's list holds no candidate that was read as the real flaw (the earlier `proof_y` run, on the candidate read as Y from another
+run, refuted it too), so this shows no noise survives, not that the checker finds the flaw. Remaining sets: run again after the quota resets.

@@ -1,0 +1,350 @@
+{
+  "schema": 1,
+  "set": "ghsa-8x88-c5mf-7j5w",
+  "variant": "raw",
+  "arm": "import-all_r1",
+  "run": 1,
+  "commit": "e02a4e9e013c4be95302e2eb2047a942b883c27b",
+  "started_at": "2026-10-25T08:38:11+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": true,
+  "verify_config": {
+    "checks": 3,
+    "exploit": true
+  },
+  "status": "ok",
+  "candidates": 15,
+  "kept": [],
+  "proposed": [
+    {
+      "title": "Arbitrary File Write (ZipSlip via Symbolic Links)",
+      "code_refs": [
+        {
+          "file": "src/unpack.ts",
+          "line": 1106,
+          "quote": "if (this.preservePaths || parts.length === 0) return done()"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    },
+    {
+      "title": "Use of Deprecated and Thread-Unsafe process.umask()",
+      "code_refs": [
+        {
+          "file": "src/process-umask.ts",
+          "line": 2,
+          "quote": "export const umask = () => process.umask()"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    },
+    {
+      "title": "Insecure Temporary File Deletion on Windows",
+      "code_refs": [
+        {
+          "file": "src/unpack.ts",
+          "line": 78,
+          "quote": "const name = path + '.DELETE.' + randomBytes(16).toString('hex')"
+        }
+      ],
+      "outcome": "UNVERIFIED:quote_is_comment"
+    },
+    {
+      "title": "Potential Integer Overflow in Large Numbers Parsing",
+      "code_refs": [
+        {
+          "file": "src/large-numbers.ts",
+          "line": 81,
+          "quote": "sum -= f * Math.pow(256, len - i - 1)"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    },
+    {
+      "title": "Insecure Default File Creation Permissions",
+      "code_refs": [
+        {
+          "file": "src/create.ts",
+          "line": 17,
+          "quote": "mode: opt.mode || 0o666,"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    },
+    {
+      "title": "Denial of Service via Infinite Recursion in Path Resolution",
+      "code_refs": [
+        {
+          "file": "src/list.ts",
+          "line": 39,
+          "quote": "ret = m !== undefined ? m : mapHas(dirname(file), root)"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    },
+    {
+      "title": "Insecure Fallback to utimesSync on Failure",
+      "code_refs": [
+        {
+          "file": "src/unpack.ts",
+          "line": 1024,
+          "quote": "} catch { er = futimeser }"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    },
+    {
+      "title": "Lack of Validation on Extracted User/Group IDs",
+      "code_refs": [
+        {
+          "file": "src/unpack.ts",
+          "line": 1038,
+          "quote": "fs.chownSync(String(entry.absolute), Number(uid), Number(gid))"
+        }
+      ],
+      "outcome": "REFUTED:defence_found"
+    },
+    {
+      "title": "Potential Path Traversal in @-prefixed paths",
+      "code_refs": [
+        {
+          "file": "src/create.ts",
+          "line": 61,
+          "quote": "file: path.resolve(String(p.cwd), file.slice(1)),"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    },
+    {
+      "title": "Unsafe Header Parsing with Global Extended Headers",
+      "code_refs": [
+        {
+          "file": "src/parse.ts",
+          "line": 372,
+          "quote": "this[GEX] = Pax.parse(this[META], this[GEX], true)"
+        }
+      ],
+      "outcome": "REFUTED:defence_found"
+    },
+    {
+      "title": "Use of unsafe `Buffer.allocUnsafe`",
+      "code_refs": [
+        {
+          "file": "src/list.ts",
+          "line": 62,
+          "quote": "const buf = Buffer.allocUnsafe(stat.size)"
+        }
+      ],
+      "outcome": "REFUTED:defence_found"
+    },
+    {
+      "title": "Insufficient Validation of Numeric Header Fields",
+      "code_refs": [
+        {
+          "file": "src/header.ts",
+          "line": 101,
+          "quote": "decNumber(buf, off + 100, 8)"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    },
+    {
+      "title": "Command-Injection-like Logic via Dealiasing",
+      "code_refs": [
+        {
+          "file": "src/options.ts",
+          "line": 721,
+          "quote": "delete result.noChmod"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    },
+    {
+      "title": "Insecure Default `mode` Fixes",
+      "code_refs": [
+        {
+          "file": "src/mode-fix.ts",
+          "line": 20,
+          "quote": "mode |= 0o100"
+        }
+      ],
+      "outcome": "REFUTED:contradicted_by_code"
+    },
+    {
+      "title": "Incomplete Sanitization of Win32 Path Chars",
+      "code_refs": [
+        {
+          "file": "src/winchars.ts",
+          "line": 13,
+          "quote": "export const encode = (s: string) =>"
+        }
+      ],
+      "outcome": "UNVERIFIED:quote_not_in_code"
+    }
+  ],
+  "rejected": [
+    {
+      "title": "Arbitrary File Write (ZipSlip via Symbolic Links)",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    },
+    {
+      "title": "Use of Deprecated and Thread-Unsafe process.umask()",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    },
+    {
+      "title": "Insecure Temporary File Deletion on Windows",
+      "status": "UNVERIFIED",
+      "code": "quote_is_comment",
+      "why": "the reviewer's quotes are comments, not live code"
+    },
+    {
+      "title": "Potential Integer Overflow in Large Numbers Parsing",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    },
+    {
+      "title": "Insecure Default File Creation Permissions",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    },
+    {
+      "title": "Denial of Service via Infinite Recursion in Path Resolution",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    },
+    {
+      "title": "Insecure Fallback to utimesSync on Failure",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    },
+    {
+      "title": "Lack of Validation on Extracted User/Group IDs",
+      "status": "REFUTED",
+      "code": "defence_found",
+      "why": "a protection enforced in the code defeats the claim"
+    },
+    {
+      "title": "Potential Path Traversal in @-prefixed paths",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    },
+    {
+      "title": "Unsafe Header Parsing with Global Extended Headers",
+      "status": "REFUTED",
+      "code": "defence_found",
+      "why": "a protection enforced in the code defeats the claim"
+    },
+    {
+      "title": "Use of unsafe `Buffer.allocUnsafe`",
+      "status": "REFUTED",
+      "code": "defence_found",
+      "why": "a protection enforced in the code defeats the claim"
+    },
+    {
+      "title": "Insufficient Validation of Numeric Header Fields",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    },
+    {
+      "title": "Command-Injection-like Logic via Dealiasing",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    },
+    {
+      "title": "Insecure Default `mode` Fixes",
+      "status": "REFUTED",
+      "code": "contradicted_by_code",
+      "why": "the code contradicts the claim or already contains the protection"
+    },
+    {
+      "title": "Incomplete Sanitization of Win32 Path Chars",
+      "status": "UNVERIFIED",
+      "code": "quote_not_in_code",
+      "why": "the reviewer's quotes do not exist in the files named"
+    }
+  ],
+  "verification": {
+    "mode": "source-code",
+    "files_indexed": 240,
+    "checked": 15,
+    "confirmed": 0,
+    "observations": 0,
+    "refuted": 13,
+    "unverified": 2,
+    "errors": 0,
+    "defender_pass": true,
+    "appeal_pass": true,
+    "checks": 3,
+    "exploitability": true,
+    "split_decisions": 4
+  },
+  "arm_meta": {
+    "imported_from": "bench_runs/history_pilot/proof_heldout/inputs/ghsa-8x88-c5mf-7j5w/all_r1.json",
+    "note": "produced elsewhere; not repeatable by this harness"
+  },
+  "seconds": {
+    "arm": 0.0,
+    "check": 1049.8,
+    "total": 1049.8
+  },
+  "usage": {
+    "arm": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    },
+    "check": {
+      "calls": 107,
+      "failed": 0,
+      "est_tokens": 1282414,
+      "seconds_in_calls": 1043.6,
+      "by_task": {
+        "verify_appeal": {
+          "calls": 28,
+          "failed": 0,
+          "prompt_chars": 2267034,
+          "completion_chars": 21924,
+          "seconds": 294.89802040020004,
+          "est_tokens": 572240
+        },
+        "verify_defend": {
+          "calls": 11,
+          "failed": 0,
+          "prompt_chars": 901806,
+          "completion_chars": 8091,
+          "seconds": 101.32150030008052,
+          "est_tokens": 227474
+        },
+        "verify_judge": {
+          "calls": 34,
+          "failed": 0,
+          "prompt_chars": 1439759,
+          "completion_chars": 40758,
+          "seconds": 453.3787589003332,
+          "est_tokens": 370129
+        },
+        "verify_locate": {
+          "calls": 34,
+          "failed": 0,
+          "prompt_chars": 441265,
+          "completion_chars": 9018,
+          "seconds": 194.03676590009127,
+          "est_tokens": 112571
+        }
+      }
+    }
+  }
+}
