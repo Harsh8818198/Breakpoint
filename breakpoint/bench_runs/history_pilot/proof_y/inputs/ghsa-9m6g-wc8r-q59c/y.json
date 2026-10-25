@@ -1,0 +1,120 @@
+{
+ "findings": [
+  {
+   "title": "Use of Prototype Pollution susceptible object assignment",
+   "generation": 1,
+   "discovered_by": "single-prompt baseline",
+   "description": "The `assign` function at src/scimPatch.ts:437 iterates over arbitrary user-controlled property keys and directly assigns them to the target object. Because there is no validation of the key names, an attacker can pass '__proto__', 'constructor', or 'prototype' to manipulate the object's prototype.",
+   "steps_to_exploit": [
+    "Craft a malicious SCIM PATCH operation where the 'value' object contains a key named '__proto__'.",
+    "Inject a payload such as 'polluted': 'yes' into the '__proto__' key.",
+    "Submit the patch request to the application.",
+    "The global object structure is modified, potentially leading to Remote Code Execution (RCE) or Denial of Service (DoS)."
+   ],
+   "impact": "Remote code execution or complete application compromise via prototype pollution.",
+   "evolved_from": [],
+   "attack_category": "injection",
+   "confidence": 1.0,
+   "exploitability": 0.0,
+   "impact_score": 0.0,
+   "spread": 0.0,
+   "fix_difficulty": 1.0,
+   "verification": "",
+   "evidence": [
+    {
+     "file": "src/scimPatch.ts",
+     "line": 437,
+     "quote": "function assign(obj:any, keyPath:Array<string>, value:any, op: string) {"
+    }
+   ],
+   "code_refs": [
+    {
+     "file": "src/scimPatch.ts",
+     "line": 437,
+     "quote": "function assign(obj:any, keyPath:Array<string>, value:any, op: string) {"
+    }
+   ],
+   "id": "81a5c481",
+   "bss": 0.0,
+   "severity_band": "LOW",
+   "fix_priority": "MONITOR"
+  },
+  {
+   "title": "Use of Prototype Pollution Gadget",
+   "generation": 1,
+   "discovered_by": "single-prompt baseline",
+   "description": "The `assign` function uses a recursive path traversal and object property assignment based on untrusted user input without sanitizing keys, leading to potential Prototype Pollution.",
+   "steps_to_exploit": [
+    "Craft a PATCH operation with a nested object property path like 'constructor.prototype.polluted'.",
+    "Send the malicious JSON to the scimPatch endpoint.",
+    "Observe that the base Object prototype is modified, affecting subsequent object instances."
+   ],
+   "impact": "Can lead to Remote Code Execution, Denial of Service, or bypass of security logic across the entire application runtime.",
+   "evolved_from": [],
+   "attack_category": "injection",
+   "confidence": 1.0,
+   "exploitability": 0.0,
+   "impact_score": 0.0,
+   "spread": 0.0,
+   "fix_difficulty": 1.0,
+   "verification": "",
+   "evidence": [
+    {
+     "file": "src/scimPatch.ts",
+     "line": 444,
+     "quote": "obj = obj[key];"
+    }
+   ],
+   "code_refs": [
+    {
+     "file": "src/scimPatch.ts",
+     "line": 444,
+     "quote": "obj = obj[key];"
+    }
+   ],
+   "id": "865b986e",
+   "bss": 0.0,
+   "severity_band": "LOW",
+   "fix_priority": "MONITOR"
+  },
+  {
+   "title": "Prototype Pollution via recursive object assignment",
+   "generation": 1,
+   "discovered_by": "single-prompt baseline",
+   "description": "The `assign` function (src/scimPatch.ts:437) does not sanitize input keys, allowing an attacker to set arbitrary properties on object prototypes (e.g., `__proto__`, `constructor`) when processing patch values.",
+   "steps_to_exploit": [
+    "Craft a SCIM Patch request with an 'add' operation",
+    "Set the path to '__proto__'",
+    "Set the value to an object containing malicious keys",
+    "Observe that the application's global object prototype is now modified"
+   ],
+   "impact": "Remote Code Execution (RCE) or Denial of Service by modifying the behavior of built-in objects.",
+   "evolved_from": [],
+   "attack_category": "injection",
+   "confidence": 1.0,
+   "exploitability": 0.0,
+   "impact_score": 0.0,
+   "spread": 0.0,
+   "fix_difficulty": 1.0,
+   "verification": "",
+   "evidence": [
+    {
+     "file": "src/scimPatch.ts",
+     "line": 444,
+     "quote": "obj = obj[key];"
+    }
+   ],
+   "code_refs": [
+    {
+     "file": "src/scimPatch.ts",
+     "line": 444,
+     "quote": "obj = obj[key];"
+    }
+   ],
+   "id": "9b3ef9ba",
+   "bss": 0.0,
+   "severity_band": "LOW",
+   "fix_priority": "MONITOR"
+  }
+ ]
+}

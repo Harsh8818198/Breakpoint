@@ -116,6 +116,10 @@ class Finding:
     # `evidence` is a list of {"file", "line", "quote"} whose quotes were found verbatim in the repo.
     verification: str = ""
     evidence: list[dict] = field(default_factory=list)
+    # Set only by the stricter verifier (breakpoint.proof): `exploit` says whether this accurate claim is an exploitable
+    # vulnerability (tier, who the attacker is, the entry point, the path); `votes` says how many of the repeated checks agreed.
+    exploit: dict = field(default_factory=dict)
+    votes: dict = field(default_factory=dict)
     # Where the AGENT says the flaw is (codebase mode). Each quote was found in the file it names, but that only shows the
     # citation is real, not that the claim is true: `evidence` (set by the verifier) is what supports a finding.
     code_refs: list[dict] = field(default_factory=list)

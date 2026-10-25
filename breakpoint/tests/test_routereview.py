@@ -162,7 +162,7 @@ class EndToEnd(unittest.TestCase):
         def stats(self):
             return {"checked": self.n, "confirmed": self.n, "refuted": 0, "unverified": 0, "errors": 0}
 
-    def run(self, verify=True, files=None):
+    def go(self, verify=True, files=None):
         root = make_repo(files or APP)
         out = os.path.join(tempfile.mkdtemp(prefix="bp_review_"), "out.json")
 
@@ -174,7 +174,7 @@ class EndToEnd(unittest.TestCase):
             return data, json.load(fh)
 
     def test_the_saved_report_has_the_shape_the_scorer_and_verify_report_read(self):
-        data, saved = self.run()
+        data, saved = self.go()
         self.assertEqual(saved["route_review"]["reviews"], 8)
         self.assertTrue(saved["route_review"]["checked_against_code"])
         f = saved["findings"][0]
@@ -184,7 +184,7 @@ class EndToEnd(unittest.TestCase):
         self.assertEqual(_finding_from_dict(f).title, "eval on request body")
 
     def test_without_the_code_check_the_report_says_so(self):
-        _, saved = self.run(verify=False)
+        _, saved = self.go(verify=False)
         self.assertFalse(saved["route_review"]["checked_against_code"])
         self.assertEqual(saved["findings"][0]["verification"], "")
         self.assertIsNone(saved["verification"])
@@ -209,7 +209,7 @@ class EndToEnd(unittest.TestCase):
 
     def test_a_repo_with_no_express_app_stops_with_a_clear_message(self):
         with self.assertRaises(SystemExit) as cm:
-            self.run(files={"app.py": "print('hi')\n"})
+            self.go(files={"app.py": "print('hi')\n"})
         self.assertIn("Express", str(cm.exception))
 
 

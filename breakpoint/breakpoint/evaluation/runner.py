@@ -13,8 +13,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from ..codeindex import CodeIndex
-from ..codeverify import CodeVerifier
+from ..codeverify import apply_result
 from ..llm import LLMClient
+from ..proof import make_verifier
 from ..usage import MeteredLLM
 from .arms import ArmUnsupported, arm_label, run_arm
 from .sets import EvalSet, materialize
@@ -66,13 +67,14 @@ def one_run(es: EvalSet, variant: str, arm: str, n: int, root: str, index: CodeI
     # every finding the arm proposed and what the check did with it, so "did it propose the known flaw, and did the check keep it" can be asked
     proposed = [{"title": f.title, "code_refs": list(f.code_refs), "outcome": "unchecked"} for f in result.findings]
     if verify and result.findings:
-        verifier = (verifier_factory or CodeVerifier)(index, check_llm)
+        cfg = rec["verify_config"] = {"checks": opts.get("checks", 1), "exploit": bool(opts.get("exploit", False))}
+        verifier = (verifier_factory or (lambda ix, llm: make_verifier(ix, llm, **cfg)))(index, check_llm)
         outcome = verifier(result.findings)
         kept = []
         for f, r, p in zip(result.findings, outcome, proposed):
             p["outcome"] = "kept" if r["status"] == "CONFIRMED" else f"{r['status']}:{r.get('code', '')}"
             if r["status"] == "CONFIRMED":
-                f.verification, f.evidence = "CONFIRMED", r["evidence_items"]
+                apply_result(f, r)
                 kept.append(f)
         stats = verifier.stats()
         rejected = [{"title": r["title"], "status": r["status"], "code": r["code"], "why": r.get("why", "")}

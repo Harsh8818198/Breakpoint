@@ -136,11 +136,20 @@ def _bug_ids(verdict: dict) -> set[str]:
     return {x for x in (b if isinstance(b, list) else [b]) if isinstance(x, str)}
 
 
+def _checking(run: dict) -> str:
+    """How a run's claims were checked. Runs saved before this was an option were checked once, with no exploitability step."""
+    cfg = run.get("verify_config")
+    if not cfg:
+        return "checked once, no exploitability step (older run)"
+    return f"checked up to {cfg['checks']} time(s) per claim" + (", then judged for exploitability" if cfg.get("exploit") else ", no exploitability step")
+
+
 def _arm_summary(label: str, runs: list[dict], es: EvalSet, verdicts: dict, key_of: dict) -> dict:
     ok = [r for r in runs if r.get("status") == "ok"]
     out: dict = {"label": label, "runs": len(ok), "unsupported": [r.get("reason") for r in runs if r.get("status") == "unsupported"][:1],
                  "errored_runs": [r["run"] for r in runs if r.get("status") == "error"],
-                 "verify": all(r.get("verify") for r in ok) if ok else None, "models": sorted({r["model"] for r in ok})}
+                 "verify": all(r.get("verify") for r in ok) if ok else None, "models": sorted({r["model"] for r in ok}),
+                 "checking": sorted({_checking(r) for r in ok if r.get("verify")})}
     if not ok:
         return out
     n_bugs = len(es.bugs)
@@ -239,6 +248,9 @@ def _flags(es: EvalSet, variant: str, arms: dict, adjudicated: bool, undecided: 
     if slept:
         flags.append("Wall-clock time for " + "; ".join(f"{l} run(s) {r}" for l, r in slept.items())
                      + " was far above the time spent in model calls (the machine probably slept); the call time is shown instead.")
+    how = {a["label"]: a["checking"] for a in arms.values() if a.get("checking")}
+    if how:
+        flags.append("Code check: " + "; ".join(f"{l}: {' and '.join(c)}" for l, c in how.items()) + ".")
     if any(a.get("verify") is False for a in arms.values()):
         flags.append("Some arms were NOT checked against the code: their kept findings are claims, not proven.")
     if not adjudicated:

@@ -410,12 +410,18 @@ class CodeVerifier:
                 "reasoning": r.get("reasoning", ""), "evidence": r["evidence"]}
 
 
+def apply_result(f: Finding, r: dict[str, Any]) -> None:
+    """Record a confirmed result on its finding: the evidence, and, when the stricter verifier ran, the exploit judgement and votes."""
+    f.verification, f.evidence = CONFIRMED, r["evidence_items"]
+    f.exploit, f.votes = r.get("exploit") or {}, r.get("votes") or {}
+
+
 def verify_findings(findings: list[Finding], index: CodeIndex, llm, **kw) -> tuple[list[Finding], dict[str, Any]]:
     """Check an existing list of findings (e.g. loaded from a saved report). Returns (confirmed, stats)."""
     v = CodeVerifier(index, llm, **kw)
     kept = []
     for f, res in zip(findings, v(findings)):
         if res["ok"]:
-            f.verification, f.evidence = CONFIRMED, res["evidence_items"]
+            apply_result(f, res)
             kept.append(f)
     return kept, v.stats()

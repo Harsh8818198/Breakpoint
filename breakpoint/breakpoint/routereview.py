@@ -240,7 +240,7 @@ def _save(out_path: str, data: dict) -> None:
 def run_route_review(codebase: str, out_path: str, *, verify: bool = True, max_calls: int = 150, llm=None,
                      verifier_factory=None) -> dict:
     from .blueprint import codebase_checkout
-    from .codeverify import CodeVerifier
+    from .codeverify import CodeVerifier, apply_result
     llm = llm or LLMClient()
     print(f"Provider: {llm.provider} | Model: {llm.model}")
     with codebase_checkout(codebase) as root:
@@ -276,11 +276,12 @@ def run_route_review(codebase: str, out_path: str, *, verify: bool = True, max_c
             kept = []
             for f, r in zip(result.findings, outcome):
                 if r["status"] == "CONFIRMED":
-                    f.verification, f.evidence = "CONFIRMED", r["evidence_items"]
+                    apply_result(f, r)
                     kept.append(f)
             stats = verifier.stats()
             print(f"{stats['confirmed']} of {stats['checked']} held up ({stats['refuted']} refuted, "
-                  f"{stats['unverified']} unproven, {stats['errors']} errors).")
+                  f"{stats['unverified']} unproven, {stats['errors']} errors"
+                  + (f", {stats['observations']} accurate but not exploitable" if stats.get("observations") else "") + ").")
     data = report(kept, stats, bool(verify), "done")
     _save(out_path, data)
     print(f"[+] Saved {len(kept)} findings to {out_path}" + ("" if verify else " (NOT checked against the code: they may be wrong)"))

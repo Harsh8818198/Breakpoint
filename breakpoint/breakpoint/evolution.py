@@ -410,6 +410,7 @@ def simulate(blueprint: Blueprint, agents: list[Agent], llm: LLMClient, *,
                     if v["ok"]:
                         f.verification = v.get("status", "")
                         f.evidence = v.get("evidence_items", [])
+                        f.exploit, f.votes = v.get("exploit") or {}, v.get("votes") or {}
                         verified.append(f)
                     else:
                         refuted.append({"title": f.title, "evidence": v["evidence"]})

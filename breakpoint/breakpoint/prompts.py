@@ -821,3 +821,83 @@ ROUTE_FOCUS = {
         "verbose error or debug output; secrets in config files. Remember that code inside a comment is switched off.",
     ),
 }
+
+# --- Exploitability: is an accurate claim a vulnerability? ---------------------------------------------------------
+
+EXPLOIT_SYSTEM = (
+    "You decide whether a claim that has ALREADY been shown to be accurate about the code is an exploitable "
+    "vulnerability, or only an accurate remark about how the code works. Most accurate remarks are not vulnerabilities. "
+    "Use ONLY the code and project notes shown.\n"
+    "A claim is a vulnerability only if ALL FIVE hold:\n"
+    "1. ENTRY POINT. Somewhere in the shown code, data enters from someone who is not trusted: an HTTP route, form, "
+    "header or webhook of an application; or, in a library, an exported function that processes content it is meant to "
+    "receive from outsiders (a parser given documents, a sanitizer given markup, a router given request methods, an "
+    "archive reader given archives, a path setter given client-sent keys). Quote the line where it enters.\n"
+    "2. ATTACKER. Who supplies that data. One of: remote_unauthenticated; remote_authenticated; untrusted_content (a "
+    "document, message, archive, URL or key that the application received from outsiders and hands to the library); "
+    "operator (the developer, operator or administrator: build scripts, Makefiles, configuration, options, plugins, "
+    "file paths, files in the project's own directories, environment variables, anything set when the program is "
+    "installed or started); local_user (someone already running the program on their own machine: command-line "
+    "arguments and standard input); nobody (no outsider's data reaches it).\n"
+    "3. PATH. The data reaches the flawed line (the evidence) without being stopped, and the attacker chooses part of "
+    "what arrives there.\n"
+    "4. NEW POWER. The harm gives the attacker something they did not already have. If doing the harm already requires "
+    "writing the files, setting the options, running the program or installing the code, they already have that power.\n"
+    "5. HARM. A concrete consequence: running code, reading another user's data, bypassing authentication, crashing or "
+    "hanging a server or the process that handles the content, writing outside a directory.\n"
+    "Tiers: exploitable (all five hold in the default way the project is used); conditional (all five hold, but only if "
+    "an application uses the project in a particular non-default way that you can name); not_exploitable (any of the five "
+    "fails, or it is a missing best practice, a debug aid, a command-line convenience, a build or CI detail, a "
+    "feature working as designed, or a speculation worded with may, might or could).\n"
+    "Rules that decide the common cases:\n"
+    "- A file the developer or operator puts on disk (translations, configuration, templates, plugins, build scripts) is "
+    "operator-controlled. Reading, evaluating or importing it is not a vulnerability even when the operation is dangerous: "
+    "whoever can write that file already controls the program.\n"
+    "- A debug helper, a log line of the function's own input, an unused or undocumented helper, a command-line tool's own "
+    "arguments or standard input, a Makefile or a CI step is not exploitable unless the project's own code calls it with an "
+    "outsider's data.\n"
+    "- A claim about memory, CPU or size limits needs an entry point where the OUTSIDER chooses the size or shape, in a "
+    "project whose purpose is to process outsiders' data. Reading a local file does not qualify.\n"
+    "- An outsider merely sending more data than the program can hold is not a vulnerability. A resource claim needs "
+    "disproportion: a small input that crashes, hangs or allocates far more than it carries.\n"
+    "- A condition that is the developer misusing the project (calling a debug helper in production, turning a check off, "
+    "passing untrusted data to something documented as needing trusted data) is not a vulnerability in the project.\n"
+    "- A comparison of how two parts might read the same input differently is speculation unless you can state the concrete "
+    "input on which they disagree and what the attacker gains.\n"
+    "- Do not use conditional to mean maybe. A conditional answer must name, in 'condition', the specific call an application "
+    "would make with an outsider's data. If you cannot name it, answer not_exploitable.\n"
+    "- If your own reasoning says the attacker must write files, set options, change the environment or run code, then "
+    "already_has_the_power is true.\n"
+    "Never answer exploitable or conditional by assuming an entry point you cannot quote. If the code that connects an "
+    "outsider's data to the flaw is not shown, answer not_exploitable. Output ONLY valid JSON."
+)
+
+EXPLOIT_USER = """CLAIM (already shown to be accurate about the code)
+Title: {title}
+Description: {description}
+Steps: {steps}
+Impact: {impact}
+
+THE CODE THAT SHOWS IT
+{evidence}
+
+PROJECT NOTES (the start of the README: read it for what the project is for and who uses it)
+{notes}
+
+SOURCE EXCERPTS (line-numbered; the number and '|' are not part of the code; 'c|' marks a comment line, which is NOT active code)
+{excerpts}
+
+Return JSON (reason first, then answer):
+{{
+  "entry_point": {{"file": "path exactly as in the excerpts", "start_line": 1, "end_line": 1,
+                   "quote": "1-3 lines of live code copied CHARACTER-FOR-CHARACTER where an outsider's data enters (null if none is shown)"}},
+  "attacker": "remote_unauthenticated" | "remote_authenticated" | "untrusted_content" | "operator" | "local_user" | "nobody",
+  "attacker_controls": "at most 25 words: what the attacker chooses",
+  "reaches_flaw": true | false,
+  "already_has_the_power": true | false,   (true if doing the harm already requires writing the files, setting the options, changing the environment, running the program or installing the code)
+  "path": "at most 60 words: from the entry point to the flawed line, naming the functions in between",
+  "harm": "at most 30 words",
+  "condition": "only for conditional: the non-default use that is required",
+  "tier": "exploitable" | "conditional" | "not_exploitable",
+  "reasoning": "at most 60 words"
+}}"""

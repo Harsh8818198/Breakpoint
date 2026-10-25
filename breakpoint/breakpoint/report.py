@@ -68,6 +68,9 @@ def render_report(blueprint: Blueprint, findings: list[Finding], cvg: CVG | None
     if verification:
         L.append(f"Every finding below was checked against the source code: {verification['confirmed']} of "
                  f"{verification['checked']} claims held up and are listed with the code that shows them.")
+        if verification.get("observations"):
+            L.append(f"{verification['observations']} more were accurate about the code but are not exploitable "
+                     "(a feature, a debug aid, or data only the operator controls); they are left out.")
     else:
         L.append("NOTE: findings were NOT checked against the source code; treat each one as unproven.")
     if ranked:
@@ -97,6 +100,18 @@ def render_report(blueprint: Blueprint, findings: list[Finding], cvg: CVG | None
         L.append(f"    Impact: {f.impact}")
         for e in f.evidence[:3]:
             L.append(f"    Evidence: {e['file']}:{e['line']}  {e['quote'][:160]}")
+        x = f.exploit or {}
+        if x.get("tier") in ("exploitable", "conditional"):
+            ep = x.get("entry_point") or {}
+            L.append(f"    Exploitability: {x['tier']} ({x.get('agreement', '')} checks agree); attacker: {x.get('attacker', '')}"
+                     + (f"; enters at {ep['file']}:{ep['line']}" if ep else ""))
+            if x.get("path"):
+                L.append(f"    Path: {x['path']}")
+            if x.get("condition"):
+                L.append(f"    Only if: {x['condition']}")
+        cc = (f.votes or {}).get("code_check") or {}
+        if cc.get("cast", 0) > 1:
+            L.append(f"    Held in {cc['confirmed']} of {cc['cast']} checks against the code")
         L.append(f"    Scores -> exploit {f.exploitability} / impact "
                  f"{f.impact_score} / spread {f.spread} / fixdiff {f.fix_difficulty}")
 

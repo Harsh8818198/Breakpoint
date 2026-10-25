@@ -1,0 +1,112 @@
+{
+  "schema": 1,
+  "set": "ghsa-2933-q333-qg83",
+  "variant": "raw",
+  "arm": "import-y",
+  "run": 1,
+  "commit": "321916bb9afc0413277304cf209ae4fae111e5e3",
+  "started_at": "2026-10-25T08:16:38+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": true,
+  "verify_config": {
+    "checks": 3,
+    "exploit": true
+  },
+  "status": "ok",
+  "candidates": 1,
+  "kept": [],
+  "proposed": [
+    {
+      "title": "Prototype Pollution via recursive object merge",
+      "code_refs": [
+        {
+          "file": "lib/utils.js",
+          "line": 108,
+          "quote": "obj[k] = newValue"
+        }
+      ],
+      "outcome": "REFUTED:defence_found"
+    }
+  ],
+  "rejected": [
+    {
+      "title": "Prototype Pollution via recursive object merge",
+      "status": "REFUTED",
+      "code": "defence_found",
+      "why": "a protection enforced in the code defeats the claim"
+    }
+  ],
+  "verification": {
+    "mode": "source-code",
+    "files_indexed": 87,
+    "checked": 1,
+    "confirmed": 0,
+    "observations": 0,
+    "refuted": 1,
+    "unverified": 0,
+    "errors": 0,
+    "defender_pass": true,
+    "appeal_pass": true,
+    "checks": 3,
+    "exploitability": true,
+    "split_decisions": 0
+  },
+  "arm_meta": {
+    "imported_from": "bench_runs/history_pilot/proof_y/inputs/ghsa-2933-q333-qg83/y.json",
+    "note": "produced elsewhere; not repeatable by this harness"
+  },
+  "seconds": {
+    "arm": 0.0,
+    "check": 42.6,
+    "total": 42.6
+  },
+  "usage": {
+    "arm": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    },
+    "check": {
+      "calls": 8,
+      "failed": 0,
+      "est_tokens": 95265,
+      "seconds_in_calls": 41.8,
+      "by_task": {
+        "verify_appeal": {
+          "calls": 2,
+          "failed": 0,
+          "prompt_chars": 150306,
+          "completion_chars": 2354,
+          "seconds": 5.491777100134641,
+          "est_tokens": 38165
+        },
+        "verify_defend": {
+          "calls": 2,
+          "failed": 0,
+          "prompt_chars": 123896,
+          "completion_chars": 1432,
+          "seconds": 28.010673300013877,
+          "est_tokens": 31332
+        },
+        "verify_judge": {
+          "calls": 2,
+          "failed": 0,
+          "prompt_chars": 90645,
+          "completion_chars": 2927,
+          "seconds": 4.758164700004272,
+          "est_tokens": 23393
+        },
+        "verify_locate": {
+          "calls": 2,
+          "failed": 0,
+          "prompt_chars": 9042,
+          "completion_chars": 457,
+          "seconds": 3.539057799964212,
+          "est_tokens": 2375
+        }
+      }
+    }
+  }
+}

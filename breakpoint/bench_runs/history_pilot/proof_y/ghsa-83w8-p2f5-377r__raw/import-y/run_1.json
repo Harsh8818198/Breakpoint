@@ -1,0 +1,112 @@
+{
+  "schema": 1,
+  "set": "ghsa-83w8-p2f5-377r",
+  "variant": "raw",
+  "arm": "import-y",
+  "run": 1,
+  "commit": "c68224e3067e18ee4c676cc9db66aae6b30ffb02",
+  "started_at": "2026-10-25T08:17:22+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": true,
+  "verify_config": {
+    "checks": 3,
+    "exploit": true
+  },
+  "status": "ok",
+  "candidates": 1,
+  "kept": [],
+  "proposed": [
+    {
+      "title": "Improper Input Sanitization in `getPathnameForSend`",
+      "code_refs": [
+        {
+          "file": "index.js",
+          "line": 743,
+          "quote": "return decodeURI(pathname)"
+        }
+      ],
+      "outcome": "REFUTED:defence_found"
+    }
+  ],
+  "rejected": [
+    {
+      "title": "Improper Input Sanitization in `getPathnameForSend`",
+      "status": "REFUTED",
+      "code": "defence_found",
+      "why": "a protection enforced in the code defeats the claim"
+    }
+  ],
+  "verification": {
+    "mode": "source-code",
+    "files_indexed": 66,
+    "checked": 1,
+    "confirmed": 0,
+    "observations": 0,
+    "refuted": 1,
+    "unverified": 0,
+    "errors": 0,
+    "defender_pass": true,
+    "appeal_pass": true,
+    "checks": 3,
+    "exploitability": true,
+    "split_decisions": 0
+  },
+  "arm_meta": {
+    "imported_from": "bench_runs/history_pilot/proof_y/inputs/ghsa-83w8-p2f5-377r/y.json",
+    "note": "produced elsewhere; not repeatable by this harness"
+  },
+  "seconds": {
+    "arm": 0.0,
+    "check": 21.2,
+    "total": 21.2
+  },
+  "usage": {
+    "arm": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    },
+    "check": {
+      "calls": 7,
+      "failed": 0,
+      "est_tokens": 87647,
+      "seconds_in_calls": 21.0,
+      "by_task": {
+        "verify_appeal": {
+          "calls": 2,
+          "failed": 0,
+          "prompt_chars": 166261,
+          "completion_chars": 1618,
+          "seconds": 4.974138000048697,
+          "est_tokens": 41970
+        },
+        "verify_defend": {
+          "calls": 1,
+          "failed": 0,
+          "prompt_chars": 83367,
+          "completion_chars": 601,
+          "seconds": 2.049574099946767,
+          "est_tokens": 20992
+        },
+        "verify_judge": {
+          "calls": 2,
+          "failed": 0,
+          "prompt_chars": 88860,
+          "completion_chars": 2382,
+          "seconds": 9.00346390006598,
+          "est_tokens": 22810
+        },
+        "verify_locate": {
+          "calls": 2,
+          "failed": 0,
+          "prompt_chars": 7114,
+          "completion_chars": 384,
+          "seconds": 4.979241900029592,
+          "est_tokens": 1874
+        }
+      }
+    }
+  }
+}

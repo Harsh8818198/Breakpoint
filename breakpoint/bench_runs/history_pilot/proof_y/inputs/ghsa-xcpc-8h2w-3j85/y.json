@@ -1,0 +1,80 @@
+{
+ "findings": [
+  {
+   "title": "Lack of Memory Limits on Decompression",
+   "generation": 1,
+   "discovered_by": "single-prompt baseline",
+   "description": "When decompressing, the library allocates a buffer based on the `size` field in the central header without verifying if the available system memory is sufficient, leading to potential out-of-memory errors.",
+   "steps_to_exploit": [
+    "Create a zip archive with an entry reporting an extremely large `size` (e.g., several GBs).",
+    "Call the decompression method on that entry.",
+    "The library attempts to allocate the requested size in RAM, crashing the process."
+   ],
+   "impact": "Denial of Service (DoS) via memory exhaustion.",
+   "evolved_from": [],
+   "attack_category": "scalability",
+   "confidence": 1.0,
+   "exploitability": 0.0,
+   "impact_score": 0.0,
+   "spread": 0.0,
+   "fix_difficulty": 1.0,
+   "verification": "",
+   "evidence": [
+    {
+     "file": "zipEntry.js",
+     "line": 103,
+     "quote": "var data = Buffer.alloc(_centralHeader.size);"
+    }
+   ],
+   "code_refs": [
+    {
+     "file": "zipEntry.js",
+     "line": 103,
+     "quote": "var data = Buffer.alloc(_centralHeader.size);"
+    }
+   ],
+   "id": "c9674cc0",
+   "bss": 0.0,
+   "severity_band": "LOW",
+   "fix_priority": "MONITOR"
+  },
+  {
+   "title": "Implicit Trust in Zip Header Metadata",
+   "generation": 1,
+   "discovered_by": "single-prompt baseline",
+   "description": "The library relies heavily on metadata provided within the zip file (like `size` and `compressedSize`) to perform memory allocations and file operations without secondary verification.",
+   "steps_to_exploit": [
+    "Craft a zip file with conflicting header information (e.g., local header size vs central directory size).",
+    "The library may attempt to read past buffer bounds or allocate incorrect memory blocks during extraction.",
+    "Potential for buffer overflow or out-of-bounds read vulnerabilities in underlying Node.js calls."
+   ],
+   "impact": "Potential memory corruption or process crash.",
+   "evolved_from": [],
+   "attack_category": "architecture",
+   "confidence": 1.0,
+   "exploitability": 0.0,
+   "impact_score": 0.0,
+   "spread": 0.0,
+   "fix_difficulty": 1.0,
+   "verification": "",
+   "evidence": [
+    {
+     "file": "zipEntry.js",
+     "line": 28,
+     "quote": "return input.slice(_centralHeader.realDataOffset, _centralHeader.realDataOffset + _centralHeader.compressedSize);"
+    }
+   ],
+   "code_refs": [
+    {
+     "file": "zipEntry.js",
+     "line": 28,
+     "quote": "return input.slice(_centralHeader.realDataOffset, _centralHeader.realDataOffset + _centralHeader.compressedSize);"
+    }
+   ],
+   "id": "4db2d542",
+   "bss": 0.0,
+   "severity_band": "LOW",
+   "fix_priority": "MONITOR"
+  }
+ ]
+}

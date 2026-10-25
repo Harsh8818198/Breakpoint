@@ -22,7 +22,8 @@ from .report import render_report
 from .cvg import build_cvg
 from .models import Blueprint, Finding
 from .codeindex import CodeIndex
-from .codeverify import CodeVerifier
+from .codeverify import apply_result
+from .proof import DEFAULT_CHECKS, make_verifier
 from .coderetrieval import CodeRetriever
 from . import prompts
 
@@ -100,14 +101,15 @@ def _pipeline(description: str | None, gens: int, archetypes: int | None,
               product_specific: int, show_questions: bool, interactive: bool = False,
               codebase: str | None = None, docs: list[str] | None = None,
               known_fixed: list[str] | None = None,
-              verify: bool = True, retrieval: bool = True) -> tuple[Blueprint, list[Finding], dict | None]:
+              verify: bool = True, retrieval: bool = True, checks: int = 1,
+              exploit: bool = False) -> tuple[Blueprint, list[Finding], dict | None]:
     with ExitStack() as stack:       # keeps a temporary clone alive until the verifier is done with it
         return _pipeline_inner(stack, description, gens, archetypes, product_specific, show_questions,
-                               interactive, codebase, docs, known_fixed, verify, retrieval)
+                               interactive, codebase, docs, known_fixed, verify, retrieval, checks, exploit)
 
 
 def _pipeline_inner(stack: ExitStack, description, gens, archetypes, product_specific, show_questions,
-                    interactive, codebase, docs, known_fixed, verify, retrieval=True):
+                    interactive, codebase, docs, known_fixed, verify, retrieval=True, checks=1, exploit=False):
     llm = LLMClient()
     print(f"Provider: {llm.provider} | Model: {llm.model}")
     verifier = retriever = None
@@ -127,8 +129,10 @@ def _pipeline_inner(stack: ExitStack, description, gens, archetypes, product_spe
         else:
             print("[warn] --no-retrieval: agents see only the blueprint summary, not the source code.")
         if verify:
-            print("Verifier ready: every finding will be checked against the real code.")
-            verifier = CodeVerifier(index, llm)
+            print("Verifier ready: every finding will be checked against the real code"
+                  + (f", up to {checks} times, going with the majority" if checks > 1 else "")
+                  + (", and judged for exploitability." if exploit else "."))
+            verifier = make_verifier(index, llm, checks=checks, exploit=exploit)
         else:
             print("[warn] --no-verify: findings are NOT checked against the code and may be wrong.")
     elif docs:
@@ -205,9 +209,10 @@ def _pipeline_inner(stack: ExitStack, description, gens, archetypes, product_spe
 def run(description: str | None, gens: int, archetypes: int | None, product_specific: int,
         show_questions: bool, interactive: bool = False, output: str | None = None,
         codebase: str | None = None, docs: list[str] | None = None,
-        known_fixed: list[str] | None = None, verify: bool = True, retrieval: bool = True) -> str:
+        known_fixed: list[str] | None = None, verify: bool = True, retrieval: bool = True, checks: int = 1,
+        exploit: bool = False) -> str:
     bp, findings, verification = _pipeline(description, gens, archetypes, product_specific, show_questions,
-                                           interactive, codebase, docs, known_fixed, verify, retrieval)
+                                           interactive, codebase, docs, known_fixed, verify, retrieval, checks, exploit)
     print("\n[4/4] Building causal graph + report\n")
     llm = LLMClient()
     cvg = build_cvg(findings, llm)
@@ -243,7 +248,8 @@ def _finding_from_dict(d: dict) -> Finding:
     return Finding(**{k: v for k, v in d.items() if k in _FINDING_FIELDS and v is not None})
 
 
-def verify_report(report_path: str, codebase: str, output: str | None = None, defend: bool = True) -> dict:
+def verify_report(report_path: str, codebase: str, output: str | None = None, defend: bool = True, checks: int = 1,
+                  exploit: bool = False) -> dict:
     """Re-check every finding in a saved JSON report against the real code. Writes nothing unless --output."""
     try:
         with open(report_path, encoding="utf-8") as fh:
@@ -257,19 +263,21 @@ def verify_report(report_path: str, codebase: str, output: str | None = None, de
     with codebase_checkout(codebase) as root:
         index = CodeIndex.from_dir(root)
         print(f"Checking {len(findings)} findings against {len(index)} source files...")
-        verifier = CodeVerifier(index, llm, defend=defend)
+        verifier = make_verifier(index, llm, checks=checks, exploit=exploit, defend=defend)
         results = verifier(findings)
     kept = []
     for f, r in zip(findings, results):
-        mark = {"CONFIRMED": "HOLDS  ", "REFUTED": "REFUTED", "UNVERIFIED": "UNPROVEN", "ERROR": "ERROR  "}[r["status"]]
+        mark = {"CONFIRMED": "HOLDS  ", "REFUTED": "REFUTED", "UNVERIFIED": "UNPROVEN", "ERROR": "ERROR  ",
+                "OBSERVATION": "ACCURATE, NOT EXPLOITABLE"}[r["status"]]
         print(f"\n[{mark}] {f.title}")
         if r["status"] == "CONFIRMED":
-            f.verification, f.evidence = "CONFIRMED", r["evidence_items"]
+            apply_result(f, r)
             kept.append(f)
         print(f"    ({r['code']}) " + r["evidence"])
     stats = verifier.stats()
     print(f"\n{stats['confirmed']} of {stats['checked']} findings held up against the code "
-          f"({stats['refuted']} refuted, {stats['unverified']} unproven, {stats['errors']} errors).")
+          f"({stats['refuted']} refuted, {stats['unverified']} unproven, {stats['errors']} errors"
+          + (f", {stats['observations']} accurate but not exploitable" if stats.get("observations") else "") + ").")
     if output:
         out = {"blueprint": data.get("blueprint"), "findings": [f.to_dict() for f in kept], "verification": stats}
         try:
@@ -336,6 +344,11 @@ def _main(argv: list[str] | None = None) -> None:
                    help="path to a JSON report (from --output *.json) whose findings are all treated as patched")
     p.add_argument("--no-verify", action="store_true",
                    help="skip the source-code check of each finding (codebase mode only; findings may be wrong)")
+    p.add_argument("--checks", type=int, default=DEFAULT_CHECKS, metavar="N",
+                   help=f"codebase mode: run the code check up to N times per claim and go with the majority (default {DEFAULT_CHECKS}; "
+                        "1 = a single check, which can change its mind on a rerun)")
+    p.add_argument("--no-exploit", action="store_true",
+                   help="codebase mode: skip the exploitability step (a kept finding is then accurate about the code, not necessarily a vulnerability)")
     p.add_argument("--no-retrieval", action="store_true",
                    help="codebase mode: do not show agents real source code (they see only the blueprint summary, as before)")
     p.add_argument("--verify-report", metavar="REPORT.json",
@@ -369,7 +382,7 @@ def _main(argv: list[str] | None = None) -> None:
     if args.verify_report:
         if not args.codebase:
             sys.exit("--verify-report needs --codebase (the local folder or git URL the report is about)")
-        verify_report(args.verify_report, args.codebase, args.output)
+        verify_report(args.verify_report, args.codebase, args.output, checks=args.checks, exploit=not args.no_exploit)
         return
 
     if args.baseline:
@@ -383,7 +396,8 @@ def _main(argv: list[str] | None = None) -> None:
         if not args.codebase:
             sys.exit("--route-review needs --codebase (the local folder or git URL to review)")
         from .routereview import run_route_review
-        run_route_review(args.codebase, args.route_review, verify=not args.no_verify, max_calls=args.review_max_calls)
+        run_route_review(args.codebase, args.route_review, verify=not args.no_verify, max_calls=args.review_max_calls,
+                         verifier_factory=lambda ix, llm: make_verifier(ix, llm, checks=args.checks, exploit=not args.no_exploit))
         return
 
     if not 1 <= args.gens <= _MAX_GENS:
@@ -419,7 +433,7 @@ def _main(argv: list[str] | None = None) -> None:
 
     run(desc, args.gens, args.archetypes, args.product_specific, args.questions,
         args.interactive, args.output, args.codebase, args.docs, known_fixed or None,
-        verify=not args.no_verify, retrieval=not args.no_retrieval)
+        verify=not args.no_verify, retrieval=not args.no_retrieval, checks=args.checks, exploit=not args.no_exploit)
 
 
 if __name__ == "__main__":
