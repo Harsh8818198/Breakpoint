@@ -1,0 +1,330 @@
+{
+  "schema": 1,
+  "set": "ghsa-9m6g-wc8r-q59c",
+  "variant": "raw",
+  "arm": "import-y",
+  "run": 1,
+  "commit": "871b1e202b0f6fb393409e8962cfdc958fb0f1c1",
+  "started_at": "2026-10-25T08:17:43+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": true,
+  "verify_config": {
+    "checks": 3,
+    "exploit": true
+  },
+  "status": "ok",
+  "candidates": 3,
+  "kept": [
+    {
+      "title": "Use of Prototype Pollution susceptible object assignment",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `assign` function at src/scimPatch.ts:437 iterates over arbitrary user-controlled property keys and directly assigns them to the target object. Because there is no validation of the key names, an attacker can pass '__proto__', 'constructor', or 'prototype' to manipulate the object's prototype.",
+      "steps_to_exploit": [
+        "Craft a malicious SCIM PATCH operation where the 'value' object contains a key named '__proto__'.",
+        "Inject a payload such as 'polluted': 'yes' into the '__proto__' key.",
+        "Submit the patch request to the application.",
+        "The global object structure is modified, potentially leading to Remote Code Execution (RCE) or Denial of Service (DoS)."
+      ],
+      "impact": "Remote code execution or complete application compromise via prototype pollution.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "CONFIRMED",
+      "evidence": [
+        {
+          "file": "src/scimPatch.ts",
+          "line": 424,
+          "quote": "for (const [key, value] of Object.entries(patch.value)) { assign(property, resolvePaths(key), value, patch.op);"
+        },
+        {
+          "file": "src/scimPatch.ts",
+          "line": 461,
+          "quote": "obj[keyPath[lastKeyIndex]] = value;"
+        }
+      ],
+      "exploit": {
+        "tier": "exploitable",
+        "code": "exploitable",
+        "attacker": "untrusted_content",
+        "entry_point": {
+          "file": "src/scimPatch.ts",
+          "line": 101,
+          "quote": "export function scimPatch<T extends ScimResource>(scimResource: T, patchOperations: Array<ScimPatchOperation>,"
+        },
+        "path": "The scimPatch function receives the attacker-supplied patchOperations. It iterates through these operations and calls addOrReplaceObjectAttribute, which subsequently calls the recursive assign function at line 425 with user-provided keys, eventually reaching the prototype modification at line 461.",
+        "harm": "Prototype pollution allows for modifying the base Object prototype, potentially leading to denial of service or remote code execution by influencing downstream object property lookups.",
+        "condition": "None",
+        "reasoning": "The library explicitly processes untrusted patch operations. The assign function performs direct property assignment onto objects using keys provided by the caller without sanitization, allowing for prototype pollution in the execution environment.",
+        "agreement": "2/2"
+      },
+      "votes": {
+        "code_check": {
+          "confirmed": 2,
+          "cast": 2,
+          "errors": 0
+        },
+        "exploit": {
+          "yes": 2,
+          "cast": 2,
+          "errors": 0
+        }
+      },
+      "code_refs": [
+        {
+          "file": "src/scimPatch.ts",
+          "line": 437,
+          "quote": "function assign(obj:any, keyPath:Array<string>, value:any, op: string) {"
+        }
+      ],
+      "id": "81a5c481",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Use of Prototype Pollution Gadget",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `assign` function uses a recursive path traversal and object property assignment based on untrusted user input without sanitizing keys, leading to potential Prototype Pollution.",
+      "steps_to_exploit": [
+        "Craft a PATCH operation with a nested object property path like 'constructor.prototype.polluted'.",
+        "Send the malicious JSON to the scimPatch endpoint.",
+        "Observe that the base Object prototype is modified, affecting subsequent object instances."
+      ],
+      "impact": "Can lead to Remote Code Execution, Denial of Service, or bypass of security logic across the entire application runtime.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "CONFIRMED",
+      "evidence": [
+        {
+          "file": "src/scimPatch.ts",
+          "line": 441,
+          "quote": "if (!(key in obj)){ obj[key] = {}; } obj = obj[key];"
+        }
+      ],
+      "exploit": {
+        "tier": "conditional",
+        "code": "conditional",
+        "attacker": "untrusted_content",
+        "entry_point": {
+          "file": "src/scimPatch.ts",
+          "line": 101,
+          "quote": "export function scimPatch<T extends ScimResource>(scimResource: T, patchOperations: Array<ScimPatchOperation>, options: ScimPatchOptions = {mutateDocument: true, treatMissingAsAdd: true}): T {"
+        },
+        "path": "The `scimPatch` function receives the operations, iterates through them, and calls `applyAddOrReplaceOperation`, which subsequently calls `assign` in `src/scimPatch.ts` at line 425 with the attacker-controlled path components.",
+        "harm": "Prototype pollution allows an attacker to modify the Object prototype, potentially leading to remote code execution or bypassing security logic in the host application.",
+        "condition": "The library must be used to process SCIM patch operations where the 'path' field is not validated or sanitized by the host application.",
+        "reasoning": "The code allows arbitrary path traversal in `assign` by failing to block properties like 'constructor', 'prototype', or '__proto__'. This is a standard prototype pollution gadget. It is conditional because it depends on the host application providing untrusted input to this library function without prior key validation.",
+        "agreement": "2/2"
+      },
+      "votes": {
+        "code_check": {
+          "confirmed": 2,
+          "cast": 2,
+          "errors": 0
+        },
+        "exploit": {
+          "yes": 2,
+          "cast": 2,
+          "errors": 0
+        }
+      },
+      "code_refs": [
+        {
+          "file": "src/scimPatch.ts",
+          "line": 444,
+          "quote": "obj = obj[key];"
+        }
+      ],
+      "id": "865b986e",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    },
+    {
+      "title": "Prototype Pollution via recursive object assignment",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `assign` function (src/scimPatch.ts:437) does not sanitize input keys, allowing an attacker to set arbitrary properties on object prototypes (e.g., `__proto__`, `constructor`) when processing patch values.",
+      "steps_to_exploit": [
+        "Craft a SCIM Patch request with an 'add' operation",
+        "Set the path to '__proto__'",
+        "Set the value to an object containing malicious keys",
+        "Observe that the application's global object prototype is now modified"
+      ],
+      "impact": "Remote Code Execution (RCE) or Denial of Service by modifying the behavior of built-in objects.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "CONFIRMED",
+      "evidence": [
+        {
+          "file": "src/scimPatch.ts",
+          "line": 461,
+          "quote": "obj[keyPath[lastKeyIndex]] = value;"
+        }
+      ],
+      "exploit": {
+        "tier": "conditional",
+        "code": "conditional",
+        "attacker": "untrusted_content",
+        "entry_point": {
+          "file": "src/scimPatch.ts",
+          "line": 101,
+          "quote": "export function scimPatch<T extends ScimResource>(scimResource: T, patchOperations: Array<ScimPatchOperation>,"
+        },
+        "path": "The scimPatch function receives the attacker-supplied patchOperations. It calls applyAddOrReplaceOperation, which calls assign. The assign function recursively traverses the object using path keys and finally performs the assignment on line 461.",
+        "harm": "Prototype pollution allowing for arbitrary property modification, which can lead to Denial of Service or Remote Code Execution depending on the application context.",
+        "condition": "The application must pass user-controlled SCIM patch request objects directly into the scimPatch library function.",
+        "reasoning": "The library lacks sanitization for object keys, allowing __proto__ or other special keys to be set. This is a classic prototype pollution vulnerability that becomes exploitable when the library processes untrusted input supplied by the application.",
+        "agreement": "2/2"
+      },
+      "votes": {
+        "code_check": {
+          "confirmed": 2,
+          "cast": 2,
+          "errors": 0
+        },
+        "exploit": {
+          "yes": 2,
+          "cast": 2,
+          "errors": 0
+        }
+      },
+      "code_refs": [
+        {
+          "file": "src/scimPatch.ts",
+          "line": 444,
+          "quote": "obj = obj[key];"
+        }
+      ],
+      "id": "9b3ef9ba",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "proposed": [
+    {
+      "title": "Use of Prototype Pollution susceptible object assignment",
+      "code_refs": [
+        {
+          "file": "src/scimPatch.ts",
+          "line": 437,
+          "quote": "function assign(obj:any, keyPath:Array<string>, value:any, op: string) {"
+        }
+      ],
+      "outcome": "kept"
+    },
+    {
+      "title": "Use of Prototype Pollution Gadget",
+      "code_refs": [
+        {
+          "file": "src/scimPatch.ts",
+          "line": 444,
+          "quote": "obj = obj[key];"
+        }
+      ],
+      "outcome": "kept"
+    },
+    {
+      "title": "Prototype Pollution via recursive object assignment",
+      "code_refs": [
+        {
+          "file": "src/scimPatch.ts",
+          "line": 444,
+          "quote": "obj = obj[key];"
+        }
+      ],
+      "outcome": "kept"
+    }
+  ],
+  "rejected": [],
+  "verification": {
+    "mode": "source-code",
+    "files_indexed": 29,
+    "checked": 3,
+    "confirmed": 3,
+    "observations": 0,
+    "refuted": 0,
+    "unverified": 0,
+    "errors": 0,
+    "defender_pass": true,
+    "appeal_pass": true,
+    "checks": 3,
+    "exploitability": true,
+    "split_decisions": 0
+  },
+  "arm_meta": {
+    "imported_from": "bench_runs/history_pilot/proof_y/inputs/ghsa-9m6g-wc8r-q59c/y.json",
+    "note": "produced elsewhere; not repeatable by this harness"
+  },
+  "seconds": {
+    "arm": 0.0,
+    "check": 232.4,
+    "total": 232.4
+  },
+  "usage": {
+    "arm": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    },
+    "check": {
+      "calls": 24,
+      "failed": 0,
+      "est_tokens": 272464,
+      "seconds_in_calls": 231.9,
+      "by_task": {
+        "exploit": {
+          "calls": 6,
+          "failed": 0,
+          "prompt_chars": 415516,
+          "completion_chars": 8446,
+          "seconds": 133.23345169995446,
+          "est_tokens": 105990
+        },
+        "verify_defend": {
+          "calls": 6,
+          "failed": 0,
+          "prompt_chars": 369276,
+          "completion_chars": 2571,
+          "seconds": 24.878718400141224,
+          "est_tokens": 92962
+        },
+        "verify_judge": {
+          "calls": 6,
+          "failed": 0,
+          "prompt_chars": 271521,
+          "completion_chars": 7922,
+          "seconds": 46.9824166999897,
+          "est_tokens": 69861
+        },
+        "verify_locate": {
+          "calls": 6,
+          "failed": 0,
+          "prompt_chars": 13036,
+          "completion_chars": 1566,
+          "seconds": 26.85163689998444,
+          "est_tokens": 3650
+        }
+      }
+    }
+  }
+}

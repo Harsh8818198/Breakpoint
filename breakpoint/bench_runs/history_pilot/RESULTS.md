@@ -74,3 +74,12 @@ finder runs per set; the code check was run once on most candidates and twice on
 The free tier limited how much could be run. No prompt, retrieval rule or verifier setting was changed after seeing these results; the
 only changes made along the way were to how the model's reply is read (a regex with a backslash, or a raw line break, inside a JSON
 string made 9 of the first 66 finder runs unreadable; they were redone, not counted as misses) and to retrying a dropped connection.
+
+## Stricter check on the real flaws (2026-10-25)
+
+The 7 candidates earlier read as Y (4 sets), run through the voting check plus the exploitability step (`proof_y/`, 3 checks, 1 run).
+Kept 4 of 7 candidates, covering the real flaw in 2 of the 4 sets (scim-patch: all 3 candidates kept, all the same flaw; adm-zip: kept).
+The i18next-fs-backend and send candidates were refuted as "a protection enforced in the code defeats the claim", with no split votes
+(`split_decisions` 0). So voting did not rescue them: the defender is wrong the same way every time, which is a systematic miss, not
+noise. Voting fixes instability, not a consistently mistaken defender. Four sets, one run each, one model: direction only.
+Not yet done: the same strict check on all candidates of the 4 sets, to see whether the survivors are now real vulnerabilities.
