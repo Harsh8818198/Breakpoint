@@ -67,12 +67,16 @@ def one_run(es: EvalSet, variant: str, arm: str, n: int, root: str, index: CodeI
     # every finding the arm proposed and what the check did with it, so "did it propose the known flaw, and did the check keep it" can be asked
     proposed = [{"title": f.title, "code_refs": list(f.code_refs), "outcome": "unchecked"} for f in result.findings]
     if verify and result.findings:
-        cfg = rec["verify_config"] = {"checks": opts.get("checks", 1), "exploit": bool(opts.get("exploit", False))}
+        cfg = rec["verify_config"] = {"checks": opts.get("checks", 1), "exploit": bool(opts.get("exploit", False)),
+                                      **({"trace": True} if opts.get("trace") else {})}
         verifier = (verifier_factory or (lambda ix, llm: make_verifier(ix, llm, **cfg)))(index, check_llm)
         outcome = verifier(result.findings)
         kept = []
         for f, r, p in zip(result.findings, outcome, proposed):
             p["outcome"] = "kept" if r["status"] == "CONFIRMED" else f"{r['status']}:{r.get('code', '')}"
+            if r.get("trace"):           # --trace: keep how each claim was checked, step by step (large; off by default)
+                p.update(claim=f.description[:600], impact=f.impact[:300], votes=r.get("votes") or {}, exploit=r.get("exploit") or {},
+                         evidence=r.get("evidence_items") or [], trace=r["trace"])
             if r["status"] == "CONFIRMED":
                 apply_result(f, r)
                 kept.append(f)

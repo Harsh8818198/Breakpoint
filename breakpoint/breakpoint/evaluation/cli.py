@@ -86,7 +86,8 @@ def cmd_run(args) -> int:
     es = load_set(args.set)
     try:
         run_eval(es, args.variant, args.arm or ["plain"], args.runs, out, cache, verify=not args.no_verify,
-                 opts={"max_calls": args.max_calls, "checks": args.checks, "exploit": not args.no_exploit}, resume=not args.fresh)
+                 opts={"max_calls": args.max_calls, "checks": args.checks, "exploit": not args.no_exploit, "trace": args.trace},
+                 resume=not args.fresh)
     except LLMFatalError as e:
         print(f"\n[error] {e}\nRuns that finished are saved in {run_dir(out, es, args.variant)}; run the same command again to continue.")
         return 2
@@ -199,6 +200,7 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--no-verify", action="store_true", help="skip the code check (kept findings are then unproven claims)")
     sp.add_argument("--checks", type=int, default=3, help="run the code check up to this many times per claim and go with the majority (default 3; 1 = a single check)")
     sp.add_argument("--no-exploit", action="store_true", help="skip the exploitability step (a kept finding is then accurate about the code, not necessarily a vulnerability)")
+    sp.add_argument("--trace", action="store_true", help="save each claim's step-by-step trace in the run file (large); print one with `python -m breakpoint.trace show RUN.json`")
     sp.add_argument("--max-calls", type=int, default=150, help="cap on route-review calls per run")
     sp.add_argument("--fresh", action="store_true", help="redo runs even if their files exist")
     sp.set_defaults(fn=cmd_run)

@@ -1,0 +1,75 @@
+====================================================================================================
+CLAIM   Prototype Pollution via recursive object merge
+        While `defaults` attempts to block some keys, the `setPath` and `pushPath` utility functions
+        perform property assignment without validating that the path segments do not contain
+        '__proto__', 'constructor', or 'prototype'.
+RESULT  FINDING (conditional): 2 of 2 code checks held, 2 of 2 exploitability answers positive
+====================================================================================================
+
+CODE CHECK 1 of 2: held
+  locate       looked at lib/utils.js, lib/index.js, test/security.js; searched for setPath,
+               pushPath, addPath, loadPath, __proto__, constructor, prototype, defaults
+  read         the reviewer was shown 9 file(s): lib/index.js, lib/utils.js, test/security.js,
+               lib/formats/yaml.js, README.md, CHANGELOG.md ...
+  judge        REFUTED; impact follows: no
+               The application explicitly defines `UNSAFE_KEYS` containing 'prototype',
+               'constructor', and '__proto__', and enforces this via `isSafeSegmentBase` in
+               `interpolatePath` and during object updates in `defaults`. The recursive `setPath`
+               function is protected by these sanitizers before any user-controlled input (like
+               `lng` or `ns`) is interpolated into path-constructing operations.
+               quoted lib/utils.js: `const UNSAFE_KEYS = ['__proto__', 'constructor', 'prototype']`
+               quoted lib/utils.js: `if (UNSAFE_KEYS.indexOf(v) > -1) return false`
+               quoted lib/utils.js: `if (UNSAFE_KEYS.indexOf(k) > -1) return match`
+  mechanical   lib/utils.js:5 found, live code `const UNSAFE_KEYS = ['__proto__', 'constructor',
+               'prototype']`
+               lib/utils.js:28 found, live code `if (UNSAFE_KEYS.indexOf(v) > -1) return false`
+               lib/utils.js:142 found, live code `if (UNSAFE_KEYS.indexOf(k) > -1) return match`
+  appeal       the refutation cited lib/utils.js:5 const UNSAFE_KEYS = ['__proto__', 'constructor',
+               'prototype']; lib/utils.js:28 if (UNSAFE_KEYS.indexOf(v) > -1) return false;
+               lib/utils.js:142 if (UNSAFE_KEYS.indexOf(k) > -1) return match
+               The provided `UNSAFE_KEYS` checks only protect against prototype pollution during
+               object merging in `defaults` and when interpolating strings. The `setPath` and
+               `pushPath` functions (lines 105, 111) perform property assignment using `k` without
+               any sanitization, allowing an attacker to inject `__proto__` or `constructor`
+               properties into `queuedWrites`.
+               -> overturned: the vulnerable code is live and the cited defence does not enforce
+               anything
+               lib/utils.js:105  found, live code  `export function setPath (object, path, newValue) { const { obj, k } = getLastOfPath(object, path, Object) if (Array.isAr`
+  defender     read 8 file(s); protection found: no
+               The claim asserts that 'setPath' and 'pushPath' allow prototype pollution because
+               they lack sanitization. However, 'setPath' and 'pushPath' both invoke 'getLastOfPath'
+               (line 84), which relies on 'cleanKey' (line 85). 'cleanKey' does not remove
+               'prototype' keys, and the code lacks any runtime enforcement to block those specific
+               keys during deep-object traversal for `setPath` or `pushPath` operations. No existing
+               defense prevents the described prototype pollution in these functions.
+               -> no protection found: the claim stands
+  decision     CONFIRMED (confirmed_on_appeal): refuted at first, then shown real on appeal
+
+CODE CHECK 2 of 2: held (confirmed_on_appeal)
+
+EXPLOITABILITY 1 of 2
+  tier         conditional (conditional): an outsider's data reaches the flaw, but only if an
+               application uses the project in a particular way
+  entry point  lib/index.js:174 found, live code `queue (lng, namespace, key, fallbackValue,
+               callback) { pushPath(this.queuedWrites, [lng, namespace], { key, fallbackValu`
+  attacker     remote_authenticated, who chooses: The 'key' and 'fallbackValue' fields sent to the
+               'create' or 'save' method, which are then queued for filesystem write.
+  gains        reaches the flaw: yes; already had the power: no
+  path         The i18next-fs-backend 'create' or 'save' method (entry) calls 'queue', which calls
+               'pushPath'. 'pushPath' calls 'getLastOfPath', then directly performs property
+               assignment 'obj[k] = newValue' on internal state objects without prototype
+               sanitization.
+  harm         Prototype pollution allowing an attacker to overwrite Object prototype properties,
+               potentially leading to privilege escalation or application-wide logic compromise.
+  only if      The application uses the 'save' or 'create' functionality of the backend with user-
+               controlled input.
+  reasoning    The 'pushPath' and 'setPath' functions are used in 'Backend.queue' and
+               'Backend.writeFile' to update internal 'queuedWrites' objects. If an application
+               exposes the 'create' or 'save' methods to untrusted users, they can inject
+               '__proto__' keys into the backend's internal state, leading to prototype pollution.
+  rules        attacker is outside the trust boundary [ok]; no power already held [ok]; path to the
+               flaw shown [ok]; entry point is live code [ok]
+
+EXPLOITABILITY 2 of 2: conditional (conditional)
+
+====================================================================================================

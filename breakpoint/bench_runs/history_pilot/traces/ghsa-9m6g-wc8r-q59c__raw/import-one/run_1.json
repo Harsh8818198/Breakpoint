@@ -1,0 +1,502 @@
+{
+  "schema": 1,
+  "set": "ghsa-9m6g-wc8r-q59c",
+  "variant": "raw",
+  "arm": "import-one",
+  "run": 1,
+  "commit": "871b1e202b0f6fb393409e8962cfdc958fb0f1c1",
+  "started_at": "2026-10-26T17:47:24+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": true,
+  "verify_config": {
+    "checks": 3,
+    "exploit": true,
+    "trace": true
+  },
+  "status": "ok",
+  "candidates": 1,
+  "kept": [
+    {
+      "title": "Use of Prototype Pollution susceptible object assignment",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "The `assign` function at src/scimPatch.ts:437 iterates over arbitrary user-controlled property keys and directly assigns them to the target object. Because there is no validation of the key names, an attacker can pass '__proto__', 'constructor', or 'prototype' to manipulate the object's prototype.",
+      "steps_to_exploit": [
+        "Craft a malicious SCIM PATCH operation where the 'value' object contains a key named '__proto__'.",
+        "Inject a payload such as 'polluted': 'yes' into the '__proto__' key.",
+        "Submit the patch request to the application.",
+        "The global object structure is modified, potentially leading to Remote Code Execution (RCE) or Denial of Service (DoS)."
+      ],
+      "impact": "Remote code execution or complete application compromise via prototype pollution.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "CONFIRMED",
+      "evidence": [
+        {
+          "file": "src/scimPatch.ts",
+          "line": 424,
+          "quote": "for (const [key, value] of Object.entries(patch.value)) { assign(property, resolvePaths(key), value, patch.op); }"
+        },
+        {
+          "file": "src/scimPatch.ts",
+          "line": 461,
+          "quote": "obj[keyPath[lastKeyIndex]] = value;"
+        }
+      ],
+      "exploit": {
+        "tier": "exploitable",
+        "code": "exploitable",
+        "attacker": "untrusted_content",
+        "attacker_controls": "The keys and values inside the 'value' object of a SCIM PATCH operation.",
+        "reaches_flaw": true,
+        "already_has_the_power": false,
+        "entry_point": {
+          "file": "src/scimPatch.ts",
+          "line": 424,
+          "quote": "for (const [key, value] of Object.entries(patch.value)) { assign(property, resolvePaths(key), value, patch.op); }"
+        },
+        "path": "The application receives an external SCIM PATCH payload, which passes into scimPatch(), calls applyAddOrReplaceOperation(), which then iterates through patch.value in addOrReplaceObjectAttribute() and calls the flawed assign() function.",
+        "harm": "Prototype pollution allowing modification of the global Object prototype, potentially leading to privilege escalation, DoS, or RCE.",
+        "condition": "None",
+        "reasoning": "The code blindly assigns user-controlled keys to objects via the assign function without filtering out '__proto__', 'prototype', or 'constructor'. This permits prototype pollution, a known vulnerability in Node.js applications that process untrusted JSON objects.",
+        "entry_checked": {
+          "file": "src/scimPatch.ts",
+          "line": 424,
+          "quote": "for (const [key, value] of Object.entries(patch.value)) { assign(property, resolvePaths(key), value, patch.op); }",
+          "result": "found, live code"
+        },
+        "agreement": "2/2"
+      },
+      "votes": {
+        "code_check": {
+          "confirmed": 2,
+          "cast": 2,
+          "errors": 0
+        },
+        "exploit": {
+          "yes": 2,
+          "cast": 2,
+          "errors": 0
+        }
+      },
+      "code_refs": [
+        {
+          "file": "src/scimPatch.ts",
+          "line": 437,
+          "quote": "function assign(obj:any, keyPath:Array<string>, value:any, op: string) {"
+        }
+      ],
+      "id": "81a5c481",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "proposed": [
+    {
+      "title": "Use of Prototype Pollution susceptible object assignment",
+      "code_refs": [
+        {
+          "file": "src/scimPatch.ts",
+          "line": 437,
+          "quote": "function assign(obj:any, keyPath:Array<string>, value:any, op: string) {"
+        }
+      ],
+      "outcome": "kept",
+      "claim": "The `assign` function at src/scimPatch.ts:437 iterates over arbitrary user-controlled property keys and directly assigns them to the target object. Because there is no validation of the key names, an attacker can pass '__proto__', 'constructor', or 'prototype' to manipulate the object's prototype.",
+      "impact": "Remote code execution or complete application compromise via prototype pollution.",
+      "votes": {
+        "code_check": {
+          "confirmed": 2,
+          "cast": 2,
+          "errors": 0
+        },
+        "exploit": {
+          "yes": 2,
+          "cast": 2,
+          "errors": 0
+        }
+      },
+      "exploit": {
+        "tier": "exploitable",
+        "code": "exploitable",
+        "attacker": "untrusted_content",
+        "attacker_controls": "The keys and values inside the 'value' object of a SCIM PATCH operation.",
+        "reaches_flaw": true,
+        "already_has_the_power": false,
+        "entry_point": {
+          "file": "src/scimPatch.ts",
+          "line": 424,
+          "quote": "for (const [key, value] of Object.entries(patch.value)) { assign(property, resolvePaths(key), value, patch.op); }"
+        },
+        "path": "The application receives an external SCIM PATCH payload, which passes into scimPatch(), calls applyAddOrReplaceOperation(), which then iterates through patch.value in addOrReplaceObjectAttribute() and calls the flawed assign() function.",
+        "harm": "Prototype pollution allowing modification of the global Object prototype, potentially leading to privilege escalation, DoS, or RCE.",
+        "condition": "None",
+        "reasoning": "The code blindly assigns user-controlled keys to objects via the assign function without filtering out '__proto__', 'prototype', or 'constructor'. This permits prototype pollution, a known vulnerability in Node.js applications that process untrusted JSON objects.",
+        "entry_checked": {
+          "file": "src/scimPatch.ts",
+          "line": 424,
+          "quote": "for (const [key, value] of Object.entries(patch.value)) { assign(property, resolvePaths(key), value, patch.op); }",
+          "result": "found, live code"
+        },
+        "agreement": "2/2"
+      },
+      "evidence": [
+        {
+          "file": "src/scimPatch.ts",
+          "line": 424,
+          "quote": "for (const [key, value] of Object.entries(patch.value)) { assign(property, resolvePaths(key), value, patch.op); }"
+        },
+        {
+          "file": "src/scimPatch.ts",
+          "line": 461,
+          "quote": "obj[keyPath[lastKeyIndex]] = value;"
+        }
+      ],
+      "trace": {
+        "code_checks": [
+          {
+            "status": "CONFIRMED",
+            "code": "confirmed",
+            "steps": [
+              {
+                "step": "locate",
+                "files": [
+                  "src/scimPatch.ts",
+                  "test/scimPatch.test.ts",
+                  "test/patchValidation.test.ts"
+                ],
+                "search_terms": [
+                  "assign",
+                  "__proto__",
+                  "constructor",
+                  "prototype",
+                  "key",
+                  "value",
+                  "patch",
+                  "validate"
+                ],
+                "note": ""
+              },
+              {
+                "step": "read",
+                "files": [
+                  "src/scimPatch.ts",
+                  "test/scimPatch.test.ts",
+                  "test/patchValidation.test.ts",
+                  "src/errors/scimErrors.ts",
+                  "example/example.ts",
+                  "README.md",
+                  "src/types/types.ts",
+                  "test/perf/benchmark.ts",
+                  ".github/workflows/auto-assign-pull-request.yml"
+                ],
+                "note": "files put in front of the judge"
+              },
+              {
+                "step": "judge",
+                "verdict": "CONFIRMED",
+                "impact_follows": true,
+                "reasoning": "The `assign` function recursively iterates over user-controlled keys in `patch.value` and directly assigns them to the object using `obj[key] = value`. It lacks any sanitization or check to prevent access to special keys like `__proto__`, `prototype`, or `constructor`, enabling prototype pollution when handling nested objects.",
+                "attacker_needs": "Ability to submit a SCIM PATCH operation to the application.",
+                "exploit_path": "The attacker sends a PATCH request containing a 'value' object with a key named '__proto__'. The code at src/scimPatch.ts:424-426 passes this to `assign` at line 437, which writes the payload directly into the object prototype, potentially causing RCE or DoS.",
+                "quotes": [
+                  {
+                    "file": "src/scimPatch.ts",
+                    "quote": "for (const [key, value] of Object.entries(patch.value)) { assign(property, resolvePaths(key), value, patch.op); }"
+                  },
+                  {
+                    "file": "src/scimPatch.ts",
+                    "quote": "obj[keyPath[lastKeyIndex]] = value;"
+                  }
+                ],
+                "absent_names": [
+                  "__proto__",
+                  "constructor",
+                  "prototype",
+                  "isSafeKey"
+                ]
+              },
+              {
+                "step": "mechanical",
+                "quotes": [
+                  {
+                    "file": "src/scimPatch.ts",
+                    "line": 424,
+                    "quote": "for (const [key, value] of Object.entries(patch.value)) { assign(property, resolvePaths(key), value, patch.op); }",
+                    "result": "found, live code"
+                  },
+                  {
+                    "file": "src/scimPatch.ts",
+                    "line": 461,
+                    "quote": "obj[keyPath[lastKeyIndex]] = value;",
+                    "result": "found, live code"
+                  }
+                ],
+                "note": "each quote must exist in the file it names, as live code (not a comment)"
+              },
+              {
+                "step": "defend",
+                "files_read": [
+                  "src/scimPatch.ts",
+                  "src/errors/scimErrors.ts",
+                  "test/scimPatch.test.ts",
+                  "example/example.ts",
+                  "README.md",
+                  "src/types/types.ts",
+                  "test/patchValidation.test.ts",
+                  "test/perf/benchmark.ts"
+                ],
+                "defence_found": false,
+                "reasoning": "The application lacks any validation or sanitization against prototype-polluting property names (e.g., '__proto__') within the `assign` function or its callers. The code directly performs `obj[key] = value` and `obj[keyPath[lastKeyIndex]] = value` using untrusted input from the SCIM patch operation, allowing an attacker to modify the object prototype.",
+                "outcome": "no protection found: the claim stands"
+              },
+              {
+                "step": "decision",
+                "status": "CONFIRMED",
+                "code": "confirmed",
+                "why": "vulnerable code quoted, impact follows, no enforced defence found"
+              }
+            ]
+          },
+          {
+            "status": "CONFIRMED",
+            "code": "confirmed",
+            "steps": [
+              {
+                "step": "locate",
+                "files": [
+                  "src/scimPatch.ts",
+                  "test/scimPatch.test.ts",
+                  "test/patchValidation.test.ts"
+                ],
+                "search_terms": [
+                  "assign",
+                  "__proto__",
+                  "constructor",
+                  "prototype",
+                  "value",
+                  "key",
+                  "Object.assign",
+                  "hasOwnProperty"
+                ],
+                "note": ""
+              },
+              {
+                "step": "read",
+                "files": [
+                  "src/scimPatch.ts",
+                  "test/scimPatch.test.ts",
+                  "test/patchValidation.test.ts",
+                  "src/errors/scimErrors.ts",
+                  "example/example.ts",
+                  "README.md",
+                  "src/types/types.ts",
+                  "test/perf/benchmark.ts",
+                  ".github/workflows/auto-assign-pull-request.yml"
+                ],
+                "note": "files put in front of the judge"
+              },
+              {
+                "step": "judge",
+                "verdict": "CONFIRMED",
+                "impact_follows": true,
+                "reasoning": "The `assign` function recursively traverses the object tree using user-controlled `keyPath` derived from the SCIM patch operation. It does not validate keys against blocklists like '__proto__', 'constructor', or 'prototype', allowing an attacker to modify the prototype of objects within the `scimResource` by setting these keys.",
+                "attacker_needs": "The ability to submit a SCIM PATCH operation to the application.",
+                "exploit_path": "An attacker sends a PATCH request containing a 'value' object with a '__proto__' key. In `src/scimPatch.ts:437`, the `assign` function iterates over the keys and assigns them directly to the target object, polluting the object's prototype and potentially causing RCE or DoS.",
+                "quotes": [
+                  {
+                    "file": "src/scimPatch.ts",
+                    "quote": "function assign(obj:any, keyPath:Array<string>, value:any, op: string) { const lastKeyIndex = keyPath.length-1; for (let i = 0; i < lastKeyIndex; ++ i) { const key = keyPath[i]; if (!(key in obj)){ obj[key] = {}; } obj = obj[key]; }"
+                  }
+                ],
+                "absent_names": [
+                  "__proto__",
+                  "constructor",
+                  "prototype"
+                ]
+              },
+              {
+                "step": "mechanical",
+                "quotes": [
+                  {
+                    "file": "src/scimPatch.ts",
+                    "line": 437,
+                    "quote": "function assign(obj:any, keyPath:Array<string>, value:any, op: string) { const lastKeyIndex = keyPath.length-1; for (let i = 0; i < lastKeyIndex; ++ i) { const key = keyPath[i]; if (!(key in obj)){ obj[key] = {}; } obj = obj[key]; }",
+                    "result": "found, live code"
+                  }
+                ],
+                "note": "each quote must exist in the file it names, as live code (not a comment)"
+              },
+              {
+                "step": "defend",
+                "files_read": [
+                  "src/scimPatch.ts",
+                  "src/errors/scimErrors.ts",
+                  "test/scimPatch.test.ts",
+                  "example/example.ts",
+                  "README.md",
+                  "src/types/types.ts",
+                  "test/patchValidation.test.ts",
+                  "test/perf/benchmark.ts"
+                ],
+                "defence_found": false,
+                "reasoning": "The codebase contains no validation against prototype pollution keys like '__proto__', 'constructor', or 'prototype' within the `assign` function (src/scimPatch.ts:437). This function iterates over user-controlled keys and performs direct assignments. No existing check in the provided source restricts these specific keys during the assignment process.",
+                "outcome": "no protection found: the claim stands"
+              },
+              {
+                "step": "decision",
+                "status": "CONFIRMED",
+                "code": "confirmed",
+                "why": "vulnerable code quoted, impact follows, no enforced defence found"
+              }
+            ]
+          }
+        ],
+        "exploit": [
+          {
+            "tier": "exploitable",
+            "code": "exploitable",
+            "attacker": "untrusted_content",
+            "attacker_controls": "The keys and values inside the 'value' object of a SCIM PATCH operation.",
+            "reaches_flaw": true,
+            "already_has_the_power": false,
+            "entry_point": {
+              "file": "src/scimPatch.ts",
+              "line": 424,
+              "quote": "for (const [key, value] of Object.entries(patch.value)) { assign(property, resolvePaths(key), value, patch.op); }"
+            },
+            "path": "The application receives an external SCIM PATCH payload, which passes into scimPatch(), calls applyAddOrReplaceOperation(), which then iterates through patch.value in addOrReplaceObjectAttribute() and calls the flawed assign() function.",
+            "harm": "Prototype pollution allowing modification of the global Object prototype, potentially leading to privilege escalation, DoS, or RCE.",
+            "condition": "None",
+            "reasoning": "The code blindly assigns user-controlled keys to objects via the assign function without filtering out '__proto__', 'prototype', or 'constructor'. This permits prototype pollution, a known vulnerability in Node.js applications that process untrusted JSON objects.",
+            "entry_checked": {
+              "file": "src/scimPatch.ts",
+              "line": 424,
+              "quote": "for (const [key, value] of Object.entries(patch.value)) { assign(property, resolvePaths(key), value, patch.op); }",
+              "result": "found, live code"
+            }
+          },
+          {
+            "tier": "exploitable",
+            "code": "exploitable",
+            "attacker": "remote_authenticated",
+            "attacker_controls": "The keys within the 'value' object of a SCIM PATCH operation.",
+            "reaches_flaw": true,
+            "already_has_the_power": false,
+            "entry_point": {
+              "file": "src/scimPatch.ts",
+              "line": 424,
+              "quote": "for (const [key, value] of Object.entries(patch.value)) { assign(property, resolvePaths(key), value, patch.op); }"
+            },
+            "path": "Data from the SCIM PATCH request is passed into addOrReplaceObjectAttribute, which iterates over object keys and passes them into the assign function at src/scimPatch.ts:425. The assign function then directly sets these keys on the target object at src/scimPatch.ts:461 without validation.",
+            "harm": "Prototype pollution allowing for potential remote code execution or denial of service by modifying object prototypes.",
+            "condition": "None",
+            "reasoning": "The application accepts arbitrary user-controlled property keys in a SCIM PATCH 'value' object and directly assigns them to the target object. This enables prototype pollution, which can be exploited to compromise the application state.",
+            "entry_checked": {
+              "file": "src/scimPatch.ts",
+              "line": 424,
+              "quote": "for (const [key, value] of Object.entries(patch.value)) { assign(property, resolvePaths(key), value, patch.op); }",
+              "result": "found, live code"
+            }
+          }
+        ],
+        "votes": {
+          "code_check": {
+            "confirmed": 2,
+            "cast": 2,
+            "errors": 0
+          },
+          "exploit": {
+            "yes": 2,
+            "cast": 2,
+            "errors": 0
+          }
+        },
+        "verdict": {
+          "status": "CONFIRMED",
+          "code": "confirmed"
+        }
+      }
+    }
+  ],
+  "rejected": [],
+  "verification": {
+    "mode": "source-code",
+    "files_indexed": 29,
+    "checked": 1,
+    "confirmed": 1,
+    "observations": 0,
+    "refuted": 0,
+    "unverified": 0,
+    "errors": 0,
+    "defender_pass": true,
+    "appeal_pass": true,
+    "checks": 3,
+    "exploitability": true,
+    "split_decisions": 0
+  },
+  "arm_meta": {
+    "imported_from": "bench_runs/history_pilot/traces/inputs/ghsa-9m6g-wc8r-q59c/one.json",
+    "note": "produced elsewhere; not repeatable by this harness"
+  },
+  "seconds": {
+    "arm": 0.0,
+    "check": 34.1,
+    "total": 34.1
+  },
+  "usage": {
+    "arm": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    },
+    "check": {
+      "calls": 8,
+      "failed": 0,
+      "est_tokens": 92704,
+      "seconds_in_calls": 33.8,
+      "by_task": {
+        "exploit": {
+          "calls": 2,
+          "failed": 0,
+          "prompt_chars": 143422,
+          "completion_chars": 2296,
+          "seconds": 5.68489190004766,
+          "est_tokens": 36430
+        },
+        "verify_defend": {
+          "calls": 2,
+          "failed": 0,
+          "prompt_chars": 126153,
+          "completion_chars": 836,
+          "seconds": 12.124887499958277,
+          "est_tokens": 31747
+        },
+        "verify_judge": {
+          "calls": 2,
+          "failed": 0,
+          "prompt_chars": 90299,
+          "completion_chars": 2641,
+          "seconds": 12.676245999988168,
+          "est_tokens": 23235
+        },
+        "verify_locate": {
+          "calls": 2,
+          "failed": 0,
+          "prompt_chars": 4650,
+          "completion_chars": 520,
+          "seconds": 3.271966999862343,
+          "est_tokens": 1292
+        }
+      }
+    }
+  }
+}

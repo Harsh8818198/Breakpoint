@@ -1,0 +1,43 @@
+{
+ "findings": [
+  {
+   "title": "Use of Prototype Pollution susceptible object assignment",
+   "generation": 1,
+   "discovered_by": "single-prompt baseline",
+   "description": "The `assign` function at src/scimPatch.ts:437 iterates over arbitrary user-controlled property keys and directly assigns them to the target object. Because there is no validation of the key names, an attacker can pass '__proto__', 'constructor', or 'prototype' to manipulate the object's prototype.",
+   "steps_to_exploit": [
+    "Craft a malicious SCIM PATCH operation where the 'value' object contains a key named '__proto__'.",
+    "Inject a payload such as 'polluted': 'yes' into the '__proto__' key.",
+    "Submit the patch request to the application.",
+    "The global object structure is modified, potentially leading to Remote Code Execution (RCE) or Denial of Service (DoS)."
+   ],
+   "impact": "Remote code execution or complete application compromise via prototype pollution.",
+   "evolved_from": [],
+   "attack_category": "injection",
+   "confidence": 1.0,
+   "exploitability": 0.0,
+   "impact_score": 0.0,
+   "spread": 0.0,
+   "fix_difficulty": 1.0,
+   "verification": "",
+   "evidence": [
+    {
+     "file": "src/scimPatch.ts",
+     "line": 437,
+     "quote": "function assign(obj:any, keyPath:Array<string>, value:any, op: string) {"
+    }
+   ],
+   "code_refs": [
+    {
+     "file": "src/scimPatch.ts",
+     "line": 437,
+     "quote": "function assign(obj:any, keyPath:Array<string>, value:any, op: string) {"
+    }
+   ],
+   "id": "81a5c481",
+   "bss": 0.0,
+   "severity_band": "LOW",
+   "fix_priority": "MONITOR"
+  }
+ ]
+}

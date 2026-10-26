@@ -105,9 +105,10 @@ class CodeVerifier:
     """Callable with the `simulate(verifier=...)` contract: list[Finding] -> [{"ok", "evidence", ...}]."""
 
     def __init__(self, index: CodeIndex, llm, *, defend: bool = True, appeal: bool = True,
-                 context_chars: int = 40000, max_files: int = 9, log=print):
+                 context_chars: int = 40000, max_files: int = 9, log=print, trace: bool = False):
         self.index, self.llm, self.defend, self.appeal = index, llm, defend, appeal
         self.context_chars, self.max_files, self.log = context_chars, max_files, log
+        self.trace = trace                  # keep each claim's step-by-step trace in the results and records (it is always built)
         self.records: list[dict[str, Any]] = []
 
     # ------------------------------------------------------------------ public
@@ -117,9 +118,13 @@ class CodeVerifier:
             results = list(pool.map(self.check, findings))
         out = []
         for f, r in zip(findings, results):
-            self.records.append(self._record(f, r))
-            out.append({"ok": r["status"] == CONFIRMED, "evidence": self._feedback(r), "status": r["status"],
-                        "code": r["code"], "evidence_items": r["evidence"]})
+            rec = self._record(f, r)
+            item = {"ok": r["status"] == CONFIRMED, "evidence": self._feedback(r), "status": r["status"],
+                    "code": r["code"], "evidence_items": r["evidence"]}
+            if self.trace:
+                rec["trace"] = item["trace"] = r.get("trace") or []
+            self.records.append(rec)
+            out.append(item)
         return out
 
     def stats(self) -> dict[str, Any]:
@@ -131,18 +136,27 @@ class CodeVerifier:
 
     # ------------------------------------------------------------------ one finding
     def check(self, f: Finding) -> dict[str, Any]:
+        """Check one claim. The result carries `trace`: every step taken, in order, with what each one saw and decided."""
+        tr: list[dict[str, Any]] = []
         try:
-            return self._check(f)
+            res = self._check(f, tr)
         except LLMFatalError:
             raise                      # no credit / bad key: stop the run, do not file it as one bad answer
         except Exception as e:  # noqa: BLE001 - one bad model reply must not sink the whole run
             print(f"[warn] could not verify {f.title!r}: {type(e).__name__}: {e}", file=sys.stderr)
-            return _result(ERROR, "error", f"{type(e).__name__}: {e}")
+            tr.append({"step": "error", "message": f"{type(e).__name__}: {e}"[:300]})
+            res = _result(ERROR, "error", f"{type(e).__name__}: {e}")
+        tr.append({"step": "decision", "status": res["status"], "code": res["code"], "why": CODE_LABELS.get(res["code"], res["code"])})
+        res["trace"] = tr
+        return res
 
-    def _check(self, f: Finding) -> dict[str, Any]:
+    def _check(self, f: Finding, tr: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+        tr = [] if tr is None else tr
         terms = claim_terms(f)
         located = self._locate(f, terms)
         files = [p for p in (self.index.resolve_path(x) for x in located.get("files", [])) if p]
+        tr.append({"step": "locate", "files": list(files), "search_terms": [t for t in located.get("search_terms", []) if isinstance(t, str)][:8],
+                   "note": "" if located else "the locating step gave nothing; the claim's own words were used"})
         # Files the agent cited are only a hint about what to put in front of the judge. They prove nothing: the judge
         # must still quote live vulnerable lines, the quotes are still checked against the files, and the defender still runs.
         for ref in getattr(f, "code_refs", None) or []:
@@ -151,23 +165,38 @@ class CodeVerifier:
                 files.append(p)
         terms += [t for t in located.get("search_terms", []) if isinstance(t, str)]
         ranked = self.index.rank_files(terms, preferred=files, limit=self.max_files)
+        tr.append({"step": "read", "files": [p for p, _ in ranked], "note": "files put in front of the judge"})
         if not ranked:
             return _result(UNVERIFIED, "no_related_files", "no file in the repository relates to this claim")
 
         judged = self._judge(f, self._context(ranked, self.context_chars, terms=terms))
-        res = self._decide(judged)
+        tr.append(self._judge_step(judged))
+        res = self._decide(judged, tr)
         if res["code"] == "judge_unverifiable":
             # The reviewer can say what it needed to see; fetch exactly that and let it look once more.
-            judged = self._look_again(f, judged, ranked, terms) or judged
-            res = self._decide(judged)
+            second = self._look_again(f, judged, ranked, terms)
+            if second:
+                tr.append({"step": "look_again", "asked_for": [t for t in (judged.get("need_to_see") or []) if isinstance(t, str)][:5]})
+                tr.append(self._judge_step(second, "judge (second look)"))
+                judged = second
+            res = self._decide(judged, tr)
         res["_judged"] = judged
 
         if res["status"] == REFUTED and res["code"] == "contradicted_by_code" and self.appeal:
-            res = self._on_appeal(f, res, terms)
+            res = self._on_appeal(f, res, terms, tr)
         if res["status"] == CONFIRMED and self.defend:
-            res = self._defence_gate(f, res, terms)
+            res = self._defence_gate(f, res, terms, tr)
         res.pop("_judged", None)
         return res
+
+    @staticmethod
+    def _judge_step(judged: dict, label: str = "judge") -> dict[str, Any]:
+        quotes = [{"file": str(e.get("file", "")), "quote": " ".join(str(e.get("quote", "")).split())[:240]}
+                  for e in (judged.get("evidence") or [])[:4] if isinstance(e, dict)]
+        return {"step": label, "verdict": str(judged.get("verdict", "")).strip().upper(), "impact_follows": judged.get("impact_follows"),
+                "reasoning": str(judged.get("reasoning", ""))[:600], "attacker_needs": str(judged.get("attacker_needs", ""))[:200],
+                "exploit_path": str(judged.get("exploit_path", ""))[:300], "quotes": quotes,
+                "absent_names": [n for n in (judged.get("absent_names") or []) if isinstance(n, str)][:5]}
 
     def _look_again(self, f: Finding, judged: dict, ranked: list[tuple[str, list[int]]], terms: list[str]) -> dict | None:
         need = [t.strip() for t in (judged.get("need_to_see") or []) if isinstance(t, str) and len(t.strip()) >= 3][:5]
@@ -187,20 +216,28 @@ class CodeVerifier:
             return None
 
     # ------------------------------------------------------------------ deciding from a reviewer's reply
-    def _decide(self, judged: dict) -> dict[str, Any]:
+    def _decide(self, judged: dict, tr: list[dict[str, Any]] | None = None) -> dict[str, Any]:
         reasoning = str(judged.get("reasoning", ""))[:600]
         verdict = str(judged.get("verdict", "")).strip().upper()
         if verdict == "UNVERIFIABLE":
             return _result(UNVERIFIED, "judge_unverifiable", reasoning)
         if verdict not in (CONFIRMED, REFUTED):
             return _result(UNVERIFIED, "invalid_verdict", reasoning)
-        evidence, dropped = self._valid_evidence(judged.get("evidence"))
+        checked: list[dict[str, Any]] = []
+        evidence, dropped = self._valid_evidence(judged.get("evidence"), checked)
+        if tr is not None:
+            tr.append({"step": "mechanical", "quotes": checked,
+                       "note": "each quote must exist in the file it names, as live code (not a comment)"})
         absent = None
         if not evidence and verdict == CONFIRMED:
             # "This protection is missing / switched off" cannot be quoted: there is no live line to copy. Prove it by
             # search instead: the names the protection would carry appear in no live code, and the commented-out
             # copies the search finds are the evidence.
             absent = self._absence(judged.get("absent_names"))
+            names = [n for n in (judged.get("absent_names") or []) if isinstance(n, str)][:5]
+            if tr is not None and names:
+                tr.append({"step": "absence_search", "names": names, "proved": bool(absent),
+                           "switched_off_at": [f"{e['file']}:{e['line']}" for e in (absent or {}).get("evidence", [])]})
             if absent:
                 evidence = absent["evidence"]
                 reasoning = (reasoning + " [No live code uses " + ", ".join(f"`{n}`" for n in absent["names"])
@@ -252,9 +289,10 @@ class CodeVerifier:
                   "kind": "switched_off", "absent": n} for (p, ln), n in list(once.items())[:3]]
         return {"names": clean, "evidence": items}
 
-    def _valid_evidence(self, items) -> tuple[list[dict], dict[str, int]]:
+    def _valid_evidence(self, items, report: list | None = None) -> tuple[list[dict], dict[str, int]]:
         """Keep only quotes that exist in the file named AND are live code (a commented-out line is neither
-        a flaw nor a defence). Each kept item carries its true line number, not the model's."""
+        a flaw nor a defence). Each kept item carries its true line number, not the model's.
+        If `report` is given, what happened to every quote is appended to it, for the trace."""
         valid: list[dict] = []
         dropped = {"not_found": 0, "comment": 0}
         for item in (items or [])[:4]:
@@ -266,15 +304,24 @@ class CodeVerifier:
             line = self.index.find_quote(path, quote, near=near) if path else None
             if line is None:
                 dropped["not_found"] += 1
+                outcome = "quote not found in the file" if path else "no such file in the repository"
             elif self.index.span_is_comment(path, line, quote):
                 dropped["comment"] += 1
+                outcome = "found, but it is a comment, not live code"
             else:
                 valid.append({"file": path, "line": line, "quote": " ".join(str(quote).split())[:240]})
+                outcome = "found, live code"
+            if report is not None:
+                report.append({"file": path or str(item.get("file", "")), "line": line, "quote": " ".join(str(quote).split())[:240],
+                               "result": outcome})
         return valid, dropped
 
     # ------------------------------------------------------------------ appeal of a refutation
-    def _on_appeal(self, f: Finding, res: dict, terms: list[str]) -> dict:
+    def _on_appeal(self, f: Finding, res: dict, terms: list[str], tr: list[dict[str, Any]] | None = None) -> dict:
         """A refutation is only as good as the code it cites. Re-read that code with everything it refers to."""
+        step: dict[str, Any] = {"step": "appeal", "refutation_cited": [f"{e['file']}:{e['line']}  {e['quote'][:100]}" for e in res["evidence"]][:3]}
+        if tr is not None:
+            tr.append(step)
         try:
             quotes = "\n".join(e["quote"] for e in res["evidence"])
             idents = identifiers(quotes)
@@ -294,19 +341,27 @@ class CodeVerifier:
             raise
         except Exception as e:  # noqa: BLE001 - an appeal that fails leaves the refutation standing
             print(f"[warn] appeal failed for {f.title!r}: {type(e).__name__}: {e}", file=sys.stderr)
+            step.update(error=f"{type(e).__name__}: {e}"[:200], outcome="the appeal failed; the refutation stands")
             return res
+        step.update(refutation_holds=reply.get("refutation_holds"), impact_follows=reply.get("impact_follows"),
+                    reasoning=str(reply.get("reasoning", ""))[:600])
         if reply.get("refutation_holds") is not False or reply.get("impact_follows") is not True:
+            step["outcome"] = "the refutation holds"
             return res
-        evidence, _ = self._valid_evidence(reply.get("evidence"))
+        appeal_quotes: list[dict[str, Any]] = []
+        evidence, _ = self._valid_evidence(reply.get("evidence"), appeal_quotes)
+        step["quotes"] = appeal_quotes
         if not evidence:
+            step["outcome"] = "the appeal quoted no real vulnerable code; the refutation stands"
             return res
+        step["outcome"] = "overturned: the vulnerable code is live and the cited defence does not enforce anything"
         out = _result(CONFIRMED, "confirmed_on_appeal", str(reply.get("reasoning", ""))[:600], evidence)
         out["_judged"] = {"exploit_path": reply.get("exploit_path", ""),
                           "defense_search_terms": reply.get("defense_search_terms", [])}
         return out
 
     # ------------------------------------------------------------------ the defender gate
-    def _defence_gate(self, f: Finding, res: dict, terms: list[str]) -> dict:
+    def _defence_gate(self, f: Finding, res: dict, terms: list[str], tr: list[dict[str, Any]] | None = None) -> dict:
         """Independent second look at every confirmation: the defender reads each confirming file whole, plus
         wherever the reviewer said a protection would live. This is the pass that catches 'the check is far away'."""
         judged = res.get("_judged", {})
@@ -321,11 +376,19 @@ class CodeVerifier:
         case = (res["reasoning"] + " " + str(judged.get("exploit_path", ""))[:500]).strip()
         verdict = self._defend(f, case, self._context(list(ranked.items()), DEFENDER_CHARS, whole=confirming,
                                                        terms=extra + terms))
+        step: dict[str, Any] = {"step": "defend", "files_read": list(ranked)[:8], "defence_found": verdict.get("defence_found"),
+                                "reasoning": str(verdict.get("reasoning", ""))[:600], "outcome": "no protection found: the claim stands"}
+        if tr is not None:
+            tr.append(step)
         if verdict.get("defence_found") is True:
-            defence, _ = self._valid_evidence(verdict.get("evidence"))
+            defence_quotes: list[dict[str, Any]] = []
+            defence, _ = self._valid_evidence(verdict.get("evidence"), defence_quotes)
+            step["quotes"] = defence_quotes
             if defence:             # a defence only counts if it is real, live code that can be quoted
+                step["outcome"] = "defeated: a protection is enforced in live code"
                 return _result(REFUTED, "defence_found",
                                "Defender found a protection: " + str(verdict.get("reasoning", ""))[:500], defence)
+            step["outcome"] = "the defender claimed a protection but quoted no real live code, so the claim stands"
         return _result(CONFIRMED, res["code"], res["reasoning"], evidence)
 
     def _around(self, evidence: list[dict]) -> list[str]:

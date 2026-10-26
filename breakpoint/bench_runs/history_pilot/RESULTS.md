@@ -80,8 +80,9 @@ string made 9 of the first 66 finder runs unreadable; they were redone, not coun
 The 7 candidates earlier read as Y (4 sets), run through the voting check plus the exploitability step (`proof_y/`, 3 checks, 1 run).
 Kept 4 of 7 candidates, covering the real flaw in 2 of the 4 sets (scim-patch: all 3 candidates kept, all the same flaw; adm-zip: kept).
 The i18next-fs-backend and send candidates were refuted as "a protection enforced in the code defeats the claim", with no split votes
-(`split_decisions` 0). So voting did not rescue them: the defender is wrong the same way every time, which is a systematic miss, not
-noise. Voting fixes instability, not a consistently mistaken defender. Four sets, one run each, one model: direction only.
+(`split_decisions` 0). This section first read that as a systematic miss by the defender; the trace run below shows that reading was
+wrong for i18next-fs-backend (the same claim held on 2 of 2 checks later), so treat it as noise that a vote of two cannot absorb.
+Four sets, one run each, one model: direction only.
 Not yet done: the same strict check on all candidates of the 4 sets, to see whether the survivors are now real vulnerabilities.
 
 ## Strict check on all candidates, partial (2026-10-25)
@@ -115,3 +116,24 @@ check (`--checks 3`, exploitability on; `proof_heldout/`):
 - **Cost**: 107 to 123 calls per 15 claims, about two and a half times the single check (about 45).
 - Not done: the same 30 claims through the old single check, to see what it would have kept. The run produced no result before it
   stopped, so there is no paired comparison and no claim that the strict check is better on these two repositories.
+
+## Step-by-step traces, and a correction (2026-10-26)
+
+The check now records every step (`--trace`; printed one page at a time with `python -m breakpoint.trace show RUN.json --index N`).
+Two real traces, recorded with three checks and the exploitability step, are in `traces/`:
+
+- `trace-scim-patch-kept.txt`: a real prototype-pollution flaw, kept. Both checks held; the quoted lines are confirmed as live code at
+  their true line numbers; the defender found no protection; the exploitability step names the entry point, the attacker (content an
+  application received from outsiders) and the path. 64 lines.
+- `trace-i18next-fs-backend-kept-on-appeal.txt`: the flaw this file twice called lost. This time the first reviewer refuted it in both
+  checks, citing the key filter in `defaults` and `interpolatePath`; the appeal overturned that because the filter does not protect
+  `setPath` and `pushPath`; the defender found nothing; the step named the entry point (`queue`) and the condition (an application that
+  saves missing translation keys from users). 75 lines.
+
+**Correction.** The same i18next-fs-backend claim, same code, has now been decided by the checker in five separate runs, seven individual
+checks in all: kept once (single check), refuted by the defender once (single check), refuted by the defender once (single check),
+refuted by the defender on both votes (strict, `proof_y/`), and held on both votes (strict, `traces/`). That is 3 held of 7, close to a
+coin flip, and the two strict runs of two votes each gave opposite answers. Two things follow. The earlier statement that the defender is
+"wrong the same way every time" was false for this claim. And a majority of two (the early stop) is too small a sample for a claim like
+this: it needs more votes, or a different kind of evidence, such as running the exploit. Counting only the latest run the strict check
+kept the real flaw in 3 of the 4 sets that had a clear candidate; counting all runs it is not a stable number.

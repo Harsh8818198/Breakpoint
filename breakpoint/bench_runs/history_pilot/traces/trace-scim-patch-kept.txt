@@ -1,0 +1,63 @@
+====================================================================================================
+CLAIM   Use of Prototype Pollution susceptible object assignment
+        The `assign` function at src/scimPatch.ts:437 iterates over arbitrary user-controlled
+        property keys and directly assigns them to the target object. Because there is no validation
+        of the key names, an attacker can pass '__proto__', 'constructor', or 'prototype' to
+        manipulate the object's prototype.
+RESULT  FINDING (exploitable): 2 of 2 code checks held, 2 of 2 exploitability answers positive
+====================================================================================================
+
+CODE CHECK 1 of 2: held
+  locate       looked at src/scimPatch.ts, test/scimPatch.test.ts, test/patchValidation.test.ts;
+               searched for assign, __proto__, constructor, prototype, key, value, patch, validate
+  read         the reviewer was shown 9 file(s): src/scimPatch.ts, test/scimPatch.test.ts,
+               test/patchValidation.test.ts, src/errors/scimErrors.ts, example/example.ts, README.md
+               ...
+  judge        CONFIRMED; impact follows: yes
+               The `assign` function recursively iterates over user-controlled keys in `patch.value`
+               and directly assigns them to the object using `obj[key] = value`. It lacks any
+               sanitization or check to prevent access to special keys like `__proto__`,
+               `prototype`, or `constructor`, enabling prototype pollution when handling nested
+               objects.
+               quoted src/scimPatch.ts: `for (const [key, value] of Object.entries(patch.value)) { assign(property, resolvePaths(key), value, patch.op)`
+               quoted src/scimPatch.ts: `obj[keyPath[lastKeyIndex]] = value;`
+  mechanical   src/scimPatch.ts:424 found, live code `for (const [key, value] of
+               Object.entries(patch.value)) { assign(property, resolvePaths(key), value, patch.op);
+               }`
+               src/scimPatch.ts:461 found, live code `obj[keyPath[lastKeyIndex]] = value;`
+  defender     read 8 file(s); protection found: no
+               The application lacks any validation or sanitization against prototype-polluting
+               property names (e.g., '__proto__') within the `assign` function or its callers. The
+               code directly performs `obj[key] = value` and `obj[keyPath[lastKeyIndex]] = value`
+               using untrusted input from the SCIM patch operation, allowing an attacker to modify
+               the object prototype.
+               -> no protection found: the claim stands
+  decision     CONFIRMED (confirmed): vulnerable code quoted, impact follows, no enforced defence
+               found
+
+CODE CHECK 2 of 2: held (confirmed)
+
+EXPLOITABILITY 1 of 2
+  tier         exploitable (exploitable): an outsider's data reaches the flaw in the default way the
+               project is used
+  entry point  src/scimPatch.ts:424 found, live code `for (const [key, value] of
+               Object.entries(patch.value)) { assign(property, resolvePaths(key), value, patch.op);
+               }`
+  attacker     untrusted_content, who chooses: The keys and values inside the 'value' object of a
+               SCIM PATCH operation.
+  gains        reaches the flaw: yes; already had the power: no
+  path         The application receives an external SCIM PATCH payload, which passes into
+               scimPatch(), calls applyAddOrReplaceOperation(), which then iterates through
+               patch.value in addOrReplaceObjectAttribute() and calls the flawed assign() function.
+  harm         Prototype pollution allowing modification of the global Object prototype, potentially
+               leading to privilege escalation, DoS, or RCE.
+  reasoning    The code blindly assigns user-controlled keys to objects via the assign function
+               without filtering out '__proto__', 'prototype', or 'constructor'. This permits
+               prototype pollution, a known vulnerability in Node.js applications that process
+               untrusted JSON objects.
+  rules        attacker is outside the trust boundary [ok]; no power already held [ok]; path to the
+               flaw shown [ok]; entry point is live code [ok]
+
+EXPLOITABILITY 2 of 2: exploitable (exploitable)
+
+====================================================================================================

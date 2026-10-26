@@ -121,6 +121,11 @@ also lists what was rejected and why, and the JSON has a `verification` block
   exist), whether the attacker gains a power they lacked, and what the harm is. Data the operator or developer controls, a
   command-line tool's own input and debug helpers are rejected by rule. A claim that is accurate but not exploitable is kept
   out of the findings and counted as an *observation* with its reason. `--no-exploit` skips this step.
+- **Traces.** Every check records each step it took: the files the reviewer was shown, what it quoted, whether each quote exists as
+  live code, the appeal, the defender, and each exploitability answer with the rules it passed. `breakpoint-eval run ... --trace`
+  saves them in the run file; `python -m breakpoint.trace show RUN.json --index N` prints one claim on a page (the first check in full,
+  the others as one line; `--all` shows everything), and `python -m breakpoint.trace check REPORT.json --codebase DIR --index N --save t.json`
+  runs the strict check on one finding of a saved report and prints it. Two real pages are in `bench_runs/history_pilot/traces/`.
 - `--verify-report report.json --codebase <path>` re-checks any saved report against code.
 - Secret files (`.env`, `*.pem`, `*key*.hex`, ...) are never read, and secret-looking
   values are redacted before anything is shown to a model or written to a report.
@@ -216,8 +221,9 @@ committed after gemini-3.1-flash-lite was released. The plain prompt three times
 - On all 15 candidates of four sets it kept 10 of 60. None of the 10 is a vulnerability: six are accurate observations about a
   feature or a local tool, four are wrong. Kept means the code does what the claim says, not that it is a vulnerability.
 - The stricter check (three votes, then the exploitability step) kept the real flaw in 2 of the 4 sets where the finder had named
-  it, and kept 0 of 30 claims on two repositories not used for tuning. The two lost flaws were refuted the same way on every vote:
-  repeating a check fixes instability, not a defender that is consistently wrong. It costs about two and a half times the calls.
+  it (3 of 4 on the latest run), and kept 0 of 30 claims on two repositories not used for tuning. It is still not stable: the same real
+  flaw was held on 3 of 7 individual checks across five runs, and two strict runs of two votes each disagreed. It costs about two and a
+  half times the calls.
 - One reader for every reading, one model for finder and checker, small repositories. The exploitability prompt was tuned on four of
   these sets (see `bench_runs/history_pilot/RESULTS.md`).
 

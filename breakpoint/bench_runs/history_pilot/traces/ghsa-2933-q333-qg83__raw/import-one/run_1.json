@@ -1,0 +1,549 @@
+{
+  "schema": 1,
+  "set": "ghsa-2933-q333-qg83",
+  "variant": "raw",
+  "arm": "import-one",
+  "run": 1,
+  "commit": "321916bb9afc0413277304cf209ae4fae111e5e3",
+  "started_at": "2026-10-26T17:47:58+00:00",
+  "model": "gemini/gemini-3.1-flash-lite",
+  "verify": true,
+  "verify_config": {
+    "checks": 3,
+    "exploit": true,
+    "trace": true
+  },
+  "status": "ok",
+  "candidates": 1,
+  "kept": [
+    {
+      "title": "Prototype Pollution via recursive object merge",
+      "generation": 1,
+      "discovered_by": "single-prompt baseline",
+      "description": "While `defaults` attempts to block some keys, the `setPath` and `pushPath` utility functions perform property assignment without validating that the path segments do not contain '__proto__', 'constructor', or 'prototype'.",
+      "steps_to_exploit": [
+        "Attacker provides a malicious object containing `__proto__` properties in `addPath` or `loadPath` configurations.",
+        "The system merges these objects into internal state or processing structures.",
+        "Subsequent operations allow the attacker to overwrite Object prototype properties, influencing application logic."
+      ],
+      "impact": "Denial of service or privilege escalation by altering object behavior globally.",
+      "evolved_from": [],
+      "attack_category": "injection",
+      "confidence": 1.0,
+      "exploitability": 0.0,
+      "impact_score": 0.0,
+      "spread": 0.0,
+      "fix_difficulty": 1.0,
+      "verification": "CONFIRMED",
+      "evidence": [
+        {
+          "file": "lib/utils.js",
+          "line": 105,
+          "quote": "export function setPath (object, path, newValue) { const { obj, k } = getLastOfPath(object, path, Object) if (Array.isArray(obj) && isNaN(k)) throw new Error(`Cannot create property \"${k}\" here since object is an array`) obj[k] = newValue }"
+        }
+      ],
+      "exploit": {
+        "tier": "conditional",
+        "code": "conditional",
+        "attacker": "remote_authenticated",
+        "attacker_controls": "The 'key' and 'fallbackValue' fields sent to the 'create' or 'save' method, which are then queued for filesystem write.",
+        "reaches_flaw": true,
+        "already_has_the_power": false,
+        "entry_point": {
+          "file": "lib/index.js",
+          "line": 174,
+          "quote": "queue (lng, namespace, key, fallbackValue, callback) { pushPath(this.queuedWrites, [lng, namespace], { key, fallbackValue: fallbackValue || '', callback })"
+        },
+        "path": "The i18next-fs-backend 'create' or 'save' method (entry) calls 'queue', which calls 'pushPath'. 'pushPath' calls 'getLastOfPath', then directly performs property assignment 'obj[k] = newValue' on internal state objects without prototype sanitization.",
+        "harm": "Prototype pollution allowing an attacker to overwrite Object prototype properties, potentially leading to privilege escalation or application-wide logic compromise.",
+        "condition": "The application uses the 'save' or 'create' functionality of the backend with user-controlled input.",
+        "reasoning": "The 'pushPath' and 'setPath' functions are used in 'Backend.queue' and 'Backend.writeFile' to update internal 'queuedWrites' objects. If an application exposes the 'create' or 'save' methods to untrusted users, they can inject '__proto__' keys into the backend's internal state, leading to prototype pollution.",
+        "entry_checked": {
+          "file": "lib/index.js",
+          "line": 174,
+          "quote": "queue (lng, namespace, key, fallbackValue, callback) { pushPath(this.queuedWrites, [lng, namespace], { key, fallbackValue: fallbackValue || '', callback })",
+          "result": "found, live code"
+        },
+        "agreement": "2/2"
+      },
+      "votes": {
+        "code_check": {
+          "confirmed": 2,
+          "cast": 2,
+          "errors": 0
+        },
+        "exploit": {
+          "yes": 2,
+          "cast": 2,
+          "errors": 0
+        }
+      },
+      "code_refs": [
+        {
+          "file": "lib/utils.js",
+          "line": 108,
+          "quote": "obj[k] = newValue"
+        }
+      ],
+      "id": "e074f54d",
+      "bss": 0.0,
+      "severity_band": "LOW",
+      "fix_priority": "MONITOR"
+    }
+  ],
+  "proposed": [
+    {
+      "title": "Prototype Pollution via recursive object merge",
+      "code_refs": [
+        {
+          "file": "lib/utils.js",
+          "line": 108,
+          "quote": "obj[k] = newValue"
+        }
+      ],
+      "outcome": "kept",
+      "claim": "While `defaults` attempts to block some keys, the `setPath` and `pushPath` utility functions perform property assignment without validating that the path segments do not contain '__proto__', 'constructor', or 'prototype'.",
+      "impact": "Denial of service or privilege escalation by altering object behavior globally.",
+      "votes": {
+        "code_check": {
+          "confirmed": 2,
+          "cast": 2,
+          "errors": 0
+        },
+        "exploit": {
+          "yes": 2,
+          "cast": 2,
+          "errors": 0
+        }
+      },
+      "exploit": {
+        "tier": "conditional",
+        "code": "conditional",
+        "attacker": "remote_authenticated",
+        "attacker_controls": "The 'key' and 'fallbackValue' fields sent to the 'create' or 'save' method, which are then queued for filesystem write.",
+        "reaches_flaw": true,
+        "already_has_the_power": false,
+        "entry_point": {
+          "file": "lib/index.js",
+          "line": 174,
+          "quote": "queue (lng, namespace, key, fallbackValue, callback) { pushPath(this.queuedWrites, [lng, namespace], { key, fallbackValue: fallbackValue || '', callback })"
+        },
+        "path": "The i18next-fs-backend 'create' or 'save' method (entry) calls 'queue', which calls 'pushPath'. 'pushPath' calls 'getLastOfPath', then directly performs property assignment 'obj[k] = newValue' on internal state objects without prototype sanitization.",
+        "harm": "Prototype pollution allowing an attacker to overwrite Object prototype properties, potentially leading to privilege escalation or application-wide logic compromise.",
+        "condition": "The application uses the 'save' or 'create' functionality of the backend with user-controlled input.",
+        "reasoning": "The 'pushPath' and 'setPath' functions are used in 'Backend.queue' and 'Backend.writeFile' to update internal 'queuedWrites' objects. If an application exposes the 'create' or 'save' methods to untrusted users, they can inject '__proto__' keys into the backend's internal state, leading to prototype pollution.",
+        "entry_checked": {
+          "file": "lib/index.js",
+          "line": 174,
+          "quote": "queue (lng, namespace, key, fallbackValue, callback) { pushPath(this.queuedWrites, [lng, namespace], { key, fallbackValue: fallbackValue || '', callback })",
+          "result": "found, live code"
+        },
+        "agreement": "2/2"
+      },
+      "evidence": [
+        {
+          "file": "lib/utils.js",
+          "line": 105,
+          "quote": "export function setPath (object, path, newValue) { const { obj, k } = getLastOfPath(object, path, Object) if (Array.isArray(obj) && isNaN(k)) throw new Error(`Cannot create property \"${k}\" here since object is an array`) obj[k] = newValue }"
+        }
+      ],
+      "trace": {
+        "code_checks": [
+          {
+            "status": "CONFIRMED",
+            "code": "confirmed_on_appeal",
+            "steps": [
+              {
+                "step": "locate",
+                "files": [
+                  "lib/utils.js",
+                  "lib/index.js",
+                  "test/security.js"
+                ],
+                "search_terms": [
+                  "setPath",
+                  "pushPath",
+                  "addPath",
+                  "loadPath",
+                  "__proto__",
+                  "constructor",
+                  "prototype",
+                  "defaults"
+                ],
+                "note": ""
+              },
+              {
+                "step": "read",
+                "files": [
+                  "lib/index.js",
+                  "lib/utils.js",
+                  "test/security.js",
+                  "lib/formats/yaml.js",
+                  "README.md",
+                  "CHANGELOG.md",
+                  "index.d.ts",
+                  "example/caching/app.js",
+                  "example/updatable-cache/app.js"
+                ],
+                "note": "files put in front of the judge"
+              },
+              {
+                "step": "judge",
+                "verdict": "REFUTED",
+                "impact_follows": false,
+                "reasoning": "The application explicitly defines `UNSAFE_KEYS` containing 'prototype', 'constructor', and '__proto__', and enforces this via `isSafeSegmentBase` in `interpolatePath` and during object updates in `defaults`. The recursive `setPath` function is protected by these sanitizers before any user-controlled input (like `lng` or `ns`) is interpolated into path-constructing operations.",
+                "attacker_needs": "null (the claim is refuted by existing code).",
+                "exploit_path": "The claim is refuted by the logic in `lib/utils.js` (lines 5, 28, and 142), which consistently blocks the specific keys identified by the researcher.",
+                "quotes": [
+                  {
+                    "file": "lib/utils.js",
+                    "quote": "const UNSAFE_KEYS = ['__proto__', 'constructor', 'prototype']"
+                  },
+                  {
+                    "file": "lib/utils.js",
+                    "quote": "if (UNSAFE_KEYS.indexOf(v) > -1) return false"
+                  },
+                  {
+                    "file": "lib/utils.js",
+                    "quote": "if (UNSAFE_KEYS.indexOf(k) > -1) return match"
+                  }
+                ],
+                "absent_names": []
+              },
+              {
+                "step": "mechanical",
+                "quotes": [
+                  {
+                    "file": "lib/utils.js",
+                    "line": 5,
+                    "quote": "const UNSAFE_KEYS = ['__proto__', 'constructor', 'prototype']",
+                    "result": "found, live code"
+                  },
+                  {
+                    "file": "lib/utils.js",
+                    "line": 28,
+                    "quote": "if (UNSAFE_KEYS.indexOf(v) > -1) return false",
+                    "result": "found, live code"
+                  },
+                  {
+                    "file": "lib/utils.js",
+                    "line": 142,
+                    "quote": "if (UNSAFE_KEYS.indexOf(k) > -1) return match",
+                    "result": "found, live code"
+                  }
+                ],
+                "note": "each quote must exist in the file it names, as live code (not a comment)"
+              },
+              {
+                "step": "appeal",
+                "refutation_cited": [
+                  "lib/utils.js:5  const UNSAFE_KEYS = ['__proto__', 'constructor', 'prototype']",
+                  "lib/utils.js:28  if (UNSAFE_KEYS.indexOf(v) > -1) return false",
+                  "lib/utils.js:142  if (UNSAFE_KEYS.indexOf(k) > -1) return match"
+                ],
+                "refutation_holds": false,
+                "impact_follows": true,
+                "reasoning": "The provided `UNSAFE_KEYS` checks only protect against prototype pollution during object merging in `defaults` and when interpolating strings. The `setPath` and `pushPath` functions (lines 105, 111) perform property assignment using `k` without any sanitization, allowing an attacker to inject `__proto__` or `constructor` properties into `queuedWrites`.",
+                "quotes": [
+                  {
+                    "file": "lib/utils.js",
+                    "line": 105,
+                    "quote": "export function setPath (object, path, newValue) { const { obj, k } = getLastOfPath(object, path, Object) if (Array.isArray(obj) && isNaN(k)) throw new Error(`Cannot create property \"${k}\" here since object is an array`) obj[k] = newValue }",
+                    "result": "found, live code"
+                  }
+                ],
+                "outcome": "overturned: the vulnerable code is live and the cited defence does not enforce anything"
+              },
+              {
+                "step": "defend",
+                "files_read": [
+                  "lib/utils.js",
+                  "lib/index.js",
+                  "lib/formats/yaml.js",
+                  "README.md",
+                  "test/security.js",
+                  "CHANGELOG.md",
+                  "index.d.ts",
+                  "example/caching/app.js"
+                ],
+                "defence_found": false,
+                "reasoning": "The claim asserts that 'setPath' and 'pushPath' allow prototype pollution because they lack sanitization. However, 'setPath' and 'pushPath' both invoke 'getLastOfPath' (line 84), which relies on 'cleanKey' (line 85). 'cleanKey' does not remove 'prototype' keys, and the code lacks any runtime enforcement to block those specific keys during deep-object traversal for `setPath` or `pushPath` operations. No existing defense prevents the described prototype pollution in these functions.",
+                "outcome": "no protection found: the claim stands"
+              },
+              {
+                "step": "decision",
+                "status": "CONFIRMED",
+                "code": "confirmed_on_appeal",
+                "why": "refuted at first, then shown real on appeal"
+              }
+            ]
+          },
+          {
+            "status": "CONFIRMED",
+            "code": "confirmed_on_appeal",
+            "steps": [
+              {
+                "step": "locate",
+                "files": [
+                  "lib/utils.js",
+                  "lib/index.js",
+                  "test/security.js"
+                ],
+                "search_terms": [
+                  "setPath",
+                  "pushPath",
+                  "__proto__",
+                  "constructor",
+                  "prototype",
+                  "addPath",
+                  "loadPath",
+                  "merge"
+                ],
+                "note": ""
+              },
+              {
+                "step": "read",
+                "files": [
+                  "lib/index.js",
+                  "lib/utils.js",
+                  "test/security.js",
+                  "lib/formats/yaml.js",
+                  "README.md",
+                  "CHANGELOG.md",
+                  "index.d.ts",
+                  "example/caching/app.js",
+                  "example/updatable-cache/app.js"
+                ],
+                "note": "files put in front of the judge"
+              },
+              {
+                "step": "judge",
+                "verdict": "REFUTED",
+                "impact_follows": false,
+                "reasoning": "The application consistently prevents prototype pollution. `lib/utils.js` uses an `UNSAFE_KEYS` list and explicit checks in `defaults`, `interpolatePath`, and `interpolate`. `lib/formats/yaml.js` (a dependency) also includes a `setProperty` helper specifically designed to prevent prototype pollution when merging mappings, as noted in its comments.",
+                "attacker_needs": "null; the code explicitly prevents this attack pattern.",
+                "exploit_path": "Not applicable, the code has active mitigations against prototype pollution.",
+                "quotes": [
+                  {
+                    "file": "lib/utils.js",
+                    "quote": "const UNSAFE_KEYS = ['__proto__', 'constructor', 'prototype'] ... if (UNSAFE_KEYS.indexOf(prop) > -1) continue"
+                  },
+                  {
+                    "file": "lib/formats/yaml.js",
+                    "quote": "function setProperty(object, key, value) { if (key === '__proto__') { Object.defineProperty(object, key, { configurable: true, enumerable: true, writable: true, value: value }); } else { object[key] = value; } }"
+                  }
+                ],
+                "absent_names": []
+              },
+              {
+                "step": "mechanical",
+                "quotes": [
+                  {
+                    "file": "lib/utils.js",
+                    "line": 5,
+                    "quote": "const UNSAFE_KEYS = ['__proto__', 'constructor', 'prototype'] ... if (UNSAFE_KEYS.indexOf(prop) > -1) continue",
+                    "result": "found, live code"
+                  },
+                  {
+                    "file": "lib/formats/yaml.js",
+                    "line": 1215,
+                    "quote": "function setProperty(object, key, value) { if (key === '__proto__') { Object.defineProperty(object, key, { configurable: true, enumerable: true, writable: true, value: value }); } else { object[key] = value; } }",
+                    "result": "found, live code"
+                  }
+                ],
+                "note": "each quote must exist in the file it names, as live code (not a comment)"
+              },
+              {
+                "step": "appeal",
+                "refutation_cited": [
+                  "lib/utils.js:5  const UNSAFE_KEYS = ['__proto__', 'constructor', 'prototype'] ... if (UNSAFE_KEYS.indexOf(prop) > -1",
+                  "lib/formats/yaml.js:1215  function setProperty(object, key, value) { if (key === '__proto__') { Object.defineProperty(object, "
+                ],
+                "refutation_holds": false,
+                "impact_follows": true,
+                "reasoning": "The application uses `setPath` and `pushPath` in `lib/utils.js` for property assignment without any validation of the path segments. The `UNSAFE_KEYS` checks only protect specific interpolation functions and `defaults`, not the general-purpose `setPath` used to build state. Consequently, user-supplied input can reach `setPath` and cause prototype pollution.",
+                "quotes": [
+                  {
+                    "file": "lib/utils.js",
+                    "line": 105,
+                    "quote": "export function setPath (object, path, newValue) { const { obj, k } = getLastOfPath(object, path, Object) if (Array.isArray(obj) && isNaN(k)) throw new Error(`Cannot create property \"${k}\" here since object is an array`) obj[k] = newValue }",
+                    "result": "found, live code"
+                  }
+                ],
+                "outcome": "overturned: the vulnerable code is live and the cited defence does not enforce anything"
+              },
+              {
+                "step": "defend",
+                "files_read": [
+                  "lib/utils.js",
+                  "lib/index.js",
+                  "lib/formats/yaml.js",
+                  "README.md",
+                  "CHANGELOG.md",
+                  "test/security.js",
+                  "index.d.ts",
+                  "lib/formats/jsonc.js"
+                ],
+                "defence_found": false,
+                "reasoning": "The application code handles `queuedWrites` objects and user-provided keys using the `setPath` and `pushPath` functions. While these functions do not perform recursive validation, the path segments (keys) are derived from the `key` parameter passed to `Backend.queue`. The logic in `Backend.writeFile` ensures that these keys are treated as property paths for `setPath` without allowing injection of the `__proto__` property itself into the target object structure in a way that escapes scope. More importantly, the security model restricts `lng`/`ns` at the boundary, and the operations described ar",
+                "outcome": "no protection found: the claim stands"
+              },
+              {
+                "step": "decision",
+                "status": "CONFIRMED",
+                "code": "confirmed_on_appeal",
+                "why": "refuted at first, then shown real on appeal"
+              }
+            ]
+          }
+        ],
+        "exploit": [
+          {
+            "tier": "conditional",
+            "code": "conditional",
+            "attacker": "remote_authenticated",
+            "attacker_controls": "The 'key' and 'fallbackValue' fields sent to the 'create' or 'save' method, which are then queued for filesystem write.",
+            "reaches_flaw": true,
+            "already_has_the_power": false,
+            "entry_point": {
+              "file": "lib/index.js",
+              "line": 174,
+              "quote": "queue (lng, namespace, key, fallbackValue, callback) { pushPath(this.queuedWrites, [lng, namespace], { key, fallbackValue: fallbackValue || '', callback })"
+            },
+            "path": "The i18next-fs-backend 'create' or 'save' method (entry) calls 'queue', which calls 'pushPath'. 'pushPath' calls 'getLastOfPath', then directly performs property assignment 'obj[k] = newValue' on internal state objects without prototype sanitization.",
+            "harm": "Prototype pollution allowing an attacker to overwrite Object prototype properties, potentially leading to privilege escalation or application-wide logic compromise.",
+            "condition": "The application uses the 'save' or 'create' functionality of the backend with user-controlled input.",
+            "reasoning": "The 'pushPath' and 'setPath' functions are used in 'Backend.queue' and 'Backend.writeFile' to update internal 'queuedWrites' objects. If an application exposes the 'create' or 'save' methods to untrusted users, they can inject '__proto__' keys into the backend's internal state, leading to prototype pollution.",
+            "entry_checked": {
+              "file": "lib/index.js",
+              "line": 174,
+              "quote": "queue (lng, namespace, key, fallbackValue, callback) { pushPath(this.queuedWrites, [lng, namespace], { key, fallbackValue: fallbackValue || '', callback })",
+              "result": "found, live code"
+            }
+          },
+          {
+            "tier": "conditional",
+            "code": "conditional",
+            "attacker": "remote_authenticated",
+            "attacker_controls": "The attacker controls the 'key' and 'fallbackValue' fields passed to i18next's missing translation reporting functionality (e.g., via the 'addPath' configuration).",
+            "reaches_flaw": true,
+            "already_has_the_power": false,
+            "entry_point": {
+              "file": "lib/index.js",
+              "line": 174,
+              "quote": "queue (lng, namespace, key, fallbackValue, callback) { pushPath(this.queuedWrites, [lng, namespace], { key, fallbackValue: fallbackValue || '', callback })"
+            },
+            "path": "The application calls i18next's 'addResource' or related missing key reporting functions, which invokes the backend's 'queue' method. This calls 'pushPath', which invokes 'getLastOfPath' (lib/utils.js) to set properties on an internal object without sanitizing the key path segments.",
+            "harm": "Prototype pollution allowing an attacker to modify object behavior globally, potentially leading to denial of service or further exploitation.",
+            "condition": "The application must be configured to process and save missing translation keys supplied by users (e.g., via 'saveMissing: true').",
+            "reasoning": "The 'setPath' and 'pushPath' utilities lack checks for '__proto__'. While the backend attempts to sanitize 'lng' and 'ns' for file paths, the actual content of the objects (keys) being saved is not validated, leading to prototype pollution if the application allows user-supplied keys to be saved.",
+            "entry_checked": {
+              "file": "lib/index.js",
+              "line": 174,
+              "quote": "queue (lng, namespace, key, fallbackValue, callback) { pushPath(this.queuedWrites, [lng, namespace], { key, fallbackValue: fallbackValue || '', callback })",
+              "result": "found, live code"
+            }
+          }
+        ],
+        "votes": {
+          "code_check": {
+            "confirmed": 2,
+            "cast": 2,
+            "errors": 0
+          },
+          "exploit": {
+            "yes": 2,
+            "cast": 2,
+            "errors": 0
+          }
+        },
+        "verdict": {
+          "status": "CONFIRMED",
+          "code": "confirmed_on_appeal"
+        }
+      }
+    }
+  ],
+  "rejected": [],
+  "verification": {
+    "mode": "source-code",
+    "files_indexed": 87,
+    "checked": 1,
+    "confirmed": 1,
+    "observations": 0,
+    "refuted": 0,
+    "unverified": 0,
+    "errors": 0,
+    "defender_pass": true,
+    "appeal_pass": true,
+    "checks": 3,
+    "exploitability": true,
+    "split_decisions": 0
+  },
+  "arm_meta": {
+    "imported_from": "bench_runs/history_pilot/traces/inputs/ghsa-2933-q333-qg83/one.json",
+    "note": "produced elsewhere; not repeatable by this harness"
+  },
+  "seconds": {
+    "arm": 0.0,
+    "check": 66.4,
+    "total": 66.5
+  },
+  "usage": {
+    "arm": {
+      "calls": 0,
+      "failed": 0,
+      "est_tokens": 0,
+      "seconds_in_calls": 0.0,
+      "by_task": {}
+    },
+    "check": {
+      "calls": 10,
+      "failed": 0,
+      "est_tokens": 136328,
+      "seconds_in_calls": 65.2,
+      "by_task": {
+        "exploit": {
+          "calls": 2,
+          "failed": 0,
+          "prompt_chars": 143852,
+          "completion_chars": 2938,
+          "seconds": 7.79237600020133,
+          "est_tokens": 36698
+        },
+        "verify_appeal": {
+          "calls": 2,
+          "failed": 0,
+          "prompt_chars": 165299,
+          "completion_chars": 2303,
+          "seconds": 7.853225599974394,
+          "est_tokens": 41900
+        },
+        "verify_defend": {
+          "calls": 2,
+          "failed": 0,
+          "prompt_chars": 126787,
+          "completion_chars": 1299,
+          "seconds": 7.868674399796873,
+          "est_tokens": 32022
+        },
+        "verify_judge": {
+          "calls": 2,
+          "failed": 0,
+          "prompt_chars": 90645,
+          "completion_chars": 2676,
+          "seconds": 11.146573100006208,
+          "est_tokens": 23330
+        },
+        "verify_locate": {
+          "calls": 2,
+          "failed": 0,
+          "prompt_chars": 9042,
+          "completion_chars": 473,
+          "seconds": 30.524758900050074,
+          "est_tokens": 2379
+        }
+      }
+    }
+  }
+}

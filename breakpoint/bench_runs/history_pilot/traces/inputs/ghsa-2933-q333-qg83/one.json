@@ -1,0 +1,42 @@
+{
+ "findings": [
+  {
+   "title": "Prototype Pollution via recursive object merge",
+   "generation": 1,
+   "discovered_by": "single-prompt baseline",
+   "description": "While `defaults` attempts to block some keys, the `setPath` and `pushPath` utility functions perform property assignment without validating that the path segments do not contain '__proto__', 'constructor', or 'prototype'.",
+   "steps_to_exploit": [
+    "Attacker provides a malicious object containing `__proto__` properties in `addPath` or `loadPath` configurations.",
+    "The system merges these objects into internal state or processing structures.",
+    "Subsequent operations allow the attacker to overwrite Object prototype properties, influencing application logic."
+   ],
+   "impact": "Denial of service or privilege escalation by altering object behavior globally.",
+   "evolved_from": [],
+   "attack_category": "injection",
+   "confidence": 1.0,
+   "exploitability": 0.0,
+   "impact_score": 0.0,
+   "spread": 0.0,
+   "fix_difficulty": 1.0,
+   "verification": "",
+   "evidence": [
+    {
+     "file": "lib/utils.js",
+     "line": 108,
+     "quote": "obj[k] = newValue"
+    }
+   ],
+   "code_refs": [
+    {
+     "file": "lib/utils.js",
+     "line": 108,
+     "quote": "obj[k] = newValue"
+    }
+   ],
+   "id": "e074f54d",
+   "bss": 0.0,
+   "severity_band": "LOW",
+   "fix_priority": "MONITOR"
+  }
+ ]
+}

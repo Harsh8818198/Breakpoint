@@ -60,12 +60,13 @@ class ProvenVerifier:
     `votes` and `exploit` on a confirmed result."""
 
     def __init__(self, index: CodeIndex, llm, *, checks: int = DEFAULT_CHECKS, exploit: bool = True, defend: bool = True,
-                 appeal: bool = True, log=print, **kw):
+                 appeal: bool = True, log=print, trace: bool = False, **kw):
         if checks < 1:
             raise ValueError("checks must be at least 1")
         self.cv = CodeVerifier(index, llm, defend=defend, appeal=appeal, log=log, **kw)
         self.judge = ExploitJudge(self.cv) if exploit else None
         self.index, self.llm, self.checks, self.exploit, self.defend, self.appeal = index, llm, checks, exploit, defend, appeal
+        self.trace = trace              # keep every claim's step-by-step trace in the results and records (it is always built)
         self.records: list[dict[str, Any]] = []
 
     # ------------------------------------------------------------------ public
@@ -75,9 +76,13 @@ class ProvenVerifier:
             results = list(pool.map(self.check, findings))
         out = []
         for f, r in zip(findings, results):
-            self.records.append(self._record(f, r))
-            out.append({"ok": r["status"] == CONFIRMED, "evidence": self._feedback(r), "status": r["status"], "code": r["code"],
-                        "evidence_items": r["evidence"], "exploit": r.get("exploit") or {}, "votes": r.get("votes") or {}})
+            rec = self._record(f, r)
+            item = {"ok": r["status"] == CONFIRMED, "evidence": self._feedback(r), "status": r["status"], "code": r["code"],
+                    "evidence_items": r["evidence"], "exploit": r.get("exploit") or {}, "votes": r.get("votes") or {}}
+            if self.trace:
+                rec["trace"] = item["trace"] = r.get("trace") or {}
+            self.records.append(rec)
+            out.append(item)
         return out
 
     def stats(self) -> dict[str, Any]:
@@ -91,7 +96,21 @@ class ProvenVerifier:
 
     # ------------------------------------------------------------------ one finding
     def check(self, f: Finding) -> dict[str, Any]:
-        answers, yes, no, errors = vote(lambda: self.cv.check(f), lambda r: r["status"] == CONFIRMED,
+        """Check one claim. The result carries `trace`: each code check (with its own steps), each exploitability answer, the votes."""
+        trace: dict[str, Any] = {"code_checks": [], "exploit": []}
+        result = self._check(f, trace)
+        trace["votes"] = result.get("votes") or {}
+        trace["verdict"] = {"status": result["status"], "code": result["code"]}
+        result["trace"] = trace
+        return result
+
+    def _attempt(self, f: Finding, trace: dict[str, Any]) -> dict[str, Any]:
+        r = self.cv.check(f)
+        trace["code_checks"].append({"status": r["status"], "code": r["code"], "steps": r.get("trace") or []})
+        return r
+
+    def _check(self, f: Finding, trace: dict[str, Any]) -> dict[str, Any]:
+        answers, yes, no, errors = vote(lambda: self._attempt(f, trace), lambda r: r["status"] == CONFIRMED,
                                         lambda r: r["status"] == ERROR, self.checks)
         votes: dict[str, Any] = {"code_check": {"confirmed": yes, "cast": yes + no, "errors": errors}}
         if not answers:
@@ -104,11 +123,17 @@ class ProvenVerifier:
         base = next(r for r in answers if r["status"] == CONFIRMED)
         if not self.judge:
             return {**base, "votes": votes}
-        return self._exploitable(f, base, votes)
+        return self._exploitable(f, base, votes, trace)
 
-    def _exploitable(self, f: Finding, base: dict[str, Any], votes: dict[str, Any]) -> dict[str, Any]:
+    def _exploitable(self, f: Finding, base: dict[str, Any], votes: dict[str, Any], trace: dict[str, Any]) -> dict[str, Any]:
         positive = lambda r: r["tier"] in (EXPLOITABLE, CONDITIONAL)  # noqa: E731
-        answers, yes, no, errors = vote(lambda: self.judge.judge(f, base["evidence"]), positive, lambda r: r["tier"] is None, self.checks)
+
+        def ask():
+            r = self.judge.judge(f, base["evidence"])
+            trace["exploit"].append(r)
+            return r
+
+        answers, yes, no, errors = vote(ask, positive, lambda r: r["tier"] is None, self.checks)
         votes["exploit"] = {"yes": yes, "cast": yes + no, "errors": errors}
         if not answers:                         # the exploitability check never ran: the claim stays confirmed but says so
             return {**base, "votes": votes, "exploit": {"tier": "unchecked", "code": "error"}}
