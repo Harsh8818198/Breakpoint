@@ -93,3 +93,25 @@ ghsa-2933-q333-qg83 (i18next-fs-backend): 15 candidates, 0 kept (11 refuted, 3 u
 1 observation: accurate but no new power for the attacker). 99 calls, about 930k tokens, 15 minutes. 3 of the 15 had split votes.
 This run's list holds no candidate that was read as the real flaw (the earlier `proof_y` run, on the candidate read as Y from another
 run, refuted it too), so this shows no noise survives, not that the checker finds the flaw. Remaining sets: run again after the quota resets.
+
+## Strict check on repositories not used for tuning (2026-10-25 and 26)
+
+The exploitability prompt was iterated three times against the ten survivors of the plain check (`exploit_dev_v1_untuned.json`,
+`exploit_dev_v2.json`): a single call let 4, then 2, then 4 of the 10 through, and not the same ones each time, so wording was
+being tuned against noise and the iteration stopped. Anything measured on those four repositories is therefore tuned-on. The two
+repositories below were never looked at while writing the prompt rules.
+
+All 15 candidates of finder run 1 for `ghsa-73wf-gq98-2v4g` (browserslist) and `ghsa-8x88-c5mf-7j5w` (tar), through the full
+check (`--checks 3`, exploitability on; `proof_heldout/`):
+
+| | claims | kept as findings | observations | refuted | unproven | claims with split votes | calls |
+|---|---|---|---|---|---|---|---|
+| browserslist | 15 | 0 | 2 | 12 | 1 | 8 | 123 |
+| tar | 15 | 0 | 0 | 13 | 2 | 4 | 107 |
+
+- **No false finding survived**: 0 of 30 kept. Neither list holds a candidate read as the real flaw (both sets read N in all three
+  finder runs), so this says the filter is strict on noise, not that it finds flaws. A list with a real flaw is the other table.
+- **The checks disagreed on 12 of 30 claims.** The old single check would have been deciding those by one draw.
+- **Cost**: 107 to 123 calls per 15 claims, about two and a half times the single check (about 45).
+- Not done: the same 30 claims through the old single check, to see what it would have kept. The run produced no result before it
+  stopped, so there is no paired comparison and no claim that the strict check is better on these two repositories.

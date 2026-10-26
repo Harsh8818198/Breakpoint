@@ -114,6 +114,13 @@ also lists what was rejected and why, and the JSON has a `verification` block
 (`checked / confirmed / refuted / unverified / errors`).
 
 - `--no-verify` turns the check off (findings are then unproven and the report says so).
+- `--checks N` (default 3) runs the check up to N times per claim and goes with the majority, stopping as soon as a majority
+  agrees (two identical answers out of three), so a claim usually costs two runs. A single run can change its mind on a rerun.
+  Each finding says how many checks agreed. `--checks 1` is the old single check.
+- An **exploitability** step then judges every claim that held: who supplies the data, where it enters (a quoted line that must
+  exist), whether the attacker gains a power they lacked, and what the harm is. Data the operator or developer controls, a
+  command-line tool's own input and debug helpers are rejected by rule. A claim that is accurate but not exploitable is kept
+  out of the findings and counted as an *observation* with its reason. `--no-exploit` skips this step.
 - `--verify-report report.json --codebase <path>` re-checks any saved report against code.
 - Secret files (`.env`, `*.pem`, `*key*.hex`, ...) are never read, and secret-looking
   values are redacted before anything is shown to a model or written to a report.
@@ -208,7 +215,11 @@ committed after gemini-3.1-flash-lite was released. The plain prompt three times
   decision on 2, one of them a true flaw, so one check run per claim is not enough.
 - On all 15 candidates of four sets it kept 10 of 60. None of the 10 is a vulnerability: six are accurate observations about a
   feature or a local tool, four are wrong. Kept means the code does what the claim says, not that it is a vulnerability.
-- One reader for every reading, one model for finder and checker, small repositories, nothing tuned on these sets.
+- The stricter check (three votes, then the exploitability step) kept the real flaw in 2 of the 4 sets where the finder had named
+  it, and kept 0 of 30 claims on two repositories not used for tuning. The two lost flaws were refuted the same way on every vote:
+  repeating a check fixes instability, not a defender that is consistently wrong. It costs about two and a half times the calls.
+- One reader for every reading, one model for finder and checker, small repositories. The exploitability prompt was tuned on four of
+  these sets (see `bench_runs/history_pilot/RESULTS.md`).
 
 **What this supports:** reported findings come with quoted evidence and few false claims.
 **What it does not support:** that the engine, or the per-route review, finds more bugs than one prompt does; or (item 6)
