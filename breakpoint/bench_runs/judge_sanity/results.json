@@ -1,0 +1,91 @@
+{
+  "scim": {
+    "ok": true,
+    "before": {
+      "worked": true,
+      "reason": "worked",
+      "oracle": "pollution",
+      "target_loaded": true,
+      "new_keys": [
+        "polluted"
+      ],
+      "crashed_in_target": false,
+      "control_fired": false,
+      "errors": [],
+      "output": "",
+      "detail": ""
+    },
+    "after": {
+      "worked": false,
+      "reason": "rejected_by_library",
+      "oracle": "pollution",
+      "target_loaded": true,
+      "new_keys": [],
+      "crashed_in_target": true,
+      "control_fired": false,
+      "errors": [
+        "Error: Invalid SCIM Patch: Forbidden key in patch path: __proto__"
+      ],
+      "output": "",
+      "detail": ""
+    }
+  },
+  "i18next": {
+    "ok": true,
+    "before": {
+      "worked": true,
+      "reason": "worked",
+      "oracle": "pollution",
+      "target_loaded": true,
+      "new_keys": [
+        "polluted"
+      ],
+      "crashed_in_target": false,
+      "control_fired": false,
+      "errors": [],
+      "output": "",
+      "detail": ""
+    },
+    "after": {
+      "worked": false,
+      "reason": "no_effect",
+      "oracle": "pollution",
+      "target_loaded": true,
+      "new_keys": [],
+      "crashed_in_target": false,
+      "control_fired": false,
+      "errors": [],
+      "output": "",
+      "detail": ""
+    }
+  },
+  "browserslist": {
+    "ok": true,
+    "before": {
+      "worked": true,
+      "reason": "worked",
+      "oracle": "crash",
+      "target_loaded": true,
+      "new_keys": [],
+      "crashed_in_target": true,
+      "control_fired": false,
+      "errors": [
+        "TypeError: Cannot read properties of undefined (reading 'length')"
+      ],
+      "output": "",
+      "detail": ""
+    },
+    "after": {
+      "worked": false,
+      "reason": "no_effect",
+      "oracle": "crash",
+      "target_loaded": true,
+      "new_keys": [],
+      "crashed_in_target": false,
+      "control_fired": false,
+      "errors": [],
+      "output": "",
+      "detail": ""
+    }
+  }
+}
