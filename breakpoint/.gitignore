@@ -16,3 +16,4 @@ build/
 # evaluation: clones of other people's repositories, and run output
 .breakpoint/
 /eval_runs/
+/WORK/
